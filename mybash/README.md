@@ -14,7 +14,7 @@ A collection of my personal configuration files for Bash, Starship, and other to
 Clone the repository:
 
 ```bash
-git clone git@github.com:0xSCHfL/My-Omarchy-Conf.git ~/.local/share/mybash
+git clone https://github.com/0xSCHfL/My-Omarchy-Conf.git
 ```
 Change The directoy
 ```bash
