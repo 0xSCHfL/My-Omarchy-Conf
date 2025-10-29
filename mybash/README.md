@@ -15,3 +15,12 @@ Clone the repository:
 
 ```bash
 git clone git@github.com:0xSCHfL/My-Omarchy-Conf.git ~/.local/share/mybash
+```
+Change The directoy
+```bash
+cd mybash
+```
+Run the Install script
+```bash
+./mybash-setup.sh
+```
