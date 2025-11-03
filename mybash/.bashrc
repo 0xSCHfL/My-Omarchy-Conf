@@ -597,7 +597,6 @@ trim() {
 
 gcom() {
   git status
-  git push
   git add .
   git commit -m "$1"
 }
