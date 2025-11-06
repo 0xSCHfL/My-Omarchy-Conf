@@ -1,0 +1,28 @@
+format = """
+[](#10100e)\
+\
+\
+[](bg:#544731 fg:#10100e)\
+\
+[](fg:#544731 bg:#695135)\
+\
+\
+[](fg:#695135 bg:#716234)\
+\
+[ ](fg:#716234)\
+"""
+
+[username]
+style_user = "bg:#10100e"
+format = '[ ]()'
+
+[directory]
+style = "bg:#544731"
+format = "[  ]()"
+
+[git_branch]
+style = "bg:#695135"
+
+[time]
+style = "bg:#716234"
+

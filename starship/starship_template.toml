@@ -1,0 +1,28 @@
+format = """
+[]($BG)\
+$python\
+$username\
+[](bg:$ACCENT1 fg:$BG)\
+$directory\
+[](fg:$ACCENT1 bg:$ACCENT2)\
+$git_branch\
+$git_status\
+[](fg:$ACCENT2 bg:$ACCENT3)\
+$time\
+[ ](fg:$ACCENT3)\
+"""
+
+[username]
+style_user = "bg:$BG"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:$ACCENT1"
+format = "[ $path ]($style)"
+
+[git_branch]
+style = "bg:$ACCENT2"
+
+[time]
+style = "bg:$ACCENT3"
+
