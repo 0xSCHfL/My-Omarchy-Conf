@@ -1,0 +1,27 @@
+{
+    "wallpaper": "/mnt/external/All stuf/Blanat/Wallpapers/Linux/Brown/1-ristretto.jpg",
+    "alpha": "100",
+    "special": {
+        "background": "#10100e",
+        "foreground": "#c9bca7",
+        "cursor": "#c9bca7"
+    },
+    "colors": {
+        "color0": "#10100e",
+        "color1": "#544731",
+        "color2": "#695135",
+        "color3": "#716234",
+        "color4": "#6E5C48",
+        "color5": "#846B3B",
+        "color6": "#8B7050",
+        "color7": "#c9bca7",
+        "color8": "#8c8374",
+        "color9": "#544731",
+        "color10": "#695135",
+        "color11": "#716234",
+        "color12": "#6E5C48",
+        "color13": "#846B3B",
+        "color14": "#8B7050",
+        "color15": "#c9bca7"
+    }
+}

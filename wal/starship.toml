@@ -1,0 +1,120 @@
+format = """
+[](#0f0c01)\
+$python\
+$username\
+[](bg:#6A5C1C fg:#0f0c01)\
+$directory\
+[](fg:#6A5C1C bg:#5D5B37)\
+$git_branch\
+$git_status\
+[](fg:#5D5B37 bg:#8C6911)\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+[](fg:#8C6911 bg:#8D641D)\
+$docker_context\
+[](fg:#8D641D bg:#8A7652)\
+$time\
+[ ](fg:#8A7652)\
+"""
+command_timeout = 5000
+
+[username]
+show_always = true
+style_user = "bg:#0f0c01"
+style_root = "bg:#0f0c01"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:#6A5C1C"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+
+[c]
+symbol = " "
+style = "bg:#8C6911"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:#8D641D"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:#8C6911"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:#8C6911"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:#5D5B37"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#5D5B37"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:#8C6911"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:#8C6911"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:#8C6911"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:#8C6911"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#8C6911"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:#8C6911"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:#0f0c01"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#8C6911"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R"
+style = "bg:#8A7652"
+format = '[ $time ]($style)'
+

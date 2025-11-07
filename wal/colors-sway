@@ -1,0 +1,21 @@
+set $wallpaper /home/sohaib/.local/share/omarchy/themes/ristretto/backgrounds/2-ristretto.jpg
+
+set $background #0f0c01
+set $foreground #c8bea0
+
+set $color0 #0f0c01
+set $color1 #6A5C1C
+set $color2 #5D5B37
+set $color3 #7A7F7D
+set $color4 #8C6911
+set $color5 #8D641D
+set $color6 #8A7652
+set $color7 #c8bea0
+set $color8 #8c8570
+set $color9 #6A5C1C
+set $color10 #5D5B37
+set $color11 #7A7F7D
+set $color12 #8C6911
+set $color13 #8D641D
+set $color14 #8A7652
+set $color15 #c8bea0

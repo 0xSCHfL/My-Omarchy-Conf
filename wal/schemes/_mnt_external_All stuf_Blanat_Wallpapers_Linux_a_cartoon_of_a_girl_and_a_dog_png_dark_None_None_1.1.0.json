@@ -1,0 +1,27 @@
+{
+    "wallpaper": "/mnt/external/All stuf/Blanat/Wallpapers/Linux/a_cartoon_of_a_girl_and_a_dog.png",
+    "alpha": "100",
+    "special": {
+        "background": "#1d1e20",
+        "foreground": "#f1e6d7",
+        "cursor": "#f1e6d7"
+    },
+    "colors": {
+        "color0": "#1d1e20",
+        "color1": "#A88477",
+        "color2": "#7B7E81",
+        "color3": "#A2968F",
+        "color4": "#CCAB9A",
+        "color5": "#BDC6AA",
+        "color6": "#E4D3B4",
+        "color7": "#f1e6d7",
+        "color8": "#a8a196",
+        "color9": "#A88477",
+        "color10": "#7B7E81",
+        "color11": "#A2968F",
+        "color12": "#CCAB9A",
+        "color13": "#BDC6AA",
+        "color14": "#E4D3B4",
+        "color15": "#f1e6d7"
+    }
+}

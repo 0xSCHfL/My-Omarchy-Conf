@@ -1,0 +1,28 @@
+{
+    "wallpaper": "/home/sohaib/.local/share/omarchy/themes/ristretto/backgrounds/2-ristretto.jpg",
+    "alpha": "100",
+
+    "special": {
+        "background": "#0f0c01",
+        "foreground": "#c8bea0",
+        "cursor": "#c8bea0"
+    },
+    "colors": {
+        "color0": "#0f0c01",
+        "color1": "#6A5C1C",
+        "color2": "#5D5B37",
+        "color3": "#7A7F7D",
+        "color4": "#8C6911",
+        "color5": "#8D641D",
+        "color6": "#8A7652",
+        "color7": "#c8bea0",
+        "color8": "#8c8570",
+        "color9": "#6A5C1C",
+        "color10": "#5D5B37",
+        "color11": "#7A7F7D",
+        "color12": "#8C6911",
+        "color13": "#8D641D",
+        "color14": "#8A7652",
+        "color15": "#c8bea0"
+    }
+}

@@ -1,0 +1,23 @@
+" Special
+let wallpaper  = "/home/sohaib/.local/share/omarchy/themes/ristretto/backgrounds/2-ristretto.jpg"
+let background = "#0f0c01"
+let foreground = "#c8bea0"
+let cursor     = "#c8bea0"
+
+" Colors
+let color0  = "#0f0c01"
+let color1  = "#6A5C1C"
+let color2  = "#5D5B37"
+let color3  = "#7A7F7D"
+let color4  = "#8C6911"
+let color5  = "#8D641D"
+let color6  = "#8A7652"
+let color7  = "#c8bea0"
+let color8  = "#8c8570"
+let color9  = "#6A5C1C"
+let color10 = "#5D5B37"
+let color11 = "#7A7F7D"
+let color12 = "#8C6911"
+let color13 = "#8D641D"
+let color14 = "#8A7652"
+let color15 = "#c8bea0"

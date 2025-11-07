@@ -1,0 +1,27 @@
+{
+    "wallpaper": "/home/sohaib/.config/omarchy/themes/aura/backgrounds/1.png",
+    "alpha": "100",
+    "special": {
+        "background": "#0B151C",
+        "foreground": "#a1bfc4",
+        "cursor": "#a1bfc4"
+    },
+    "colors": {
+        "color0": "#0B151C",
+        "color1": "#595770",
+        "color2": "#936177",
+        "color3": "#1C6C89",
+        "color4": "#5E6F8B",
+        "color5": "#9A7089",
+        "color6": "#CB7C83",
+        "color7": "#a1bfc4",
+        "color8": "#708589",
+        "color9": "#595770",
+        "color10": "#936177",
+        "color11": "#1C6C89",
+        "color12": "#5E6F8B",
+        "color13": "#9A7089",
+        "color14": "#CB7C83",
+        "color15": "#a1bfc4"
+    }
+}

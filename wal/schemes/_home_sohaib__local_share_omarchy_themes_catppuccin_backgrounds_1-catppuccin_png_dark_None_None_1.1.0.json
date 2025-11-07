@@ -1,0 +1,27 @@
+{
+    "wallpaper": "/home/sohaib/.local/share/omarchy/themes/catppuccin/backgrounds/1-catppuccin.png",
+    "alpha": "100",
+    "special": {
+        "background": "#0e0e16",
+        "foreground": "#e0cbf0",
+        "cursor": "#e0cbf0"
+    },
+    "colors": {
+        "color0": "#0e0e16",
+        "color1": "#9176AD",
+        "color2": "#9B7EC1",
+        "color3": "#AA87B7",
+        "color4": "#B08ED0",
+        "color5": "#B794E0",
+        "color6": "#C89FDF",
+        "color7": "#e0cbf0",
+        "color8": "#9c8ea8",
+        "color9": "#9176AD",
+        "color10": "#9B7EC1",
+        "color11": "#AA87B7",
+        "color12": "#B08ED0",
+        "color13": "#B794E0",
+        "color14": "#C89FDF",
+        "color15": "#e0cbf0"
+    }
+}

@@ -1,0 +1,27 @@
+{
+    "wallpaper": "/home/sohaib/.local/share/omarchy/themes/catppuccin/backgrounds/2-cat-waves-mocha.png",
+    "alpha": "100",
+    "special": {
+        "background": "#0D0C15",
+        "foreground": "#decfeb",
+        "cursor": "#decfeb"
+    },
+    "colors": {
+        "color0": "#0D0C15",
+        "color1": "#656F8F",
+        "color2": "#8A779F",
+        "color3": "#6F8CB0",
+        "color4": "#7AA3C9",
+        "color5": "#AA9CCB",
+        "color6": "#9FA9D8",
+        "color7": "#decfeb",
+        "color8": "#9b90a4",
+        "color9": "#656F8F",
+        "color10": "#8A779F",
+        "color11": "#6F8CB0",
+        "color12": "#7AA3C9",
+        "color13": "#AA9CCB",
+        "color14": "#9FA9D8",
+        "color15": "#decfeb"
+    }
+}
