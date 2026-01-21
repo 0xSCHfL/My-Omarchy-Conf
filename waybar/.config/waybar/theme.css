@@ -1,5 +1,5 @@
 * {
-  background-color: #282828;
+  background-color: #1a1a1a;
   color: #c6d0f5;
   border: none;
   border-radius: 0;
@@ -115,7 +115,7 @@
 
 tooltip {
   padding: 6px;
-  background: #282828;
+  background: #1a1a1a;
 }
 
 tooltip label {
