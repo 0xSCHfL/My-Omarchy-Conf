@@ -1,5 +1,9 @@
 * {
+<<<<<<< HEAD
   background-color: #1a1a1a;
+=======
+  background-color: #000000;
+>>>>>>> f5fe4d0 (Update nvim Conf)
   color: #c6d0f5;
   border: none;
   border-radius: 0;
@@ -115,7 +119,11 @@
 
 tooltip {
   padding: 6px;
+<<<<<<< HEAD
   background: #1a1a1a;
+=======
+  background: #000000;
+>>>>>>> f5fe4d0 (Update nvim Conf)
 }
 
 tooltip label {
