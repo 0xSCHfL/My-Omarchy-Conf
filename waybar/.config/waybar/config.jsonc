@@ -26,7 +26,8 @@
     "bluetooth",
     "cpu",
     "memory",
-    "tray",
+    // "tray",
+    "group/tray-expander",
     "custom/lock"
   ],
 
@@ -158,11 +159,30 @@
     "format-muted": "",
     "format-icons": {
       "headphone": "",
+      "headset": "",
       "default": ["","",""]
     },
     "on-click": "omarchy-launch-audio",
     "on-click-right": "pamixer -t"
   },
+
+  "group/tray-expander": {
+    "orientation": "inherit",
+    "drawer": {
+      "transition-duration": 600,
+      "children-class": "tray-group-item"
+    },
+    "modules": ["custom/expand-icon", "tray"]
+  },
+  
+  "custom/expand-icon": {
+    "format": "",
+    "tooltip": false,
+    "on-scroll-up": "",
+    "on-scroll-down": "",
+    "on-scroll-left": "",
+    "on-scroll-right": ""
+  }, 
 
   "custom/voxtype": {
     "exec": "omarchy-voxtype-status",
@@ -176,6 +196,18 @@
     "tooltip": true,
     "on-click-right": "omarchy-voxtype-config",
     "on-click": "omarchy-voxtype-model"
+  },
+  "custom/idle-indicator": {
+    "on-click": "omarchy-toggle-idle",
+    "exec": "$OMARCHY_PATH/default/waybar/indicators/idle.sh",
+    "signal": 9,
+    "return-type": "json"
+  },
+  "custom/notification-silencing-indicator": {
+    "on-click": "omarchy-toggle-notification-silencing",
+    "exec": "$OMARCHY_PATH/default/waybar/indicators/notification-silencing.sh",
+    "signal": 10,
+    "return-type": "json"
   },
   "tray": {
     "icon-size": 16,
@@ -202,6 +234,7 @@
     "on-click": "playerctl --player=spotify play-pause",
     "on-click-right": "playerctl next",
     "on-click-middle": "playerctl previous",
+    "on-click-double": "omarchy-launch-or-focus spotify",
     "return-type": "json",
     "format": "{}"
   },

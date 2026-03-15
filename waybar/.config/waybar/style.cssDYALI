@@ -1,4 +1,5 @@
-@import "../omarchy/current/theme/waybar.css";
+/* ===== BASE WAYBAR STYLE (LAYOUT ONLY) ===== */
+@import "./theme.css";
 
 /* DO NOT SET BACKGROUND HERE */
 * {
@@ -6,19 +7,19 @@
   border: none;
   border-radius: 0;
   min-height: 0;
-  /* font-family: 'Iosevka Term'; */
-  font-family: 'Iosevka Term', 'Noto Sans Arabic', sans-serif;
+
+  font-family: 'Iosevka Term';
   font-size: 13px;
 }
 
-/* BAR HEIGHT */
+/* BAR WEIGHT */
 #waybar {
   min-height: 34px;
   padding: 6px 0;
 }
 
 /* CONTAINERS */
-.modules-left  { margin-left: 8px; }
+.modules-left { margin-left: 8px; }
 .modules-right { margin-right: 8px; }
 
 /* WORKSPACES */
@@ -27,10 +28,6 @@
   padding: 4px 10px;
   margin: 0 2px;
   min-width: 9px;
-}
-
-#workspaces button.empty {
-  opacity: 0.5;
 }
 
 /* UNIFIED MODULE SPACING */
@@ -42,15 +39,16 @@
 #bluetooth,
 #cpu,
 #memory,
+#tray,
 #custom-lock,
 #custom-omarchy,
+
 #custom-update,
-#custom-spotify,
-#custom-weather,
 #clock,
 #custom-voxtype {
   margin: 0;
   padding: 4px 8px;
+  /* min-width: 12px; */
 }
 
 /* WINDOW */
@@ -69,9 +67,8 @@
 #bluetooth:hover,
 #cpu:hover,
 #memory:hover,
-#custom-lock:hover,
-#custom-spotify:hover,
-#custom-weather:hover {
+#tray:hover,
+#custom-lock:hover {
   background: rgba(255,255,255,0.08);
 }
 
@@ -81,46 +78,8 @@ tooltip { padding: 6px; }
 /* STATES */
 .hidden { opacity: 0; }
 
-#custom-screenrecording-indicator,
-#custom-idle-indicator,
-#custom-notification-silencing-indicator {
-  min-width: 12px;
-  margin-left: 5px;
-  margin-right: 0;
-  font-size: 10px;
-  padding-bottom: 1px;
-}
 
-#custom-screenrecording-indicator.active,
 #custom-idle-indicator.active,
 #custom-notification-silencing-indicator.active {
   color: #a55555;
-}
-
-#custom-voxtype.recording {
-  color: #a55555;
-}
-
-#custom-update {
-  font-size: 10px;
-}
-
-/* ── Tray expander group ─────────────────────────────────── */
-
-#tray {
-  margin-right: 16px;
-}
-
-#custom-expand-icon {
-  margin-right: 18px;
-  opacity: 0.6;
-}
-
-#custom-expand-icon:hover {
-  background: rgba(255,255,255,0.08);
-  opacity: 1;
-}
-
-.tray-group-item {
-  padding: 0 4px;
 }
