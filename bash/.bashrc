@@ -102,11 +102,13 @@ export LESS_TERMCAP_us=$'\E[01;32m'
 # Alias's for SSH
 # alias SERVERNAME='ssh YOURWEBSITE.com -l USERNAME -p PORTNUMBERHERE'
 alias callexpat='ssh -p 3202 root@142.132.160.246'
-alias vocallremote='ssh -p 7202 root@188.34.199.50'
+# alias vocallremote='ssh -p 7202 root@188.34.199.50'
+alias vocallremote='ssh -p 7202 root@46.225.182.112'
 alias ais='ssh -p 7264 sadhg@195.201.130.179'
 alias kb='ssh -p 2520 root@49.13.236.152'
 alias fw='ssh -p 3920 root@5.75.147.151'
 alias crm='ssh -p 4810 root@91.98.140.68'
+alias ht='ssh 2xsr8y@www512.your-server.de -p222'
 
 #######################################################
 # GENERAL ALIAS'S
@@ -724,3 +726,5 @@ eval "$(register-python-argcomplete --no-defaults exegol)"
 if [[ -z $DISPLAY ]] && [[ $(tty) = /dev/tty1 ]]; then
   exec startx
 fi
+
+export PATH=$PATH:/home/sohaib/.spicetify
