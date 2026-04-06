@@ -2,8 +2,7 @@
 
 WAYBAR_DIR="$HOME/.config/waybar"
 OM_ARCHY_DIR="$HOME/.local/share/omarchy/config/waybar"
-
-exec 2>&1
+DOTFILES_DIR="$HOME/Work/dotfiles"
 
 CHOICE=$(echo -e "Custom\nOmarchy" | walker --dmenu -p "Waybar:" 2>/dev/null)
 
@@ -16,7 +15,9 @@ case "$CHOICE" in
         notify-send "Waybar" "Applied Omarchy config" -t 2000
         ;;
     Custom)
-        [ -f "$WAYBAR_DIR/config.jsoncOM" ] && rm -f "$WAYBAR_DIR/config.jsonc" "$WAYBAR_DIR/style.css" && cp "$WAYBAR_DIR/config.jsoncOM" "$WAYBAR_DIR/config.jsonc" && cp "$WAYBAR_DIR/style.cssOM" "$WAYBAR_DIR/style.css"
+        rm -f "$WAYBAR_DIR/config.jsonc" "$WAYBAR_DIR/style.css"
+        cp "$DOTFILES_DIR/waybar/.config/waybar/config.jsonc" "$WAYBAR_DIR/config.jsonc"
+        cp "$DOTFILES_DIR/waybar/.config/waybar/style.css" "$WAYBAR_DIR/style.css"
         notify-send "Waybar" "Applied Custom config" -t 2000
         ;;
     *)
@@ -24,6 +25,6 @@ case "$CHOICE" in
         ;;
 esac
 
-pkill waybar 2>/dev/null
-sleep 0.3
+pkill waybar
+sleep 1
 uwsm-app waybar &

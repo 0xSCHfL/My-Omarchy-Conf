@@ -1,31 +1,28 @@
 @import "../omarchy/current/theme/waybar.css";
 
-/* DO NOT SET BACKGROUND HERE */
 * {
+  background-color: @background;
   color: @foreground;
+
   border: none;
   border-radius: 0;
   min-height: 0;
-  /* font-family: 'Iosevka Term'; */
-  font-family: 'Iosevka Term', 'Noto Sans Arabic', sans-serif;
+  font-family: 'Iosecka Term';
   font-size: 13px;
 }
 
-/* BAR HEIGHT */
-#waybar {
-  min-height: 34px;
-  padding: 6px 0;
+.modules-left {
+  margin-left: 8px;
 }
 
-/* CONTAINERS */
-.modules-left  { margin-left: 8px; }
-.modules-right { margin-right: 8px; }
+.modules-right {
+  margin-right: 8px;
+}
 
-/* WORKSPACES */
 #workspaces button {
   all: initial;
-  padding: 4px 10px;
-  margin: 0 2px;
+  padding: 0 6px;
+  margin: 0 1.5px;
   min-width: 9px;
 }
 
@@ -33,53 +30,46 @@
   opacity: 0.5;
 }
 
-/* UNIFIED MODULE SPACING */
-#custom-uptime,
-#backlight,
+#cpu,
 #battery,
 #pulseaudio,
-#custom-network,
-#bluetooth,
-#cpu,
-#memory,
-#custom-lock,
 #custom-omarchy,
-#custom-update,
-#custom-spotify,
-#custom-weather,
-#clock,
-#custom-voxtype {
-  margin: 0;
-  padding: 4px 8px;
+#custom-update {
+  min-width: 12px;
+  margin: 0 7.5px;
 }
 
-/* WINDOW */
-#window {
-  margin: 0 6px;
-  padding: 4px 8px;
+#tray {
+  margin-right: 16px;
+}
+
+#bluetooth {
+  margin-right: 17px;
+}
+
+#network {
+  margin-right: 13px;
+}
+
+#custom-expand-icon {
+  margin-right: 18px;
+}
+
+tooltip {
+  padding: 2px;
+}
+
+#custom-update {
   font-size: 10px;
 }
 
-/* HOVER */
-#custom-uptime:hover,
-#backlight:hover,
-#battery:hover,
-#pulseaudio:hover,
-#custom-network:hover,
-#bluetooth:hover,
-#cpu:hover,
-#memory:hover,
-#custom-lock:hover,
-#custom-spotify:hover,
-#custom-weather:hover {
-  background: rgba(255,255,255,0.08);
+#clock {
+  margin-left: 8.75px;
 }
 
-/* TOOLTIP */
-tooltip { padding: 6px; }
-
-/* STATES */
-.hidden { opacity: 0; }
+.hidden {
+  opacity: 0;
+}
 
 #custom-screenrecording-indicator,
 #custom-idle-indicator,
@@ -91,36 +81,20 @@ tooltip { padding: 6px; }
   padding-bottom: 1px;
 }
 
-#custom-screenrecording-indicator.active,
+#custom-screenrecording-indicator.active {
+  color: #a55555;
+}
+
 #custom-idle-indicator.active,
 #custom-notification-silencing-indicator.active {
   color: #a55555;
 }
 
+#custom-voxtype {
+  min-width: 12px;
+  margin: 0 0 0 7.5px;
+}
+
 #custom-voxtype.recording {
   color: #a55555;
-}
-
-#custom-update {
-  font-size: 10px;
-}
-
-/* ── Tray expander group ─────────────────────────────────── */
-
-#tray {
-  margin-right: 16px;
-}
-
-#custom-expand-icon {
-  margin-right: 18px;
-  opacity: 0.6;
-}
-
-#custom-expand-icon:hover {
-  background: rgba(255,255,255,0.08);
-  opacity: 1;
-}
-
-.tray-group-item {
-  padding: 0 4px;
 }
