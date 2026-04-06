@@ -3,30 +3,21 @@
 WAYBAR_DIR="$HOME/.config/waybar"
 OM_ARCHY_DIR="$HOME/.local/share/omarchy/config/waybar"
 
-# Check current state
-CURRENT_CONFIG=$(readlink -f "$WAYBAR_DIR/config.jsonc" 2>/dev/null)
-OMARCHY_CONFIG=$(realpath "$OM_ARCHY_DIR/config.jsonc")
+OPTIONS=("Custom" "Omarchy")
 
-if [ "$CURRENT_CONFIG" = "$OMARCHY_CONFIG" ]; then
-    # Currently using omarchy config - switch to custom
-    if [ ! -f "$WAYBAR_DIR/config.jsoncOM" ]; then
-        cp "$WAYBAR_DIR/config.jsonc" "$WAYBAR_DIR/config.jsoncOM"
-        cp "$WAYBAR_DIR/style.css" "$WAYBAR_DIR/style.cssOM"
-    fi
-    rm "$WAYBAR_DIR/config.jsonc" "$WAYBAR_DIR/style.css"
-    cp "$WAYBAR_DIR/config.jsoncOM" "$WAYBAR_DIR/config.jsonc"
-    cp "$WAYBAR_DIR/style.cssOM" "$WAYBAR_DIR/style.css"
-    echo "Switched to custom waybar config"
-else
-    # Currently using custom config - switch to omarchy
-    if [ ! -f "$WAYBAR_DIR/config.jsoncOM" ]; then
-        cp "$WAYBAR_DIR/config.jsonc" "$WAYBAR_DIR/config.jsoncOM"
-        cp "$WAYBAR_DIR/style.css" "$WAYBAR_DIR/style.cssOM"
-    fi
-    rm "$WAYBAR_DIR/config.jsonc" "$WAYBAR_DIR/style.css"
+CHOICE=$(printf '%s\n' "${OPTIONS[@]}" | gum choose --header "Select waybar config:")
+
+if [ "$CHOICE" = "Omarchy" ]; then
+    [ ! -f "$WAYBAR_DIR/config.jsoncOM" ] && cp "$WAYBAR_DIR/config.jsonc" "$WAYBAR_DIR/config.jsoncOM" && cp "$WAYBAR_DIR/style.css" "$WAYBAR_DIR/style.cssOM"
+    rm -f "$WAYBAR_DIR/config.jsonc" "$WAYBAR_DIR/style.css"
     ln -sf "$OM_ARCHY_DIR/config.jsonc" "$WAYBAR_DIR/config.jsonc"
     ln -sf "$OM_ARCHY_DIR/style.css" "$WAYBAR_DIR/style.css"
-    echo "Switched to omarchy waybar config"
+    notify-send "Waybar" "Applied Omarchy config" -t 2000
+else
+    [ -f "$WAYBAR_DIR/config.jsoncOM" ] && rm -f "$WAYBAR_DIR/config.jsonc" "$WAYBAR_DIR/style.css" && cp "$WAYBAR_DIR/config.jsoncOM" "$WAYBAR_DIR/config.jsonc" && cp "$WAYBAR_DIR/style.cssOM" "$WAYBAR_DIR/style.css"
+    notify-send "Waybar" "Applied Custom config" -t 2000
 fi
 
-pkill waybar && waybar &
+pkill waybar 2>/dev/null
+sleep 0.3
+uwsm-app waybar &
