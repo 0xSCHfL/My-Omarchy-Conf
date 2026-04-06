@@ -2,7 +2,7 @@
 
 WAYBAR_DIR="$HOME/.config/waybar"
 OM_ARCHY_DIR="$HOME/.local/share/omarchy/config/waybar"
-DOTFILES_DIR="$HOME/Work/dotfiles"
+DOTFILES_DIR="$HOME/Work/dotfiles/waybar/.config/waybar"
 
 CHOICE=$(echo -e "Custom\nOmarchy" | walker --dmenu -p "Waybar:" 2>/dev/null)
 
@@ -16,8 +16,8 @@ case "$CHOICE" in
         ;;
     Custom)
         rm -f "$WAYBAR_DIR/config.jsonc" "$WAYBAR_DIR/style.css"
-        cp "$DOTFILES_DIR/waybar/.config/waybar/config.jsonc" "$WAYBAR_DIR/config.jsonc"
-        cp "$DOTFILES_DIR/waybar/.config/waybar/style.css" "$WAYBAR_DIR/style.css"
+        cp "$DOTFILES_DIR/config.jsonc" "$WAYBAR_DIR/config.jsonc"
+        cp "$DOTFILES_DIR/style.css" "$WAYBAR_DIR/style.css"
         notify-send "Waybar" "Applied Custom config" -t 2000
         ;;
     *)
