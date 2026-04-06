@@ -731,7 +731,7 @@ export PATH=$PATH:"$HOME/.local/bin:$HOME/.cargo/bin:/var/lib/flatpak/exports/bi
 
 eval "$(starship init bash)"
 eval "$(zoxide init --cmd cd bash)"
-eval "$(register-python-argcomplete --no-defaults exegol)"
+# eval "$(register-python-argcomplete --no-defaults exegol)"
 
 if [[ -z $DISPLAY ]] && [[ $(tty) = /dev/tty1 ]]; then
   exec startx
