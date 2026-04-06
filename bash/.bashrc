@@ -210,6 +210,16 @@ yayd() {
   fi
 }
 
+yayc() {
+  echo "Cleaning yay cache..."
+  yay -Scc
+}
+
+pacc() {
+  echo "Cleaning pacman cache..."
+  sudo pacman -Scc
+}
+
 # Change directory aliases
 alias home='cd ~'
 alias cd..='cd ..'
