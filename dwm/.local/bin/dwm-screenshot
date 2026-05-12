@@ -2,10 +2,18 @@
 mkdir -p ~/.cache/hist
 sleep 0.3
 filename="$HOME/.cache/hist/$(date '+%a_%b%d%y_%H%M%S').png"
+
+# Try raw output first (Enter/confirm in flameshot)
 flameshot gui --raw > "$filename" 2>/dev/null
+
 if [ -s "$filename" ]; then
   notify-send -i "$filename" " Screenshot saved"
 else
+  # Check clipboard (Ctrl+C in flameshot copies image there)
   xclip -selection clipboard -t image/png -o > "$filename" 2>/dev/null
-  [ -s "$filename" ] && notify-send -i "$filename" " Screenshot saved (from clipboard)" || rm -f "$filename"
+  if [ -s "$filename" ]; then
+    notify-send -i "$filename" " Screenshot saved (clipboard)"
+  else
+    rm -f "$filename"
+  fi
 fi
