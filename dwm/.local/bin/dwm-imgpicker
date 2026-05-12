@@ -1,5 +1,5 @@
 #!/bin/bash
-# Image manager: fzf + ueberzugpp browser for ~/Pictures
+# Image manager: fzf + ueberzugpp browser for wallpapers
 # Keybindings inside fzfub (m mode):
 #   ctrl-w  watermark    ctrl-b  b&w          ctrl-t  remove bg
 #   ctrl-d  delete       ctrl-e  strip exif   ctrl-g  open gimp
@@ -7,10 +7,23 @@
 #   ctrl-l  black border ctrl-h  white border
 #   alt-j   → jpg        alt-p   → png        ctrl-r  refresh
 
-PICS="${PICS:-$HOME/Pictures}"
+COLS=140
+ROWS=40
+
+read SW SH <<< $(xdpyinfo 2>/dev/null | awk '/dimensions/{split($2,a,"x"); print a[1], a[2]}')
+[ -z "$SW" ] && SW=1920 && SH=1080
+
+# Liberation Mono pixelsize=16 ≈ 9px wide, 20px tall per cell
+WW=$(( COLS * 9 ))
+WH=$(( ROWS * 20 ))
+X=$(( (SW - WW) / 2 ))
+Y=$(( (SH - WH) / 2 ))
+
+PICS="${PICS:-$HOME/Work/dotfiles/wallpapers}"
 export PICS
+
 st \
     -f 'Liberation Mono:pixelsize=16:antialias=true:autohint=true' \
     -c fzfmenu -n fzfmenu -T fzf \
-    -g "140x40" \
+    -g "${COLS}x${ROWS}+${X}+${Y}" \
     -e fzfub "$PICS" m
