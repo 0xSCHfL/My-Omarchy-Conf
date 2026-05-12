@@ -13,7 +13,7 @@ Super + i          → Increase master count
 Super + d          → Decrease master count
 Super + h          → Shrink master area
 Super + l          → Grow master area
-Super + t          → Toggle float center
+Super + t          → Toggle floating
 Super + f          → Fullscreen (monocle)
 Super + m          → Monocle layout
 Super + Space      → Cycle layouts

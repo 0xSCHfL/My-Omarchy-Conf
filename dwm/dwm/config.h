@@ -119,7 +119,7 @@ static const Key keys[] = {
 	{ MODKEY|ShiftMask,             XK_Return, zoom,           {0} },
 	{ MODKEY,                       XK_Tab,    view,           {0} },
 	{ MODKEY|ShiftMask,             XK_c,      spawn,          {.v = chromiumcmd } },
-	{ MODKEY,                       XK_t,      togglefloatcenter, {0} },
+	{ MODKEY,                       XK_t,      togglefloating, {0} },
 	{ MODKEY,                       XK_f,      setlayout,      {.v = &layouts[2]} },
 	{ MODKEY|Mod1Mask,              XK_f,      setlayout,      {.v = &layouts[1]} },
 	{ MODKEY,                       XK_m,      setlayout,      {.v = &layouts[2]} },
