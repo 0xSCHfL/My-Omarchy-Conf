@@ -7,8 +7,8 @@
 #   ctrl-l  black border ctrl-h  white border
 #   alt-j   → jpg        alt-p   → png        ctrl-r  refresh
 
-COLS=140
-ROWS=40
+COLS=100
+ROWS=30
 
 # Liberation Mono pixelsize=16 ≈ 9px wide, 20px tall per cell
 WW=$(( COLS * 9 ))

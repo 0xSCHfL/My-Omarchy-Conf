@@ -81,7 +81,36 @@ The following run on `startx`:
 | `Mod+Shift+b` | Brave browser |
 | `Mod+Shift+o` | Obsidian |
 | `Mod+Shift+q` | Quit DWM |
-| `Ctrl+Alt+Del` | Kill X session |
+| `Mod+Ctrl+Delete` | Quit DWM (close all) |
+| `Mod+F1` | Show all keybindings |
+
+## Image Picker (fzfub — Mod+Shift+i)
+
+Open image browser with preview. Navigate with arrows/jk.
+
+| Key | Action |
+|-----|--------|
+| `Alt+w` | Set as wallpaper (pywal) |
+| `Enter` | Select file |
+| `Ctrl+g` | Open in GIMP |
+| `Ctrl+d` | Delete file |
+| `Ctrl+e` | Strip EXIF |
+| `Ctrl+b` | Convert to B&W |
+| `Ctrl+w` | Add watermark |
+| `Ctrl+t` | Remove background |
+| `Ctrl+f/v` | Flip H/V |
+| `Ctrl+l/h` | Black/white border |
+| `Ctrl+s` | Scale 50% |
+| `Alt+j/p` | Convert to JPG/PNG |
+
+## System Menu (Mod+Shift+s)
+
+| Option | Action |
+|--------|--------|
+| `kill` | Kill a process (fzf) |
+| `suspend` | Suspend to RAM |
+| `reboot` | Reboot |
+| `shutdown` | Shutdown |
 
 ## Status Bar
 
