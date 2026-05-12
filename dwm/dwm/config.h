@@ -90,7 +90,7 @@ static const char *imgpickercmd[]   = { "dwm-imgpicker", NULL };
 static const char *btopcmd[]        = { "dwm-btop", NULL };
 static const char *imgcliphistcmd[] = { "dwm-imgcliphist", NULL };
 static const char *chromiumcmd[]    = { "chromium", NULL };
-static const char *restartcmd[]     = { "/bin/sh", "-c", "pkill -HUP dwm", NULL };
+static const char *restartcmd[]     = { "dwm-restart", NULL };
 static const char *keyscmd[]        = { "dwm-keys", NULL };
 
 static const Key keys[] = {

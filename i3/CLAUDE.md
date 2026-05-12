@@ -1,82 +1,187 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code when working with code in this repository.
 
 ## Project Overview
 
-This is a personal i3 window manager rice for Arch Linux. The goal is to build a clean, customized i3 setup alongside an existing Hyprland installation, with SDDM as the display manager for switching between sessions. The primary motivation is X11 compatibility (specifically for Veyon Master, which doesn't work on Wayland/Hyprland).
+Multi-WM dotfiles for Arch Linux with Hyprland (Wayland), i3, and DWM (X11). SDDM handles session switching. Primary motivation for X11 WMs is Veyon Master compatibility.
 
 ## System Context
 
 - **OS:** Arch Linux
-- **Display Manager:** SDDM (manages both Hyprland and i3 sessions)
-- **i3 session entry:** `/usr/share/xsessions/i3.desktop`
+- **Display Manager:** SDDM
 - **AUR helper:** yay
-- **Existing WM:** Hyprland (kept, not removed)
+- **Session entries:** `/usr/share/xsessions/i3.desktop` (+ dwm & hyprland)
 
-## Installed Stack
+## Dotfiles Structure
 
-| Tool | Purpose |
-|------|---------|
-| `i3-wm` | Window manager |
-| `polybar` | Status bar (replacing i3bar) |
-| `picom` | Compositor (transparency, blur, shadows) |
-| `rofi` | App launcher (replacing dmenu) |
-| `feh` | Wallpaper setter |
-| `dunst` | Notification daemon |
-| `i3lock` + `xss-lock` | Screen locking |
-| `network-manager-applet` | System tray network indicator |
-
-## Config File Locations
-
-| Config | Path |
-|--------|------|
-| i3 | `~/.config/i3/config` |
-| polybar | `~/.config/polybar/config.ini` |
-| picom | `~/.config/picom/picom.conf` |
-| rofi | `~/.config/rofi/config.rasi` |
-| dunst | `~/.config/dunst/dunstrc` |
-
-## Ricing Approach
-
-- Polybar config is inspired by [skillarch](https://github.com/laluka/skillarch) — borrow and adapt, not copy wholesale
-- All other components are configured manually from scratch
-- Wallpaper set via `feh --bg-scale /path/to/wallpaper` in i3 config exec line
-
-## Key i3 Config Patterns
-
-Apply config changes and reload without logging out:
 ```
-$mod+Shift+r   # reload i3 config
-$mod+Shift+e   # exit i3
+dotfiles/
+├── shell/        # Shared shell config (aliases, .zshrc) — stowed by all WMs
+├── hyprland/     # Hyprland + Wayland config (bashrc managed here)
+├── i3/           # i3 config
+├── dwm/          # DWM config + suckless tools + scripts
+│   ├── dwm/      # Patched dwm source (config.h, compiled binary)
+│   ├── st/       # Patched st terminal source
+│   ├── dmenu/    # Patched dmenu source
+│   ├── .local/bin/  # 47 custom scripts
+│   └── scripts/  # Status bar, audio, wallpaper tools
+└── wallpapers/
 ```
 
-Restart i3 in-place (preserves layout):
-```
-$mod+Shift+r   → i3-msg restart
+## Switching WMs (from TTY)
+
+```bash
+xsession dwm   # symlink ~/.xinitrc → .xinitrc.dwm
+xsession i3    # symlink ~/.xinitrc → .xinitrc.i3
+xsession       # show current session
+startx         # launch the selected WM
 ```
 
-Launch rofi instead of dmenu — replace in `~/.config/i3/config`:
-```
-bindsym $mod+d exec rofi -show drun
+## Stow Packages
+
+| Package | Contents |
+|---------|----------|
+| `shell` | `.config/shell/aliases`, `.zshrc`, `.local/bin/xsession` |
+| `hyprland` | `.bashrc`, Hyprland/Wayland configs |
+| `i3` | i3 config, scripts |
+| `dwm` | DWM config, suckless tools, `.local/bin/` scripts, `.xinitrc.dwm` |
+
+Install via `./install.sh` (stows all + installs packages).
+
+## DWM Config
+
+**Source:** `dwm/dwm/config.h` — edit, then:
+
+```bash
+cd ~/Work/dotfiles/dwm/dwm && make && sudo make install
 ```
 
-Start polybar on i3 launch — add to i3 config:
+**Restart DWM in-place** (rebuilds + installs + reloads):
+- Keybind: `Super+Shift+r`
+- Script: `dwm-restart` (runs `make && sudo make install && pkill -HUP dwm`)
+
+**Autostart** (`.xinitrc.dwm`): wallpaper, picom, dunst, dwm-statusbar, nm-applet, polkit, xss-lock+i3lock, copyq, flameshot, dex, autocutsel, xrandr monitor setup.
+
+## DWM Keybindings
+
+| Key | Action |
+|-----|--------|
+| `Super+Space` | dmenu launcher |
+| `Super+Return` | Terminal (st) |
+| `Super+q` | Browser (qutebrowser) |
+| `Super+w` | Close window |
+| `Super+j/k` | Focus next/prev window |
+| `Super+h/l` | Resize master area |
+| `Super+t` | Toggle floating |
+| `Super+p` | Cycle layouts |
+| `Super+b` | Toggle bar |
+| `Super+f` / `Super+m` | Monocle layout |
+| `Super+,/.` | Focus prev/next monitor |
+| `Super+1-9` | Switch to tag |
+| `Super+Shift+c` | Chromium |
+| `Super+Shift+b` | Brave |
+| `Super+Shift+r` | Rebuild + restart DWM |
+| `Super+Shift+q` | Quit DWM |
+| `Super+Shift+s` | System menu (kill/reboot/shutdown) |
+| `Super+Shift+t` | btop (floating, centered on active window) |
+| `Super+Shift+i` | Image picker (fzfub with ueberzugpp previews) |
+| `Super+Shift+v` | Image clipboard history |
+| `Super+Shift+w/g/x/d/e` | Web apps (WhatsApp, ChatGPT, X, Discord, Email) |
+| `Super+Shift+o` | Obsidian |
+| `Super+Shift+,/.` | Move window to prev/next monitor |
+| `Super+Shift+1-9` | Move window to tag |
+| `Super+v` | Clipboard text history |
+| `Super+n` | Notes manager |
+| `Super+F1` | Show all keybindings |
+| `Super+Ctrl+Delete` | Quit DWM (close all) |
+| `Print` | Screenshot (flameshot) |
+| `Alt+Print` | Screen recording |
+| `Super+Ctrl+Print` | OCR screenshot |
+
+## Image Picker (Mod+Shift+i — fzfub)
+
+| Key | Action |
+|-----|--------|
+| `Alt+w` | Set wallpaper (pywal) |
+| `Enter` | Select / copy path |
+| `Ctrl+g` | GIMP |
+| `Ctrl+d` | Delete |
+| `Ctrl+e` | Strip EXIF |
+| `Ctrl+b` | B&W convert |
+| `Ctrl+f/v` | Flip H/V |
+| `Ctrl+l/h` | Black/white border |
+| `Alt+j/p` | Convert JPG/PNG |
+| `Ctrl+r` | Refresh |
+
+Both `dwm-imgpicker` and `dwm-btop` center on the active window (not screen center).
+
+## System Menu (Mod+Shift+s)
+
 ```
-exec_always --no-startup-id $HOME/.config/polybar/launch.sh
+kill       → fzf process killer
+suspend    → systemctl suspend
+reboot     → systemctl reboot
+shutdown   → shutdown now
 ```
+
+## Status Bar
+
+`dwm-statusbar` shows: CPU% | Temp | RAM | Disk | Network | Volume | Battery | Time
+
+Uses `xsetroot -name` with Nord-inspired colors (SchemeSep, SchemeIcon, SchemeVal, SchemeWarn).
+
+## Custom Scripts (~/.local/bin/)
+
+| Script | Purpose |
+|--------|---------|
+| `dwm-statusbar` | Status bar loop |
+| `dwm-screenshot` | Screenshot via flameshot |
+| `dwm-screenrecord` | Screen recording |
+| `dwm-ocr` | OCR from screenshot |
+| `dwm-sys` | System menu |
+| `dwm-webapp` | Web apps via Brave |
+| `dwm-btop` | Floating btop |
+| `dwm-imgpicker` | Image browser with previews |
+| `dwm-imgcliphist` | Image clipboard history |
+| `dwm-cliphist` | Clipboard text history |
+| `dwm-restart` | Rebuild + restart DWM |
+| `dwm-keys` | Show all keybindings |
+| `xsession` | Switch between dwm/i3 |
+| `fzfub` | fzf + ueberzugpp image browser |
+| `notes` | dmenu notes manager |
+| `random_wallpaper` | Random wallpaper downloader |
+| `wallpapermenu` | Wallpaper picker (nsxiv + pywal) |
+
+## Monitor Setup
+
+`.xinitrc.dwm` runs:
+```bash
+xrandr --output eDP-1 --auto --output HDMI-1 --auto --right-of eDP-1 --primary
+```
+
+Adjust output names as needed for your hardware.
+
+## Clipboard
+
+- `autocutsel -fork` in `.xinitrc.dwm` syncs PRIMARY ↔ CLIPBOARD
+- Mouse selection in st → available for Ctrl+V everywhere
 
 ## Applying Changes
 
-- **i3 config:** `i3-msg reload` or `$mod+Shift+r`
-- **polybar:** kill and relaunch via `~/.config/polybar/launch.sh`
-- **picom:** `pkill picom && picom --daemon`
-- **dunst:** `pkill dunst && dunst &`
+| Component | Command |
+|-----------|---------|
+| DWM config | `cd ~/Work/dotfiles/dwm/dwm && make && sudo make install && pkill -HUP dwm` |
+| DWM restart | `Super+Shift+r` (builds + installs + restarts) |
+| Scripts | `cd ~/Work/dotfiles && stow --restow dwm` |
+| Shell aliases | `cd ~/Work/dotfiles && stow --restow shell` |
+| picom | `pkill picom && picom --daemon` |
+| dunst | `pkill dunst && dunst &` |
+| xsession | `xsession dwm` or `xsession i3` |
 
 ## Veyon
 
-Veyon Master is the reason for switching to X11. Once in i3, test with:
 ```bash
 veyon-master
 ```
-It requires X11 for screen capture (xshm) and remote input (XTest) — both unavailable on Wayland.
+Requires X11 — works in DWM and i3, not Hyprland (Wayland).

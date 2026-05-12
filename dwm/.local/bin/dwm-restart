@@ -1,3 +1,9 @@
 #!/bin/bash
-# Reload DWM in-place (preserves all windows and layout)
+# Rebuild dwm, install, and restart in-place
+
+DWM_DIR="$HOME/Work/dotfiles/dwm/dwm"
+
+cd "$DWM_DIR" || exit 1
+make 2>/dev/null && sudo make install 2>/dev/null
+
 pkill -HUP dwm
