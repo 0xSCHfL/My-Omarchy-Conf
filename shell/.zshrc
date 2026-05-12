@@ -17,8 +17,11 @@ setopt HIST_IGNORE_SPACE
 setopt HIST_REDUCE_BLANKS
 
 # Completion
-autoload -Uz compinit
-compinit
+zmodload zsh/complist
+autoload -Uz compinit && compinit
+autoload -U colors && colors
+
+# cmp opts
 zstyle ':completion:*' menu select
 zstyle ':completion:*' special-dirs true
 

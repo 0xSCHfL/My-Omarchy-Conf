@@ -24,6 +24,9 @@ nm-applet &
 # Clipboard sync (PRIMARY ↔ CLIPBOARD)
 autocutsel -fork &
 
+# Clipboard history daemon
+~/.local/bin/dwm-cliphist &
+
 # Screen locker
 xss-lock --transfer-sleep-lock -- i3lock --nofork &
 
