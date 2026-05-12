@@ -36,7 +36,7 @@ case $2 in
 		*c) # cliphist options
 				ILABEL="ᴄʟɪᴘʜɪsᴛ: ᴇɴᴛᴇʀ/ᴄᴛʀʟ-c: ᴄᴏᴘʏ"
 				LABEL="[ᴄᴛʀʟ g: ᴇᴅɪᴛ ɪɴ ɢɪᴍᴘ | d: ᴅᴇʟ | t: ᴛᴏ ᴛʀᴀɴsᴘᴀʀᴇɴᴛ]"
-				FZFARGS='enter:execute(cliphist copy {}),ctrl-c:execute(cliphist copy {}),ctrl-t:execute-silent(imgmgk transparencyrecopy {+}),ctrl-g:become(gimp {+} > /dev/null 2>&1),ctrl-d:execute(rm {} && notify-send {} deleted)' ;;	
+				FZFARGS="enter:execute-silent(xclip -selection clipboard -t image/png < ${1}/{}),ctrl-c:execute-silent(xclip -selection clipboard -t image/png < ${1}/{}),ctrl-t:execute-silent(imgmgk transparencyrecopy {+}),ctrl-g:become(gimp {+} > /dev/null 2>&1),ctrl-d:execute(rm ${1}/{} && notify-send Deleted {})" ;;
 		*) FZFARGS='ctrl-d:execute(rm -i {} && notify-send {} deleted)' ;; # normal options
 esac
 

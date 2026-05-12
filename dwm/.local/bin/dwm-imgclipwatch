@@ -1,0 +1,39 @@
+#!/bin/bash
+# Watches clipboard for images, saves to ~/.cache/hist, and re-persists so they survive app exit.
+HIST_DIR="$HOME/.cache/hist"
+mkdir -p "$HIST_DIR"
+
+prev_checksum=""
+
+while clipnotify; do
+    targets=$(xclip -selection clipboard -t TARGETS -o 2>/dev/null)
+
+    if echo "$targets" | grep -qx "image/png"; then
+        MIME="image/png"; EXT="png"
+    elif echo "$targets" | grep -qx "image/jpeg"; then
+        MIME="image/jpeg"; EXT="jpg"
+    else
+        continue
+    fi
+
+    TMPFILE=$(mktemp "/tmp/imgclip-XXXXXX.$EXT")
+    xclip -selection clipboard -t "$MIME" -o 2>/dev/null > "$TMPFILE"
+
+    if [ ! -s "$TMPFILE" ]; then
+        rm -f "$TMPFILE"
+        continue
+    fi
+
+    checksum=$(md5sum "$TMPFILE" | cut -d' ' -f1)
+    if [ "$checksum" = "$prev_checksum" ]; then
+        rm -f "$TMPFILE"
+        continue
+    fi
+    prev_checksum="$checksum"
+
+    OUTFILE="$HIST_DIR/$(date +%Y-%m-%d_%H-%M-%S).$EXT"
+    mv "$TMPFILE" "$OUTFILE"
+
+    # Re-copy via xclip so the image stays in clipboard after the source app exits
+    xclip -selection clipboard -t "$MIME" < "$OUTFILE" &
+done
