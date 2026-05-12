@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Monitors
+xrandr --output eDP-1 --auto --output HDMI-1 --auto --right-of eDP-1 --primary
+
 # Wallpaper
 ~/.config/i3/scripts/wallpaper-set.sh &
 
@@ -17,6 +20,9 @@ nm-applet &
 
 # Policykit authentication agent
 /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 &
+
+# Clipboard sync (PRIMARY ↔ CLIPBOARD)
+autocutsel -fork &
 
 # Screen locker
 xss-lock --transfer-sleep-lock -- i3lock --nofork &

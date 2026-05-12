@@ -2,7 +2,7 @@
 COLS=120
 ROWS=35
 
-read SW SH <<< $(DISPLAY=:1 xdpyinfo 2>/dev/null | awk '/dimensions/{split($2,a,"x"); print a[1], a[2]}')
+read SW SH <<< $( xdpyinfo 2>/dev/null | awk '/dimensions/{split($2,a,"x"); print a[1], a[2]}')
 [ -z "$SW" ] && SW=1920 && SH=1080
 
 # Liberation Mono pixelsize=16 ≈ 9px wide, 20px tall per cell
@@ -11,4 +11,4 @@ WH=$(( ROWS * 20 ))
 X=$(( (SW - WW) / 2 ))
 Y=$(( (SH - WH) / 2 ))
 
-DISPLAY=:1 st -c btop -g "${COLS}x${ROWS}+${X}+${Y}" -e btop
+st -c btop -g "${COLS}x${ROWS}+${X}+${Y}" -e btop

@@ -7,9 +7,9 @@
 #   ctrl-l  black border ctrl-h  white border
 #   alt-j   → jpg        alt-p   → png        ctrl-r  refresh
 
-PICS="${PICS:-$HOME/Work/dwm/wallpapers}"
+PICS="${PICS:-$HOME/Pictures}"
 export PICS
-DISPLAY=:1 st \
+st \
     -f 'Liberation Mono:pixelsize=16:antialias=true:autohint=true' \
     -c fzfmenu -n fzfmenu -T fzf \
     -g "140x40" \

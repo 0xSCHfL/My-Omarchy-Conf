@@ -89,6 +89,8 @@ static const char *cliphistcmd[]    = { "/bin/sh", "-c", "txtcliphist sel", NULL
 static const char *imgpickercmd[]   = { "dwm-imgpicker", NULL };
 static const char *btopcmd[]        = { "dwm-btop", NULL };
 static const char *imgcliphistcmd[] = { "dwm-imgcliphist", NULL };
+static const char *chromiumcmd[]    = { "chromium", NULL };
+static const char *restartcmd[]     = { "/bin/sh", "-c", "pkill -HUP dwm", NULL };
 
 static const Key keys[] = {
 	/* modifier                     key        function        argument */
@@ -102,10 +104,11 @@ static const Key keys[] = {
 	{ MODKEY|ShiftMask,             XK_d,      spawn,          {.v = discordcmd } },
 	{ MODKEY|ShiftMask,             XK_e,      spawn,          {.v = emailcmd } },
 	{ MODKEY,                       XK_q,      spawn,          {.v = browsercmd } },
+	{ MODKEY|ShiftMask,             XK_r,      spawn,          {.v = restartcmd } },
 	{ MODKEY|ShiftMask,             XK_b,      spawn,          {.v = bravecmd } },
 	{ MODKEY|ShiftMask|Mod1Mask,    XK_b,      spawn,          {.v = braveprivatecmd } },
 	{ MODKEY,                       XK_b,      togglebar,      {0} },
-	{ ControlMask|Mod1Mask,         XK_Delete, quit,           {0} },
+	{ MODKEY|ControlMask,           XK_Delete, quit,           {0} },
 	{ MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
 	{ MODKEY,                       XK_k,      focusstack,     {.i = -1 } },
 	{ MODKEY,                       XK_i,      incnmaster,     {.i = +1 } },
@@ -114,7 +117,7 @@ static const Key keys[] = {
 	{ MODKEY,                       XK_l,      setmfact,       {.f = +0.05} },
 	{ MODKEY|ShiftMask,             XK_Return, zoom,           {0} },
 	{ MODKEY,                       XK_Tab,    view,           {0} },
-	{ MODKEY|ShiftMask,             XK_c,      killclient,     {0} },
+	{ MODKEY|ShiftMask,             XK_c,      spawn,          {.v = chromiumcmd } },
 	{ MODKEY,                       XK_t,      togglefloatcenter, {0} },
 	{ MODKEY,                       XK_f,      setlayout,      {.v = &layouts[2]} },
 	{ MODKEY|Mod1Mask,              XK_f,      setlayout,      {.v = &layouts[1]} },

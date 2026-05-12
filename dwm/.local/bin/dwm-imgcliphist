@@ -1,4 +1,4 @@
 #!/bin/bash
 # Image clipboard history viewer
 # Uses imgcliphist sel → fzfub with copy/delete/edit bindings
-DISPLAY=:1 imgcliphist sel
+imgcliphist sel
