@@ -1,23 +1,11 @@
 #!/bin/bash
-# Clipboard history daemon — polls clipboard every second
+# Clipboard history daemon — pipes clipboard changes into cliphist
 
-HISTFILE="$HOME/.cache/cliphist"
-PLACEHOLDER="<NEWLINE>"
-MAX_ENTRIES=200
 LAST=""
-
-mkdir -p "$(dirname "$HISTFILE")"
-touch "$HISTFILE"
-
 while true; do
     clip=$(xclip -o -selection clipboard 2>/dev/null)
     if [ -n "$clip" ] && [ "$clip" != "$LAST" ]; then
-        multiline=$(printf "%s" "$clip" | sed ':a;N;$!ba;s/\n/'"$PLACEHOLDER"'/g')
-        grep -Fxq "$multiline" "$HISTFILE" || {
-            tmp=$(mktemp)
-            { echo "$multiline"; cat "$HISTFILE"; } | head -n "$MAX_ENTRIES" > "$tmp"
-            mv "$tmp" "$HISTFILE"
-        }
+        printf '%s' "$clip" | cliphist store
         LAST="$clip"
     fi
     sleep 1

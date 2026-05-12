@@ -1,4 +1,5 @@
 #!/bin/bash
 sleep 0.3
-flameshot gui
-notify-send " Screenshot taken"
+dunstify -u critical -t 8000 " Screenshot" "Flameshot opened" >/dev/null 2>&1 || notify-send " Screenshot" "Flameshot opened"
+env XDG_SESSION_TYPE=x11 QT_QPA_PLATFORM=xcb /usr/bin/flameshot gui
+dunstify -u critical -t 8000 " Screenshot" "Flameshot closed" >/dev/null 2>&1 || notify-send " Screenshot" "Flameshot closed"

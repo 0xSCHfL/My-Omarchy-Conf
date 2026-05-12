@@ -1,39 +1,47 @@
 #!/bin/bash
-# Watches clipboard for images, saves to ~/.cache/hist, and re-persists so they survive app exit.
+# Watches the clipboard for images, saves them to ~/.cache/hist, and re-persists them.
+# Polling is more reliable than clipnotify for image clipboard owners that exit quickly.
+
 HIST_DIR="$HOME/.cache/hist"
 mkdir -p "$HIST_DIR"
 
 prev_checksum=""
 
-while clipnotify; do
-    targets=$(xclip -selection clipboard -t TARGETS -o 2>/dev/null)
+while :; do
+    targets=$(xclip -selection clipboard -t TARGETS -o 2>/dev/null || true)
+    mime=""
+    ext=""
 
-    if echo "$targets" | grep -qx "image/png"; then
-        MIME="image/png"; EXT="png"
-    elif echo "$targets" | grep -qx "image/jpeg"; then
-        MIME="image/jpeg"; EXT="jpg"
-    else
-        continue
+    for candidate in image/png image/jpeg image/webp image/bmp image/tiff; do
+        if printf '%s\n' "$targets" | grep -qx "$candidate"; then
+            mime="$candidate"
+            case "$candidate" in
+                image/png) ext="png" ;;
+                image/jpeg) ext="jpg" ;;
+                image/webp) ext="webp" ;;
+                image/bmp) ext="bmp" ;;
+                image/tiff) ext="tiff" ;;
+            esac
+            break
+        fi
+    done
+
+    if [ -n "$mime" ]; then
+        TMPFILE=$(mktemp "/tmp/imgclip-XXXXXX.$ext")
+        if xclip -selection clipboard -t "$mime" -o 2>/dev/null > "$TMPFILE" && [ -s "$TMPFILE" ]; then
+            checksum=$(md5sum "$TMPFILE" | cut -d' ' -f1)
+            if [ "$checksum" != "$prev_checksum" ]; then
+                prev_checksum="$checksum"
+                OUTFILE="$HIST_DIR/$(date +%Y-%m-%d_%H-%M-%S).$ext"
+                mv "$TMPFILE" "$OUTFILE"
+                xclip -selection clipboard -t "$mime" < "$OUTFILE" &
+            else
+                rm -f "$TMPFILE"
+            fi
+        else
+            rm -f "$TMPFILE"
+        fi
     fi
 
-    TMPFILE=$(mktemp "/tmp/imgclip-XXXXXX.$EXT")
-    xclip -selection clipboard -t "$MIME" -o 2>/dev/null > "$TMPFILE"
-
-    if [ ! -s "$TMPFILE" ]; then
-        rm -f "$TMPFILE"
-        continue
-    fi
-
-    checksum=$(md5sum "$TMPFILE" | cut -d' ' -f1)
-    if [ "$checksum" = "$prev_checksum" ]; then
-        rm -f "$TMPFILE"
-        continue
-    fi
-    prev_checksum="$checksum"
-
-    OUTFILE="$HIST_DIR/$(date +%Y-%m-%d_%H-%M-%S).$EXT"
-    mv "$TMPFILE" "$OUTFILE"
-
-    # Re-copy via xclip so the image stays in clipboard after the source app exits
-    xclip -selection clipboard -t "$MIME" < "$OUTFILE" &
+    sleep 1
 done

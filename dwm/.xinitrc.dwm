@@ -6,8 +6,13 @@ xrandr --output eDP-1 --auto --output HDMI-1 --auto --right-of eDP-1 --primary
 # Fix Backspace key (remap keycode 22 to XK_BackSpace)
 xmodmap -e "keycode 22 = BackSpace BackSpace BackSpace BackSpace"
 
-# Wallpaper
-~/.config/i3/scripts/wallpaper-set.sh &
+# Wallpaper — restore last pywal wallpaper, fall back to default
+if [ -f ~/.cache/wal/wal ]; then
+    feh --bg-scale "$(cat ~/.cache/wal/wal)" &
+    [ -f ~/.cache/wal/colors.Xresources ] && xrdb -merge ~/.cache/wal/colors.Xresources
+else
+    ~/.config/i3/scripts/wallpaper-set.sh &
+fi
 
 # Load pywal colors into Xresources so st picks them up
 [ -f ~/.cache/wal/colors.Xresources ] && xrdb -merge ~/.cache/wal/colors.Xresources

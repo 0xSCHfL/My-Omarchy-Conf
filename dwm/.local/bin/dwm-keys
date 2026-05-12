@@ -1,74 +1,162 @@
 #!/bin/bash
-# Show all shortcuts in dmenu for searching
+# Two-level keybinding help via rofi
+# j/k: navigate  Enter: select  h/Esc: go back  q: quit
 
-cat <<'EOF' | dmenu -i -l 25 -p 'Shortcuts'
-═══ DWM KEYBINDINGS ═══
-Super + Space      → dmenu (app launcher)
-Super + Return     → Terminal (st)
-Super + q          → Browser (qutebrowser)
-Super + b          → Toggle bar
-Super + w          → Close window
-Super + j          → Focus next window
-Super + k          → Focus prev window
-Super + i          → Increase master count
-Super + d          → Decrease master count
-Super + h          → Shrink master area
-Super + l          → Grow master area
-Super + t          → Toggle floating
-Super + f          → Monocle layout
-Super + m          → Monocle layout
-Super + p          → Cycle layouts
-Super + Tab        → View previous tag
-Super + 1-9        → Switch to tag
-Super + ,          → Focus prev monitor
-Super + .          → Focus next monitor
-Super + agrave     → Show all tags
-Super + Shift + c  → Chromium
-Super + Shift + b  → Brave
-Super + Shift + r  → Restart DWM in-place
-Super + Shift + q  → Quit DWM
-Super + Shift + s  → System menu (kill/reboot/shutdown)
-Super + Shift + t  → btop (floating)
-Super + Shift + v  → Image clipboard history
-Super + Shift + i  → Image picker (fzfub)
-Super + Shift + w  → WhatsApp
-Super + Shift + g  → ChatGPT
-Super + Shift + x  → Twitter/X
-Super + Shift + d  → Discord
-Super + Shift + e  → Email
-Super + Shift + o  → Obsidian
-Super + Shift + ,  → Move window to prev monitor
-Super + Shift + .  → Move window to next monitor
-Super + Shift + 1-9 → Move window to tag
-Super + Ctrl + q   → Kill client
-Super + Ctrl + Delete → Quit DWM
-Alt + Print        → Screen recording
-Print              → Screenshot
-Super + Ctrl + Print → OCR screenshot
-Super + F1         → Window switcher (or keybindings help)
-Super + e          → File manager (yazi)
+ROFI_NAV='-kb-row-up "k,Up" -kb-row-down "j,Down" -kb-cancel "Escape,h,q"'
+ROFI_THEME="$HOME/.config/rofi/dwm-keys.rasi"
 
-═══ IMAGE PICKER (Super+Shift+i — fzfub m mode) ═══
-Alt+w              → Set as wallpaper (pywal + theme update)
-Enter              → Select file (copy path)
-Ctrl+g             → Open in GIMP
-Ctrl+d             → Delete file
-Ctrl+e             → Strip EXIF
-Ctrl+b             → Convert to B&W
-Ctrl+w             → Add watermark
-Ctrl+t             → Make transparent
-Ctrl+f             → Flip horizontally
-Ctrl+v             → Flip vertically
-Ctrl+l             → Add black border
-Ctrl+h             → Add white border
-Ctrl+s             → Scale 50%
-Alt+j              → Convert to JPG
-Alt+p              → Convert to PNG
-Ctrl+r             → Refresh list
+rofi_menu() {
+  eval rofi -dmenu -no-sort -i -theme "$ROFI_THEME" $ROFI_NAV -p "$1"
+}
 
-═══ SYSTEM MENU (Super+Shift+s) ═══
-kill               → Kill a process (fzf)
-suspend            → Suspend to RAM
-reboot             → Reboot system
-shutdown           → Shutdown system
+dwm_keys() { cat <<'EOF'
+Super + Space        → App launcher (dmenu)
+Super + Return       → Terminal (st)
+Super + w            → Close window
+Super + j / k        → Focus next / prev window
+Super + h / l        → Shrink / grow master area
+Super + i / d        → Increase / decrease master count
+Super + t            → Toggle floating
+Super + f / m        → Monocle layout
+Super + p            → Cycle layouts
+Super + b            → Toggle bar
+Super + Tab          → View previous tag
+Super + 1-9          → Switch to tag
+Super + , / .        → Focus prev / next monitor
+Super + agrave       → Show all tags
+Super + Shift + ,/.  → Move window to prev / next monitor
+Super + Shift + 1-9  → Move window to tag
+Super + Shift + Return → Zoom (swap to master)
+Super + Shift + r    → Rebuild + restart DWM
+Super + Shift + q    → Quit DWM
+Super + Ctrl + Delete → Quit DWM (kill all)
 EOF
+}
+
+apps_keys() { cat <<'EOF'
+Super + q            → qutebrowser
+Super + Shift + b    → Brave
+Super + Shift + c    → Chromium
+Super + Shift + o    → Obsidian
+Super + Shift + t    → btop (floating, centered)
+Super + Shift + s    → System menu (kill/suspend/reboot/shutdown)
+Super + Shift + i    → Image picker
+Super + Shift + v    → Image clipboard history
+Super + v            → Text clipboard history
+Super + n            → Notes
+Super + F1           → Keybindings help (this menu)
+Print                → Screenshot (flameshot)
+Alt + Print          → Screen recording
+Super + Ctrl + Print → OCR screenshot
+EOF
+}
+
+webapps_keys() { cat <<'EOF'
+Super + Shift + w    → WhatsApp
+Super + Shift + g    → ChatGPT
+Super + Shift + x    → Twitter / X
+Super + Shift + d    → Discord
+Super + Shift + e    → Email (Gmail)
+EOF
+}
+
+imgpicker_keys() { cat <<'EOF'
+--- Open with Super+Shift+i ---
+Alt + w              → Set as wallpaper (pywal)
+Ctrl + g             → Open in GIMP
+Ctrl + d             → Delete image
+Ctrl + e             → Strip EXIF
+Ctrl + b             → Convert to B&W
+Ctrl + w             → Add watermark
+Ctrl + t             → Make transparent
+Ctrl + f / v         → Flip horizontal / vertical
+Ctrl + l / h         → Black / white border
+Ctrl + s             → Scale 50%
+Alt + j / p          → Convert to JPG / PNG
+Ctrl + r             → Refresh list
+EOF
+}
+
+imgcliphist_keys() { cat <<'EOF'
+--- Open with Super+Shift+v ---
+Enter / Ctrl+c       → Copy image to clipboard
+Ctrl + g             → Open in GIMP
+Ctrl + t             → Make transparent
+Ctrl + d             → Delete entry
+EOF
+}
+
+tmux_keys() { cat <<'EOF'
+Prefix: Ctrl+Space
+Prefix + r           → Reload tmux config
+Prefix + w           → Session list popup
+Prefix + |           → Split vertical
+Prefix + -           → Split horizontal
+Ctrl + h/j/k/l       → Navigate panes (vim-tmux-navigator)
+Prefix + v           → Copy mode (vi)
+  v                  → Begin selection
+  y                  → Yank selection (to clipboard)
+Mouse drag           → Select + copy to clipboard
+EOF
+}
+
+zsh_keys() { cat <<'EOF'
+Ctrl + r             → History search (fzf)
+Ctrl + f             → Jump to dir (zoxide)
+Tab                  → Completion menu
+Alt + Backspace      → Delete word backward
+Ctrl + w             → Delete word backward
+Ctrl + a / e         → Start / end of line
+Ctrl + l             → Clear screen
+EOF
+}
+
+neovim_keys() { cat <<'EOF'
+--- Normal mode ---
+Space                → Leader key
+Space + e            → File explorer (neo-tree)
+Space + ff           → Find files (telescope)
+Space + fg           → Live grep
+Space + fb           → Buffers
+Space + w            → Save file
+Space + q            → Quit
+Space + x            → Close buffer
+g + d                → Go to definition
+g + r                → Go to references
+g + i                → Go to implementation
+K                    → Hover docs (LSP)
+Space + ca           → Code actions
+Space + rn           → Rename symbol
+[ + d / ] + d        → Prev / next diagnostic
+Space + f            → Format file
+Ctrl + h/j/k/l       → Navigate windows
+--- Insert mode ---
+jk / jj              → Escape to normal mode
+EOF
+}
+
+while true; do
+  CATEGORY=$(printf '%s\n' \
+      '  DWM — window manager' \
+      '  Apps & shortcuts' \
+      '  Web apps' \
+      '  Image picker (fzfub)' \
+      '  Image clipboard history' \
+      '  tmux' \
+      '  zsh / terminal' \
+      '  Neovim' \
+      | rofi_menu 'Keybindings')
+
+  [ -z "$CATEGORY" ] && break
+
+  case "$CATEGORY" in
+    *DWM*)           dwm_keys         | rofi_menu 'DWM' ;;
+    *Apps*)          apps_keys        | rofi_menu 'Apps' ;;
+    *Web*)           webapps_keys     | rofi_menu 'Web apps' ;;
+    *Image\ picker*) imgpicker_keys   | rofi_menu 'Image picker' ;;
+    *clipboard*)     imgcliphist_keys | rofi_menu 'Clipboard' ;;
+    *tmux*)          tmux_keys        | rofi_menu 'tmux' ;;
+    *zsh*)           zsh_keys         | rofi_menu 'zsh' ;;
+    *Neovim*)        neovim_keys      | rofi_menu 'Neovim' ;;
+  esac
+done

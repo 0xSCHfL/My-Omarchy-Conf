@@ -38,10 +38,13 @@ exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork
 #exec_always --no-startup-id $HOME/.config/polybar/launch.sh
 exec --no-startup-id picom --daemon
 exec --no-startup-id nm-applet
-exec --no-startup-id flameshot
+exec --no-startup-id dunst
+exec --no-startup-id env XDG_SESSION_TYPE=x11 QT_QPA_PLATFORM=xcb flameshot
 exec --no-startup-id /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
 exec --no-startup-id copyq
 exec --no-startup-id $HOME/.config/i3/scripts/wallpaper-set.sh
+exec_always --no-startup-id $HOME/.local/bin/dwm-cliphist
+exec_always --no-startup-id $HOME/.local/bin/dwm-imgclipwatch
 
 # Use pactl to adjust volume in PulseAudio.
 set $refresh_i3status killall -SIGUSR1 i3status
@@ -72,15 +75,15 @@ tiling_drag modifier titlebar
 bindsym Mod4+Return exec kitty
 bindsym Mod4+Shift+b exec brave
 bindsym Mod4+Shift+c exec chromium
-bindsym Mod4+Shift+v exec veyon-configurator
-bindsym Mod4+Shift+t exec kitty -e btop
+bindsym Mod4+Shift+v exec --no-startup-id dwm-imgcliphist
+bindsym Mod4+Shift+t exec --no-startup-id dwm-btop
 
 # kill focused window
 bindsym Mod4+Shift+q kill
 bindsym Mod4+w kill
 
 # start dmenu (a program launcher)
-bindsym Mod4+space exec --no-startup-id dmenu_run
+bindsym Mod4+space exec --no-startup-id rofi -show drun -theme ~/.config/rofi/dwm-launcher.rasi
 # A more modern dmenu replacement is rofi:
 # bindsym Mod4+d exec "rofi -modi drun,run -show drun"
 # There also is i3-dmenu-desktop which only displays applications shipping a
@@ -114,8 +117,6 @@ bindsym Mod4+Shift+Right move right
 # split in horizontal orientation
 bindsym Mod4+h split h
 
-# split in vertical orientation
-bindsym Mod4+v split v
 
 # enter fullscreen mode for the focused container
 bindsym Mod4+f fullscreen toggle
@@ -125,7 +126,6 @@ bindsym Mod4+Shift+f exec ~/.config/i3/maximize.sh
 
 # change container layout (stacked, tabbed, toggle split)
 bindsym Mod4+s layout stacking
-bindsym Mod4+Shift+w layout tabbed
 bindsym Mod4+e layout toggle split
 
 # toggle tiling / floating
@@ -191,12 +191,21 @@ bindsym Mod4+Shift+r restart
 bindsym Mod4+Shift+e exec "i3-nagbar -t warning -m 'You pressed the exit shortcut. Do you really want to exit i3? This will end your X session.' -B 'Yes, exit i3' 'i3-msg exit'"
 bindsym Mod4+Ctrl+space exec --no-startup-id $HOME/.config/i3/scripts/wallpaper-pick.sh
 bindsym Mod4+Ctrl+v exec --no-startup-id copyq show
-bindsym Print exec --no-startup-id flameshot full -p ~/Pictures/
-bindsym Shift+Print exec --no-startup-id flameshot gui
-bindsym Mod4+F1 exec --no-startup-id $HOME/.config/i3/scripts/show-keybindings.sh
+bindsym Print exec --no-startup-id dwm-screenshot
+bindsym Mod1+Print exec --no-startup-id dwm-screenrecord
+bindsym Mod4+Ctrl+Print exec --no-startup-id dwm-ocr
+bindsym Mod4+F1 exec --no-startup-id dwm-keys
+bindsym Mod4+q exec --no-startup-id qutebrowser
+bindsym Mod4+Shift+o exec --no-startup-id obsidian
 bindsym Mod4+Shift+i exec --no-startup-id dwm-imgpicker
-bindsym Mod4+n exec --no-startup-id txtcliphist sel
-bindsym Mod4+Shift+n exec --no-startup-id dwm-imgcliphist
+bindsym Mod4+Shift+s exec --no-startup-id dwm-sys
+bindsym Mod4+Shift+w exec --no-startup-id dwm-webapp "https://web.whatsapp.com/"
+bindsym Mod4+Shift+g exec --no-startup-id dwm-webapp "https://chatgpt.com/"
+bindsym Mod4+Shift+x exec --no-startup-id dwm-webapp "https://x.com/"
+bindsym Mod4+Shift+d exec --no-startup-id dwm-webapp "https://discord.com/channels/@me"
+bindsym Mod4+n exec --no-startup-id notes
+bindsym Mod4+Ctrl+n exec --no-startup-id bash $HOME/.config/i3/scripts/notifications.sh
+bindsym Mod4+v exec --no-startup-id sh -c "cliphist list | rofi -dmenu -i -theme ~/.config/rofi/dwm-clip.rasi -p 'Clipboard' | cliphist decode | xclip -selection clipboard -i"
 
 bindsym Mod1+Tab exec --no-startup-id $HOME/.config/i3/scripts/focus-next.sh
 bindsym Mod1+Shift+Tab exec --no-startup-id $HOME/.config/i3/scripts/focus-next.sh prev
@@ -251,7 +260,7 @@ smart_borders on
 set $mode_gaps Gaps: (o) outer, (i) inner
 set $mode_gaps_outer Outer Gaps: +|-|0 (local), Shift + +|-|0 (global)
 set $mode_gaps_inner Inner Gaps: +|-|0 (local), Shift + +|-|0 (global)
-bindsym Mod4+Shift+g mode "$mode_gaps"
+bindsym Mod4+Ctrl+g mode "$mode_gaps"
 
 mode "$mode_gaps" {
         bindsym o      mode "$mode_gaps_outer"
@@ -279,5 +288,3 @@ mode "$mode_gaps_outer" {
         bindsym Return mode "default"
         bindsym Escape mode "default"
 }
-
-
