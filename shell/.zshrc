@@ -24,6 +24,8 @@ autoload -U colors && colors
 # cmp opts
 zstyle ':completion:*' menu select
 zstyle ':completion:*' special-dirs true
+zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS} ma=0\;33
+zstyle ':completion:*' squeeze-slashes false
 
 # Navigation
 setopt AUTO_CD

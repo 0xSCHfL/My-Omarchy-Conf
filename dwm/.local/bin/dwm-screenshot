@@ -1,4 +1,6 @@
 #!/bin/bash
+mkdir -p ~/.cache/hist
 sleep 0.3
-flameshot gui
-imgcliphist add
+filename="$HOME/.cache/hist/$(date '+%a_%b%d%y_%H%M%S').png"
+flameshot gui --raw > "$filename" 2>/dev/null
+[ -s "$filename" ] && notify-send -i "$filename" " Screenshot saved" || rm -f "$filename"
