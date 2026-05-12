@@ -1,13 +1,12 @@
 #!/bin/bash
-mkdir -p ~/.cache/hist
 sleep 0.3
+flameshot gui -p ~/.cache/hist 2>/dev/null
+
+# If Enter was pressed, flameshot saved to ~/.cache/hist/ already.
+# If Ctrl+C was pressed, grab from clipboard instead.
 filename="$HOME/.cache/hist/$(date '+%a_%b%d%y_%H%M%S').png"
-
-flameshot gui 2>/dev/null
-
 for fmt in image/png image/bmp application/x-qt-image; do
   xclip -selection clipboard -t "$fmt" -o > "$filename" 2>/dev/null
-  [ -s "$filename" ] && break
+  [ -s "$filename" ] && notify-send -i "$filename" " Screenshot saved" && break
 done
-
-[ -s "$filename" ] && notify-send -i "$filename" " Screenshot saved" || rm -f "$filename"
+[ -s "$filename" ] || rm -f "$filename"
