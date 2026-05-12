@@ -92,6 +92,7 @@ static const char *imgcliphistcmd[] = { "dwm-imgcliphist", NULL };
 static const char *chromiumcmd[]    = { "chromium", NULL };
 static const char *restartcmd[]     = { "dwm-restart", NULL };
 static const char *keyscmd[]        = { "dwm-keys", NULL };
+static const char *filemanagercmd[] = { "st", "-e", "yazi", NULL };
 
 static const Key keys[] = {
 	/* modifier                     key        function        argument */
@@ -144,6 +145,7 @@ static const Key keys[] = {
 	TAGKEYS(                        XK_underscore,             7)
 	TAGKEYS(                        XK_ccedilla,               8)
 	{ MODKEY|ShiftMask,             XK_s,      spawn,          {.v = syscmd } },
+	{ MODKEY,                       XK_e,      spawn,          {.v = filemanagercmd } },
 	{ MODKEY,                       XK_n,      spawn,          {.v = notescmd } },
 	{ MODKEY,                       XK_v,      spawn,          {.v = cliphistcmd } },
 	{ MODKEY|ShiftMask,             XK_i,      spawn,          {.v = imgpickercmd } },
