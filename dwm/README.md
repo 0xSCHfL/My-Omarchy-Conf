@@ -58,7 +58,7 @@ The following run on `startx`:
 
 | Key | Action |
 |-----|--------|
-| `Mod+p` | dmenu launcher |
+| `Mod+Space` | dmenu launcher |
 | `Mod+Return` | Terminal (st) |
 | `Mod+q` | Browser (qutebrowser) |
 | `Mod+w` | Close window |
@@ -66,7 +66,7 @@ The following run on `startx`:
 | `Mod+h/l` | Resize master |
 | `Mod+i/d` | Change master count |
 | `Mod+Shift+Return` | Zoom (move to master) |
-| `Mod+Space` | Cycle layouts |
+| `Mod+p` | Cycle layouts |
 | `Mod+t` | Toggle float/center |
 | `Mod+f` / `Mod+m` | Fullscreen / monocle |
 | `Mod+b` | Toggle bar |

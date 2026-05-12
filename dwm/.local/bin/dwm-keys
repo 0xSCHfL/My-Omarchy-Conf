@@ -3,7 +3,7 @@
 
 cat <<'EOF' | dmenu -i -l 25 -p 'Shortcuts'
 ═══ DWM KEYBINDINGS ═══
-Super + p          → dmenu (app launcher)
+Super + Space      → dmenu (app launcher)
 Super + Return     → Terminal (st)
 Super + q          → Browser (qutebrowser)
 Super + b          → Toggle bar
@@ -17,7 +17,7 @@ Super + l          → Grow master area
 Super + t          → Toggle floating
 Super + f          → Monocle layout
 Super + m          → Monocle layout
-Super + Space      → Cycle layouts
+Super + p          → Cycle layouts
 Super + Tab        → View previous tag
 Super + 1-9        → Switch to tag
 Super + ,          → Focus prev monitor
