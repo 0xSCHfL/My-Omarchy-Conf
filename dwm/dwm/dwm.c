@@ -38,7 +38,8 @@
 #include <X11/Xutil.h>
 #ifdef XINERAMA
 #include <X11/extensions/Xinerama.h>
-#endif /* XINERAMA */
+#endif
+#include <X11/Xresource.h>
 #include <X11/Xft/Xft.h>
 
 #include "drw.h"
@@ -201,6 +202,7 @@ static void setfocus(Client *c);
 static void setfullscreen(Client *c, int fullscreen);
 static void setlayout(const Arg *arg);
 static void setmfact(const Arg *arg);
+static void readxresources(void);
 static void setup(void);
 static void seturgent(Client *c, int urg);
 static void showhide(Client *c);
@@ -1578,6 +1580,44 @@ setmfact(const Arg *arg)
 }
 
 void
+readxresources(void)
+{
+	XrmDatabase db;
+	char *line;
+	XrmValue val;
+	char *type;
+	int i;
+	static const char *names[][3] = {
+		{ "dwm.normfgcolor",   "dwm.normbgcolor",   "dwm.normbordercolor" },
+		{ "dwm.selfgcolor",    "dwm.selbgcolor",    "dwm.selbordercolor" },
+		{ "dwm.sepcolor",      NULL,                NULL },
+		{ "dwm.iconcolor",     NULL,                NULL },
+		{ "dwm.valcolor",      NULL,                NULL },
+		{ "dwm.warncolor",     NULL,                NULL },
+	};
+
+	XrmInitialize();
+	line = XResourceManagerString(dpy);
+	if (!line)
+		return;
+
+	db = XrmGetStringDatabase(line);
+	if (!db)
+		return;
+
+	for (i = 0; i < LENGTH(colors); i++) {
+		if (names[i][0] && XrmGetResource(db, names[i][0], "String", &type, &val))
+			colors[i][0] = strdup(val.addr);
+		if (names[i][1] && XrmGetResource(db, names[i][1], "String", &type, &val))
+			colors[i][1] = strdup(val.addr);
+		if (names[i][2] && XrmGetResource(db, names[i][2], "String", &type, &val))
+			colors[i][2] = strdup(val.addr);
+	}
+
+	XrmDestroyDatabase(db);
+}
+
+void
 setup(void)
 {
 	int i;
@@ -1625,9 +1665,10 @@ setup(void)
 	cursor[CurResize] = drw_cur_create(drw, XC_sizing);
 	cursor[CurMove] = drw_cur_create(drw, XC_fleur);
 	/* init appearance */
+	readxresources();
 	scheme = ecalloc(LENGTH(colors), sizeof(Clr *));
 	for (i = 0; i < LENGTH(colors); i++)
-		scheme[i] = drw_scm_create(drw, colors[i], 3);
+		scheme[i] = drw_scm_create(drw, (const char **)colors[i], 3);
 	/* init bars */
 	updatebars();
 	updatestatus();
