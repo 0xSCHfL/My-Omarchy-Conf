@@ -1,0 +1,24 @@
+#!/bin/bash
+# Post-pywal hook — runs after wal sets wallpaper and generates colors
+
+WAL_COLORS="$HOME/.cache/wal/colors"
+
+[ -f "$WAL_COLORS" ] || exit 1
+
+# Generate themed dunst config from template
+DUNST_TEMPLATE="$HOME/.config/dunst/dunstrc"
+if [ -f "$DUNST_TEMPLATE" ]; then
+  sed -i \
+    -e "s|background = \".*\"|background = \"$(sed -n '1p' $WAL_COLORS)\"|" \
+    -e "s|foreground = \".*\"|foreground = \"$(sed -n '7p' $WAL_COLORS)\"|" \
+    "$DUNST_TEMPLATE" 2>/dev/null
+fi
+
+# Reload X resources for dwm bar
+xrdb -merge "$HOME/.cache/wal/colors.Xresources" 2>/dev/null
+
+# Restart dunst
+pkill dunst 2>/dev/null
+dunst &>/dev/null &
+
+notify-send "Wallpaper set" "Colorscheme updated"

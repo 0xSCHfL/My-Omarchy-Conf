@@ -49,7 +49,7 @@ Super + F1         → Show this help
 Super + e          → File manager (yazi)
 
 ═══ IMAGE PICKER (Super+Shift+i — fzfub m mode) ═══
-Alt+w              → Set as wallpaper (pywal)
+Alt+w              → Set as wallpaper (pywal + theme update)
 Enter              → Select file (copy path)
 Ctrl+g             → Open in GIMP
 Ctrl+d             → Delete file
