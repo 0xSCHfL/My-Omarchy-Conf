@@ -53,7 +53,7 @@ fi
 if [[ "$PM" == "pacman" ]]; then
     COMMON_PKGS=(stow feh picom dunst flameshot copyq network-manager-applet xss-lock polkit-gnome pipewire-pulse ttf-nerd-fonts-symbols noto-fonts noto-fonts-emoji brightnessctl playerctl pulsemixer autocutsel)
     I3_PKGS=(i3-wm polybar rofi kitty i3status i3blocks i3lock nsxiv btop pulseaudio-utils)
-    DWM_PKGS=(base-devel imv mpv ueberzugpp)
+    DWM_PKGS=(base-devel imv mpv)
     HYPR_PKGS=(hyprland waybar ghostty neovim tmux fastfetch starship python-pywal)
 elif [[ "$PM" == "apt" ]]; then
     COMMON_PKGS=(stow feh picom dunst flameshot copyq network-manager-gnome policykit-1-gnome pipewire-pulse fonts-noto fonts-noto-color-emoji brightnessctl playerctl)
