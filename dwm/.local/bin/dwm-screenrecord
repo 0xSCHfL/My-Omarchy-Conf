@@ -1,0 +1,16 @@
+#!/bin/bash
+RECORDING_FILE="/tmp/dwm-screenrecord-pid"
+
+if [[ -f $RECORDING_FILE ]]; then
+    pid=$(cat "$RECORDING_FILE")
+    kill "$pid" 2>/dev/null
+    rm -f "$RECORDING_FILE"
+    notify-send "Screen recording stopped" "Saved to ~/Videos/"
+else
+    mkdir -p ~/Videos
+    filename="$HOME/Videos/screenrecording-$(date +'%Y-%m-%d_%H-%M-%S').mp4"
+    DISPLAY=:1 ffmpeg -f x11grab -s $(DISPLAY=:1 xdpyinfo | grep dimensions | awk '{print $2}') \
+        -i :1 -codec:v libx264 -r 30 "$filename" -loglevel quiet &
+    echo $! > "$RECORDING_FILE"
+    notify-send "Screen recording started" "Press Alt+Print to stop"
+fi

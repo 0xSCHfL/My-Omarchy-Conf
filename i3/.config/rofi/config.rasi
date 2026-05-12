@@ -1,0 +1,8 @@
+@theme "~/.config/rofi/spotlight-dark.rasi"
+
+configuration {
+    show-icons: true;
+    icon-theme: "breeze";
+    display-drun: "";
+    drun-display-format: "{name}";
+}

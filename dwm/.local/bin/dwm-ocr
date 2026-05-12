@@ -1,0 +1,13 @@
+#!/bin/bash
+sleep 0.5
+TMPFILE=$(mktemp /tmp/dwm-ocr-XXXXXX.png)
+
+import -window root "$TMPFILE" 2>/dev/null || { rm -f "$TMPFILE"; exit 1; }
+
+TEXT=$(tesseract "$TMPFILE" stdout --oem 1 --psm 6 -l eng --dpi 300 2>/dev/null)
+rm -f "$TMPFILE"
+
+[[ -z $TEXT ]] && exit 1
+
+printf "%s" "$TEXT" | xclip -selection clipboard
+notify-send "Copied text from selection to clipboard"

@@ -1,0 +1,7 @@
+#!/bin/sh
+PICS="${PICS:-$HOME/Work/dwm/wallpapers}"
+ueberzugpp cmd -s "$SOCKET" -a exit && st \
+    -f 'Iosevka Term:pixelsize=16:antialias=true:autohint=true' \
+    -c fzfmenu -n fzfmenu -T fzf \
+    -g "140x40" \
+    -e fzfub "$PICS" m || exit 0

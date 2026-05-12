@@ -1,0 +1,86 @@
+/* ===== BASE WAYBAR STYLE (LAYOUT ONLY) ===== */
+
+@import "./theme.css";
+
+/* DO NOT SET BACKGROUND HERE */
+* {
+  color: @foreground;
+  border: none;
+  border-radius: 0;
+  min-height: 0;
+
+  font-family: 'Iosevka Term';
+  font-size: 13px;
+}
+
+/* BAR WEIGHT */
+#waybar {
+  min-height: 34px;
+  padding: 6px 0;
+}
+
+/* CONTAINERS */
+.modules-left { margin-left: 8px; }
+.modules-right { margin-right: 8px; }
+
+/* WORKSPACES */
+#workspaces button {
+  all: initial;
+  padding: 4px 10px;
+  margin: 0 2px;
+  min-width: 9px;
+}
+
+/* UNIFIED MODULE SPACING */
+#custom-uptime,
+#backlight,
+#battery,
+#pulseaudio,
+#custom-network,
+#bluetooth,
+#cpu,
+#memory,
+#tray,
+#custom-lock,
+#custom-omarchy,
+
+#custom-update,
+#clock,
+#custom-voxtype {
+  margin: 0;
+  padding: 4px 8px;
+  /* min-width: 12px; */
+}
+
+/* WINDOW */
+#window {
+  margin: 0 6px;
+  padding: 4px 8px;
+  font-size: 10px;
+}
+
+/* HOVER */
+#custom-uptime:hover,
+#backlight:hover,
+#battery:hover,
+#pulseaudio:hover,
+#custom-network:hover,
+#bluetooth:hover,
+#cpu:hover,
+#memory:hover,
+#tray:hover,
+#custom-lock:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+/* TOOLTIP */
+tooltip { padding: 6px; }
+
+/* STATES */
+.hidden { opacity: 0; }
+
+
+#custom-idle-indicator.active,
+#custom-notification-silencing-indicator.active {
+  color: #a55555;
+}

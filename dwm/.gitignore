@@ -1,0 +1,7 @@
+dwm/dwm
+dwm/*.o
+st/st
+st/*.o
+dmenu/dmenu
+dmenu/stest
+dmenu/*.o

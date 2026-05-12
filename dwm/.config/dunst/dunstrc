@@ -1,0 +1,41 @@
+[global]
+    monitor = 0
+    follow = mouse
+    width = 300
+    height = 300
+    origin = top-right
+    offset = 10x10
+    notification_limit = 5
+    progress_bar = true
+    transparency = 10
+    separator_height = 2
+    padding = 12
+    horizontal_padding = 12
+    frame_width = 2
+    frame_color = "#005577"
+    gap_size = 5
+    font = monospace 10
+    markup = full
+    format = "<b>%s</b>\n%b"
+    alignment = left
+    icon_position = left
+    min_icon_size = 32
+    max_icon_size = 128
+    corner_radius = 8
+    timeout = 5
+
+[urgency_low]
+    background = "#222222"
+    foreground = "#bbbbbb"
+    timeout = 5
+
+[urgency_normal]
+    background = "#222222"
+    foreground = "#eeeeee"
+    timeout = 5
+
+[urgency_critical]
+    background = "#900000"
+    foreground = "#ffffff"
+    frame_color = "#ff0000"
+    timeout = 0

@@ -1,0 +1,124 @@
+#!/bin/bash
+
+# Color scheme bytes (1-indexed into DWM colors[] array)
+# \x03 = SchemeSep  (dim gray  — pipes)
+# \x04 = SchemeIcon (frost blue — icons)
+# \x05 = SchemeVal  (snow white — values)
+# \x06 = SchemeWarn (aurora yellow — high temp)
+SEP=$'\x03'
+I=$'\x04'
+V=$'\x05'
+W=$'\x06'
+
+PREV_IDLE=0
+PREV_TOTAL=0
+
+get_cpu_usage() {
+    read -r _ user nice system idle iowait irq softirq _ < /proc/stat
+    total=$((user + nice + system + idle + iowait + irq + softirq))
+    if [ "$PREV_TOTAL" -gt 0 ] && [ "$((total - PREV_TOTAL))" -gt 0 ]; then
+        didle=$((idle - PREV_IDLE))
+        dtotal=$((total - PREV_TOTAL))
+        cpu=$(( (dtotal - didle) * 100 / dtotal ))
+    else
+        cpu=0
+    fi
+    PREV_IDLE=$idle
+    PREV_TOTAL=$total
+    printf "%d" "$cpu"
+}
+
+get_cpu_temp() {
+    sensors 2>/dev/null | awk '
+        /^(Tdie|Package id|Core 0|CPU|temp1)/ {
+            gsub(/[+°C]/, "")
+            for (i=1; i<=NF; i++)
+                if ($i ~ /^[0-9]+(\.[0-9]+)?$/) { gsub(/\..*/, "", $i); print $i; exit }
+        }'
+}
+
+get_volume() {
+    local vol muted icon
+    if command -v pamixer &>/dev/null; then
+        muted=$(pamixer --get-mute 2>/dev/null)
+        vol=$(pamixer --get-volume 2>/dev/null)
+        [ "$muted" = "true" ] && echo "${I}󰖁${V} mute" && return
+    elif command -v pactl &>/dev/null; then
+        vol=$(pactl get-sink-volume @DEFAULT_SINK@ 2>/dev/null | grep -oP '\d+(?=%)' | head -1)
+        muted=$(pactl get-sink-mute @DEFAULT_SINK@ 2>/dev/null | grep -o 'yes')
+        [ "$muted" = "yes" ] && echo "${I}󰖁${V} mute" && return
+    else
+        vol=$(amixer get Master 2>/dev/null | grep -oP '\[\d+%\]' | head -1 | tr -d '[]%')
+        local off=$(amixer get Master 2>/dev/null | grep -oP '\[off\]' | head -1)
+        [ "$off" = "[off]" ] && echo "${I}󰖁${V} mute" && return
+    fi
+    [ -z "$vol" ] && echo "${I}󰖁${V} ?" && return
+    if   [ "$vol" -ge 70 ]; then icon="󰕾"
+    elif [ "$vol" -ge 30 ]; then icon="󰖀"
+    else icon="󰕿"; fi
+    echo "${I}${icon}${V} ${vol}%"
+}
+
+get_battery() {
+    local bat_path
+    for p in /sys/class/power_supply/BAT{0,1,2}; do
+        [ -d "$p" ] && bat_path="$p" && break
+    done
+    [ -z "$bat_path" ] && return
+
+    local cap status icon
+    cap=$(cat "$bat_path/capacity" 2>/dev/null)
+    status=$(cat "$bat_path/status" 2>/dev/null)
+
+    if   [ "$status" = "Charging" ];      then icon="󰂄"
+    elif [ "${cap:-0}" -ge 90 ];          then icon="󰁹"
+    elif [ "${cap:-0}" -ge 70 ];          then icon="󰂀"
+    elif [ "${cap:-0}" -ge 50 ];          then icon="󰁾"
+    elif [ "${cap:-0}" -ge 30 ];          then icon="󰁼"
+    elif [ "${cap:-0}" -ge 15 ];          then icon="󰁺"
+    else icon="󰂃"; fi
+
+    echo "${I}${icon}${V} ${cap}%"
+}
+
+get_network() {
+    local ssid
+    ssid=$(iwgetid -r 2>/dev/null)
+    if [ -n "$ssid" ]; then
+        echo "${I}󰤨${V} $ssid"
+        return
+    fi
+    local eth
+    eth=$(ip -o link show up 2>/dev/null | awk -F': ' '/^[0-9]+: e/{print $2; exit}')
+    if [ -n "$eth" ]; then
+        echo "${I}󰈀${V} eth"
+        return
+    fi
+    echo "${I}󰤭${V} off"
+}
+
+while true; do
+    CPU=$(get_cpu_usage)
+
+    TEMP=$(get_cpu_temp)
+    [ -z "$TEMP" ] && TEMP="?"
+    if [ "$TEMP" != "?" ] && [ "$TEMP" -ge 80 ] 2>/dev/null; then
+        TEMP_STR="${W}󰍛 ${TEMP}°C"
+    else
+        TEMP_STR="${I}󰍛${V} ${TEMP}°C"
+    fi
+
+    MEM=$(free -m | awk '/^Mem/ {printf "%.1fG", $3/1024}')
+    DISK=$(df -h / | awk 'NR==2 {print $4}')
+    NET=$(get_network)
+    VOL=$(get_volume)
+    BAT=$(get_battery)
+    TIME=$(printf "%(%a %b %e  %I:%M %p)T\n")
+
+    STATUS="${I}󰻠${V} ${CPU}%${SEP} | ${TEMP_STR}${SEP} | ${I}${V} ${MEM}${SEP} | ${I}${V} ${DISK}${SEP} | ${NET}${SEP} | ${VOL}"
+    [ -n "$BAT" ] && STATUS="${STATUS}${SEP} | ${BAT}"
+    STATUS="${STATUS}${SEP} | ${I}${V} ${TIME}"
+
+    xsetroot -name "$STATUS"
+    sleep 5
+done

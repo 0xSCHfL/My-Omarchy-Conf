@@ -1,0 +1,7 @@
+#!/bin/bash
+# Kill existing DWM session cleanly and start fresh
+
+pkill -u "$USER" -f "Xorg.*:1" 2>/dev/null
+pkill -u "$USER" -f "Xorg.*vt2" 2>/dev/null
+sleep 1
+exec startx -- :1 vt2

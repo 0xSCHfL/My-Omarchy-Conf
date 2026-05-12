@@ -1,0 +1,2 @@
+#!/bin/bash
+WAYLAND_DISPLAY= DISPLAY=:1 brave --ozone-platform=x11 --user-data-dir="$HOME/.config/brave-dwm" --app="$1"

@@ -1,0 +1,16 @@
+#!/bin/bash
+# Image manager: fzf + ueberzugpp browser for ~/Pictures
+# Keybindings inside fzfub (m mode):
+#   ctrl-w  watermark    ctrl-b  b&w          ctrl-t  remove bg
+#   ctrl-d  delete       ctrl-e  strip exif   ctrl-g  open gimp
+#   ctrl-f  flip h       ctrl-v  flip v       ctrl-s  scale 50%
+#   ctrl-l  black border ctrl-h  white border
+#   alt-j   → jpg        alt-p   → png        ctrl-r  refresh
+
+PICS="${PICS:-$HOME/Work/dwm/wallpapers}"
+export PICS
+DISPLAY=:1 st \
+    -f 'Liberation Mono:pixelsize=16:antialias=true:autohint=true' \
+    -c fzfmenu -n fzfmenu -T fzf \
+    -g "140x40" \
+    -e fzfub "$PICS" m
