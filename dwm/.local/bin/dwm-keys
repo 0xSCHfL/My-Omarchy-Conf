@@ -1,0 +1,51 @@
+#!/bin/bash
+# Show DWM keybindings in dmenu for searching
+
+cat <<'EOF' | dmenu -i -l 20 -p 'Keybindings'
+Super + p          → dmenu (app launcher)
+Super + Return     → Terminal (st)
+Super + q          → Browser (qutebrowser)
+Super + b          → Toggle bar
+Super + w          → Close window
+Super + j          → Focus next window
+Super + k          → Focus previous window
+Super + i          → Increase master count
+Super + d          → Decrease master count
+Super + h          → Shrink master area
+Super + l          → Grow master area
+Super + t          → Toggle float center
+Super + f          → Fullscreen (monocle)
+Super + m          → Monocle layout
+Super + Space      → Cycle layouts
+Super + Tab        → View previous tag
+Super + ,          → Focus previous monitor
+Super + .          → Focus next monitor
+Super + n          → Notes manager
+Super + v          → Clipboard text history
+Super + ,          → Focus prev monitor
+Super + .          → Focus next monitor
+Super + agrave     → Show all tags
+Super + 1-9        → Switch to tag
+Super + Shift + c  → Chromium
+Super + Shift + b  → Brave
+Super + Shift + r  → Restart DWM (in-place)
+Super + Shift + q  → Quit DWM
+Super + Shift + s  → System menu
+Super + Shift + t  → btop (floating)
+Super + Shift + v  → Image clipboard history
+Super + Shift + i  → Image picker
+Super + Shift + w  → WhatsApp webapp
+Super + Shift + g  → ChatGPT webapp
+Super + Shift + x  → Twitter/X webapp
+Super + Shift + d  → Discord webapp
+Super + Shift + e  → Email webapp
+Super + Shift + o  → Obsidian
+Super + Shift + ,  → Move window to prev monitor
+Super + Shift + .  → Move window to next monitor
+Super + Shift + 1-9 → Move window to tag
+Super + Ctrl + q   → Kill client
+Super + Ctrl + Delete → Quit DWM (close all)
+Alt + Print        → Screen recording
+Print              → Screenshot
+Super + Ctrl + Print → OCR screenshot
+EOF

@@ -91,6 +91,7 @@ static const char *btopcmd[]        = { "dwm-btop", NULL };
 static const char *imgcliphistcmd[] = { "dwm-imgcliphist", NULL };
 static const char *chromiumcmd[]    = { "chromium", NULL };
 static const char *restartcmd[]     = { "/bin/sh", "-c", "pkill -HUP dwm", NULL };
+static const char *keyscmd[]        = { "dwm-keys", NULL };
 
 static const Key keys[] = {
 	/* modifier                     key        function        argument */
@@ -148,6 +149,7 @@ static const Key keys[] = {
 	{ MODKEY|ShiftMask,             XK_i,      spawn,          {.v = imgpickercmd } },
 	{ MODKEY|ShiftMask,             XK_t,      spawn,          {.v = btopcmd } },
 	{ MODKEY|ShiftMask,             XK_v,      spawn,          {.v = imgcliphistcmd } },
+	{ MODKEY,                       XK_F1,     spawn,          {.v = keyscmd } },
 	{ MODKEY|ShiftMask,             XK_q,      quit,           {0} },
 };
 
