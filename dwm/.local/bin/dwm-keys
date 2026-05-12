@@ -45,7 +45,7 @@ Super + Ctrl + Delete → Quit DWM
 Alt + Print        → Screen recording
 Print              → Screenshot
 Super + Ctrl + Print → OCR screenshot
-Super + F1         → Show this help
+Super + F1         → Window switcher (or keybindings help)
 Super + e          → File manager (yazi)
 
 ═══ IMAGE PICKER (Super+Shift+i — fzfub m mode) ═══

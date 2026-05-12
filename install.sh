@@ -51,7 +51,7 @@ fi
 
 # --- Package lists by distro ---
 if [[ "$PM" == "pacman" ]]; then
-    COMMON_PKGS=(stow feh picom dunst flameshot copyq network-manager-applet xss-lock polkit-gnome pipewire-pulse ttf-nerd-fonts-symbols noto-fonts noto-fonts-emoji brightnessctl playerctl pulsemixer autocutsel)
+    COMMON_PKGS=(stow feh picom dunst flameshot copyq network-manager-applet xss-lock polkit-gnome pipewire-pulse ttf-nerd-fonts-symbols noto-fonts noto-fonts-emoji brightnessctl playerctl pulsemixer autocutsel wmctrl)
     I3_PKGS=(i3-wm polybar rofi kitty i3status i3blocks i3lock nsxiv btop pulseaudio-utils)
     DWM_PKGS=(base-devel imv mpv ueberzugpp python-pywal clipnotify)
     HYPR_PKGS=(hyprland waybar ghostty neovim tmux fastfetch starship python-pywal)

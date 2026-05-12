@@ -1,0 +1,5 @@
+#!/bin/sh
+# Called via fzf become() after deleting an image clipboard entry.
+# Kills the current ueberzugpp layer then reopens imgcliphist in a new window.
+ueberzugpp cmd -s "$SOCKET" -a exit 2>/dev/null
+dwm-imgcliphist &

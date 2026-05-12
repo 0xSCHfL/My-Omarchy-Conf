@@ -6,6 +6,9 @@ xrandr --output eDP-1 --auto --output HDMI-1 --auto --right-of eDP-1 --primary
 # Wallpaper
 ~/.config/i3/scripts/wallpaper-set.sh &
 
+# Load pywal colors into Xresources so st picks them up
+[ -f ~/.cache/wal/colors.Xresources ] && xrdb -merge ~/.cache/wal/colors.Xresources
+
 # Compositor
 picom --daemon &
 

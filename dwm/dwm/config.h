@@ -94,7 +94,7 @@ static const char *btopcmd[]        = { "dwm-btop", NULL };
 static const char *imgcliphistcmd[] = { "dwm-imgcliphist", NULL };
 static const char *chromiumcmd[]    = { "chromium", NULL };
 static const char *restartcmd[]     = { "dwm-restart", NULL };
-static const char *keyscmd[]        = { "dwm-keys", NULL };
+static const char *keyscmd[]        = { "window-switcher", NULL };
 static const char *filemanagercmd[] = { "st", "-e", "yazi", NULL };
 
 static const Key keys[] = {
