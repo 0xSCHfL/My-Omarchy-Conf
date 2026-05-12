@@ -1,0 +1,12 @@
+#!/bin/bash
+while true; do
+  for bat in /sys/class/power_supply/BAT*; do
+    [ -d "$bat" ] || continue
+    level=$(cat "$bat/capacity" 2>/dev/null)
+    status=$(cat "$bat/status" 2>/dev/null)
+    if [ "$level" -le 15 ] && [ "$status" = "Discharging" ]; then
+      notify-send -u critical "Battery Low" "${level}% — Plug in charger!"
+    fi
+  done
+  sleep 120
+done

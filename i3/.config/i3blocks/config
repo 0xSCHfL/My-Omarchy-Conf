@@ -1,0 +1,111 @@
+[global_config]
+output_format=i3bar
+markup=pango
+interval=5
+color=#c0b18b
+separator=false
+separator_block_width=0
+
+[spotify]
+command=~/.config/i3blocks/scripts/spotify.sh
+interval=2
+color=#1DB954
+
+[separator]
+full_text= |
+color=#656565
+interval=once
+separator=false
+separator_block_width=0
+
+[cpu_temperature]
+command=temp=$(cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null); echo "Tem: $((temp/1000))°C"
+interval=5
+
+[separator]
+full_text= |
+color=#656565
+interval=once
+separator=false
+separator_block_width=0
+
+[disk]
+command=echo "Disk: $(df -h / | awk 'NR==2{print $4}')"
+interval=30
+
+[separator]
+full_text= |
+color=#656565
+interval=once
+separator=false
+separator_block_width=0
+
+[wireless]
+command=essid=$(iwgetid -r 2>/dev/null); [ -n "$essid" ] && echo "W: $essid" || echo "W: down"
+interval=10
+
+[separator]
+full_text= |
+color=#656565
+interval=once
+separator=false
+separator_block_width=0
+
+[ethernet]
+command=ip=$(ip addr show eno1 2>/dev/null | awk '/inet /{print $2}' | cut -d/ -f1); [ -n "$ip" ] && echo "E: Leaked IP: $ip" || echo "E: N/A"
+interval=10
+
+[separator]
+full_text= |
+color=#656565
+interval=once
+separator=false
+separator_block_width=0
+
+[cpu_usage]
+command=echo "CPU: $(grep 'cpu ' /proc/stat | awk '{usage=($2+$4)*100/($2+$4+$5)} END {printf "%.0f%%", usage}')"
+interval=3
+
+[separator]
+full_text= |
+color=#656565
+interval=once
+separator=false
+separator_block_width=0
+
+[load]
+command=echo "Load: $(awk '{print $1}' /proc/loadavg)"
+interval=5
+
+[separator]
+full_text= |
+color=#656565
+interval=once
+separator=false
+separator_block_width=0
+
+[memory]
+command=echo "RAM: $(free -h | awk '/^Mem/{print $3"/"$2}')"
+interval=5
+
+[separator]
+full_text= |
+color=#656565
+interval=once
+separator=false
+separator_block_width=0
+
+[audio]
+command=vol=$(pactl get-sink-volume @DEFAULT_SINK@ | awk '/Volume/{printf "%d%%", $5}'); mute=$(pactl get-sink-mute @DEFAULT_SINK@); [ "$mute" = "Mute: yes" ] && echo "Vol: $vol [M]" || echo "Vol: $vol"
+interval=1
+
+[separator]
+full_text= |
+color=#656565
+interval=once
+separator=false
+separator_block_width=0
+
+[time]
+command=date '+%Y-%m-%d %H:%M:%S'
+interval=1
