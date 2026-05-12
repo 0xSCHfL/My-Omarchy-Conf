@@ -28,6 +28,9 @@ autocutsel -fork &
 ~/.local/bin/dwm-cliphist &
 ~/.local/bin/dwm-imgclipwatch &
 
+# File manager daemon
+thunar --daemon &>/dev/null &
+
 # Screen locker
 xss-lock --transfer-sleep-lock -- i3lock --nofork &
 

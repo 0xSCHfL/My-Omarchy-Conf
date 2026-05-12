@@ -1,3 +1,4 @@
 #!/bin/bash
 sleep 0.3
 flameshot gui
+notify-send " Screenshot taken"
