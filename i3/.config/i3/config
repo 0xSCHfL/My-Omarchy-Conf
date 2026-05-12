@@ -60,6 +60,8 @@ set $right semicolon
 # use Mouse+Mod4 to drag floating windows to their wanted position
 floating_modifier Mod4
 for_window [class="Nsxiv"] floating enable, resize set 1200 700, move position center
+for_window [class="fzfmenu"] floating enable, move position center
+for_window [class="fzf"] floating enable, move position center
 for_window [class="copyq"] floating enable, resize set 500 400, move position 3330 640
 
 # move tiling windows via drag & drop by left-clicking into the title bar,

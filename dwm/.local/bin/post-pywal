@@ -14,9 +14,27 @@ if [ -f "$DUNST_TEMPLATE" ]; then
     "$DUNST_TEMPLATE" 2>/dev/null
 fi
 
-# Reload X resources for dwm bar + colors
+# Reload X resources
 xrdb -merge "$HOME/.cache/wal/colors.Xresources" 2>/dev/null
 [ -f "$HOME/.cache/wal/xrdb_extra" ] && xrdb -merge "$HOME/.cache/wal/xrdb_extra" 2>/dev/null
+
+# Write DWM color Xresources from pywal palette and restart DWM to pick them up
+if [ -f "$HOME/.cache/wal/colors.sh" ]; then
+    . "$HOME/.cache/wal/colors.sh"
+    xrdb -merge <<EOF
+dwm.normbgcolor:     $background
+dwm.normfgcolor:     $color7
+dwm.normbordercolor: $color8
+dwm.selbgcolor:      $color4
+dwm.selfgcolor:      $color0
+dwm.selbordercolor:  $color4
+dwm.sepcolor:        $color8
+dwm.iconcolor:       $color4
+dwm.valcolor:        $foreground
+dwm.warncolor:       $color3
+EOF
+    pkill -HUP dwm 2>/dev/null
+fi
 
 # Refresh st terminals (reload colors from X resources)
 pkill -USR1 st 2>/dev/null
