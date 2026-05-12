@@ -1,14 +1,3 @@
 #!/bin/bash
 sleep 0.3
-mkdir -p ~/.cache/hist
-count_before=$(ls ~/.cache/hist 2>/dev/null | wc -l)
-flameshot gui -p ~/.cache/hist 2>/dev/null
-count_after=$(ls ~/.cache/hist 2>/dev/null | wc -l)
-if [ "$count_after" -gt "$count_before" ]; then
-  newest=$(ls -t ~/.cache/hist | head -1)
-  notify-send -i "$HOME/.cache/hist/$newest" " Screenshot saved"
-else
-  filename="$HOME/.cache/hist/$(date '+%a_%b%d%y_%H%M%S').png"
-  xclip -selection clipboard -t image/png -o > "$filename" 2>/dev/null
-  [ -s "$filename" ] && notify-send -i "$filename" " Screenshot saved" || rm -f "$filename"
-fi
+flameshot gui
