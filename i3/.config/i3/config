@@ -240,6 +240,8 @@ bindsym Mod4+r mode "resize"
 bar {
     status_command i3blocks -c ~/.config/i3blocks/config
     position bottom
+    font pango:Iosevka 13
+    padding 5px
     colors {
         background #262626
         statusline #c0b18b
