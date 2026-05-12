@@ -193,8 +193,9 @@ bindsym Print exec --no-startup-id flameshot full -p ~/Pictures/
 bindsym Shift+Print exec --no-startup-id flameshot gui
 bindsym Mod4+F1 exec --no-startup-id $HOME/.config/i3/scripts/show-keybindings.sh
 bindsym Mod4+Shift+i exec --no-startup-id dwm-imgpicker
-bindsym Mod4+v exec --no-startup-id txtcliphist sel
-bindsym Mod4+Shift+v exec --no-startup-id dwm-imgcliphist
+bindsym Mod4+n exec --no-startup-id txtcliphist sel
+bindsym Mod4+Shift+n exec --no-startup-id dwm-imgcliphist
+
 bindsym Mod1+Tab exec --no-startup-id $HOME/.config/i3/scripts/focus-next.sh
 bindsym Mod1+Shift+Tab exec --no-startup-id $HOME/.config/i3/scripts/focus-next.sh prev
 
