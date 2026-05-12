@@ -3,6 +3,9 @@
 # Monitors
 xrandr --output eDP-1 --auto --output HDMI-1 --auto --right-of eDP-1 --primary
 
+# Fix Backspace key (remap keycode 22 to XK_BackSpace)
+xmodmap -e "keycode 22 = BackSpace BackSpace BackSpace BackSpace"
+
 # Wallpaper
 ~/.config/i3/scripts/wallpaper-set.sh &
 

@@ -1,22 +1,24 @@
 #!/bin/bash
-# Clipboard history daemon — run once at startup, watches clipboard via clipnotify
+# Clipboard history daemon — polls clipboard every second
 
 HISTFILE="$HOME/.cache/cliphist"
 PLACEHOLDER="<NEWLINE>"
 MAX_ENTRIES=200
+LAST=""
 
 mkdir -p "$(dirname "$HISTFILE")"
 touch "$HISTFILE"
 
-while clipnotify; do
+while true; do
     clip=$(xclip -o -selection clipboard 2>/dev/null)
-    [ -z "$clip" ] && continue
-
-    multiline=$(printf "%s" "$clip" | sed ':a;N;$!ba;s/\n/'"$PLACEHOLDER"'/g')
-    grep -Fxq "$multiline" "$HISTFILE" && continue
-
-    # Prepend new entry and keep only MAX_ENTRIES lines
-    tmp=$(mktemp)
-    { echo "$multiline"; cat "$HISTFILE"; } | head -n "$MAX_ENTRIES" > "$tmp"
-    mv "$tmp" "$HISTFILE"
+    if [ -n "$clip" ] && [ "$clip" != "$LAST" ]; then
+        multiline=$(printf "%s" "$clip" | sed ':a;N;$!ba;s/\n/'"$PLACEHOLDER"'/g')
+        grep -Fxq "$multiline" "$HISTFILE" || {
+            tmp=$(mktemp)
+            { echo "$multiline"; cat "$HISTFILE"; } | head -n "$MAX_ENTRIES" > "$tmp"
+            mv "$tmp" "$HISTFILE"
+        }
+        LAST="$clip"
+    fi
+    sleep 1
 done
