@@ -11,6 +11,9 @@ if [ -f /usr/bin/fastfetch ]; then
 	fastfetch
 fi
 
+# Source shared aliases (bash + zsh compatible)
+[ -f "$HOME/.config/shell/aliases" ] && source "$HOME/.config/shell/aliases"
+
 # Source global definitions
 if [ -f /etc/bashrc ]; then
 	. /etc/bashrc

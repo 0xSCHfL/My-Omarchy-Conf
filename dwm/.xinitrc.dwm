@@ -1,0 +1,33 @@
+#!/bin/sh
+
+# Wallpaper
+~/.config/i3/scripts/wallpaper-set.sh &
+
+# Compositor
+picom --daemon &
+
+# Notifications
+dunst &
+
+# Status bar
+~/.local/bin/dwm-statusbar &
+
+# Network manager tray
+nm-applet &
+
+# Policykit authentication agent
+/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 &
+
+# Screen locker
+xss-lock --transfer-sleep-lock -- i3lock --nofork &
+
+# Clipboard manager
+copyq &
+
+# Screenshot tool
+flameshot &
+
+# XDG autostart
+dex --autostart --environment dwm &
+
+exec dwm

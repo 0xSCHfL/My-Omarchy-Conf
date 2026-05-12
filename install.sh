@@ -97,7 +97,7 @@ install_all() {
 
 # --- Stow ---
 stow_all() {
-    IGNORE="--ignore=wallpapers --ignore=.xinitrc --ignore=CLAUDE.md"
+    IGNORE="--ignore=wallpapers --ignore=CLAUDE.md"
 
     stow_ok() {
         local pkg=$1
@@ -116,14 +116,14 @@ stow_all() {
     }
 
     echo "Stowing dotfiles to $HOME..."
+    stow_ok "shell"
     stow_ok "hyprland"
     stow_ok "i3"
     stow_ok "dwm"
 
     if [[ ! -f "$HOME/.xinitrc" ]]; then
-        echo "# No .xinitrc found. Creating default (i3). Change 'exec i3' to 'exec dwm' if needed." > "$HOME/.xinitrc"
-        echo "exec i3" >> "$HOME/.xinitrc"
-        echo "  → Created ~/.xinitrc (i3)"
+        ln -sf "Work/dotfiles/i3/.xinitrc.i3" "$HOME/.xinitrc"
+        echo "  → Created ~/.xinitrc symlink (i3) — use 'xsession dwm' to switch"
     fi
 
     echo "Wallpapers are at $DOTFILES/wallpapers/"

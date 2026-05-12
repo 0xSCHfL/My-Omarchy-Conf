@@ -1,0 +1,26 @@
+#!/bin/bash
+
+DOTFILES="$HOME/Work/dotfiles"
+
+case "${1:-}" in
+    dwm)
+        ln -sf "Work/dotfiles/dwm/.xinitrc.dwm" "$HOME/.xinitrc"
+        echo "Switched to dwm — run 'startx' to launch"
+        ;;
+    i3)
+        ln -sf "Work/dotfiles/i3/.xinitrc.i3" "$HOME/.xinitrc"
+        echo "Switched to i3 — run 'startx' to launch"
+        ;;
+    "")
+        CURRENT=$(readlink "$HOME/.xinitrc")
+        case "$CURRENT" in
+            *dwm*) echo "Current session: dwm" ;;
+            *i3*)  echo "Current session: i3" ;;
+            *)     echo "Current session: unknown ($CURRENT)" ;;
+        esac
+        ;;
+    *)
+        echo "Usage: xsession {dwm|i3}"
+        exit 1
+        ;;
+esac
