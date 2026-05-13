@@ -1,5 +1,7 @@
 #!/bin/sh
 
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
+
 DIR="${1:-$HOME/Work/dotfiles/wallpapers}"
 
 case "$(uname -a)" in *Darwin*) T="/tmp" ;; *) T="/tmp" ;; esac
@@ -21,6 +23,6 @@ SELECTED=$(find "$DIR" -type f \( -iname '*.jpg' -o -iname '*.png' \) | sort | \
 ueberzugpp cmd -s "$SOCKET" -a exit
 
 if [ -n "$SELECTED" ]; then
-  feh --bg-scale "$SELECTED"
+  "$SCRIPT_DIR/wallpaper-set.sh" "$SELECTED"
   notify-send "Wallpaper" "$(basename "$SELECTED")" -t 1500
 fi

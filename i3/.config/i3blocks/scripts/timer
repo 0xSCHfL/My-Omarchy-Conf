@@ -1,0 +1,176 @@
+#!/usr/bin/env bash
+
+STATE_FILE="/tmp/timericon"
+PID_FILE="/tmp/i3blocks_timer.pid"
+SIGNAL_NUM=4
+TERMINAL_BIN="${TERMINAL:-kitty}"
+
+if command -v readlink >/dev/null 2>&1; then
+    SCRIPT_PATH="$(readlink -f "$0" 2>/dev/null)"
+fi
+[ -n "$SCRIPT_PATH" ] || SCRIPT_PATH="$0"
+
+refresh_bar() {
+    pkill -RTMIN+"$SIGNAL_NUM" i3blocks 2>/dev/null
+}
+
+clear_state() {
+    rm -f "$STATE_FILE" "$PID_FILE"
+}
+
+valid_timer_pid() {
+    [ -f "$PID_FILE" ] || return 1
+
+    pid="$(cat "$PID_FILE" 2>/dev/null)"
+    [ -n "$pid" ] || return 1
+    [ -r "/proc/$pid/cmdline" ] || return 1
+
+    cmdline="$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null)"
+    case "$cmdline" in
+        *"$SCRIPT_PATH run "*) return 0 ;;
+    esac
+
+    return 1
+}
+
+is_running() {
+    if valid_timer_pid; then
+        return 0
+    fi
+
+    clear_state
+    return 1
+}
+
+print_status() {
+    is_running >/dev/null 2>&1 || true
+    if [ -s "$STATE_FILE" ] && grep -q '[^[:space:]]' "$STATE_FILE"; then
+        cat "$STATE_FILE"
+    else
+        echo "󰔛"
+    fi
+}
+
+cleanup() {
+    clear_state
+    pkill -RTMIN+3 dwmblocks 2>/dev/null
+    refresh_bar
+    exit 0
+}
+
+timer () {
+    trap cleanup SIGHUP SIGINT SIGQUIT SIGABRT SIGTERM
+    echo "$$" > "$PID_FILE"
+
+    while [ "$TOTAL_SECONDS" -gt 0 ]; do
+        MIN=$(printf "%02d" $((TOTAL_SECONDS / 60)))
+        SEC=$(printf "%02d" $((TOTAL_SECONDS % 60)))
+        echo "󰔛 $MIN:$SEC" > "$STATE_FILE"
+        pkill -RTMIN+3 dwmblocks 2>/dev/null
+        refresh_bar
+        sleep 1
+        ((TOTAL_SECONDS--))
+    done
+
+    notify-send "Timer ended, take a break"
+    cleanup
+}
+
+menu () {
+    if command -v rofi >/dev/null 2>&1 && [ -f "$HOME/.config/rofi/i3-launcher.rasi" ]; then
+        MINUTES="$(printf '' | rofi -dmenu -p 'Timer minutes' -theme "$HOME/.config/rofi/i3-launcher.rasi")"
+        if [ $? -eq 0 ] && [ -n "$MINUTES" ]; then
+            start_minutes "$MINUTES"
+            return
+        fi
+    fi
+
+    if command -v i3-input >/dev/null 2>&1; then
+        setsid -f i3-input -F "$SCRIPT_PATH minutes-run %s" -P "Timer minutes"
+    else
+        setsid -f "$TERMINAL_BIN" --class i3timerpopup "$SCRIPT_PATH" prompt
+    fi
+}
+
+prompt_timer() {
+    printf 'Timer minutes: '
+    IFS= read -r MINUTES
+    case "$MINUTES" in
+        ''|*[!0-9]*)
+            printf '\nInvalid input. Press Enter to close...'
+            IFS= read -r _
+            exit 0
+            ;;
+    esac
+
+    TOTAL_SECONDS=$((MINUTES * 60))
+    if [ "$TOTAL_SECONDS" -le 0 ]; then
+        printf '\nTimer must be greater than 0. Press Enter to close...'
+        IFS= read -r _
+        exit 0
+    fi
+
+    setsid -f "$SCRIPT_PATH" run "$TOTAL_SECONDS" >/dev/null 2>&1
+    refresh_bar
+    printf '\nStarted %s minute timer. Press Enter to close...' "$MINUTES"
+    IFS= read -r _
+}
+
+stop_timer() {
+    if is_running; then
+        kill -TERM "$(cat "$PID_FILE")" 2>/dev/null
+    else
+        cleanup
+    fi
+}
+
+start_minutes() {
+    MINUTES="${1:-}"
+    case "$MINUTES" in
+        ''|*[!0-9]*) exit 1 ;;
+    esac
+
+    TOTAL_SECONDS=$((MINUTES * 60))
+    [ "$TOTAL_SECONDS" -gt 0 ] || exit 1
+
+    setsid -f "$SCRIPT_PATH" run "$TOTAL_SECONDS" >/dev/null 2>&1
+    refresh_bar
+}
+
+case "$1" in
+    run)
+        TOTAL_SECONDS="${2:-0}"
+        case "$TOTAL_SECONDS" in
+            ''|*[!0-9]*) exit 1 ;;
+        esac
+        timer
+        ;;
+    stop)
+        stop_timer
+        ;;
+    minutes-run)
+        start_minutes "$2"
+        ;;
+    prompt)
+        prompt_timer
+        ;;
+    *)
+        case "${BLOCK_BUTTON:-0}" in
+            1)
+                if is_running; then
+                    notify-send "Killing timer..."
+                    stop_timer
+                else
+                    menu
+                fi
+                ;;
+            3)
+                stop_timer
+                ;;
+            6)
+                setsid -f "$TERMINAL" -e "$EDITOR" "$0"
+                ;;
+        esac
+        print_status
+        ;;
+esac

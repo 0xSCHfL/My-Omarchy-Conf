@@ -1,0 +1,27 @@
+#!/bin/bash
+# Start xob with correct monitor-aware positioning
+
+CONFIG="$HOME/.config/xob/styles.cfg"
+PIPE_VOL="/tmp/xob-vol"
+PIPE_BRIGHT="/tmp/xob-brightness"
+
+# Get primary monitor geometry
+read -r PRI_X PRI_Y PRI_W PRI_H <<< $(xrandr --query | awk '/ connected primary/{split($4,a,"[+x]"); print a[2], a[3], a[1], $3}' | sed 's/x/ /')
+
+if [ -z "$PRI_X" ]; then
+  # Fallback: get first connected monitor
+  read -r PRI_X PRI_Y PRI_W PRI_H <<< $(xrandr --query | awk '/ connected.*+/{split($3,a,"[+x]"); print a[2], a[3], a[1], $3}' | sed 's/x/ /' | head -1)
+fi
+
+# Calculate center X of primary monitor
+CENTER_X=$(( PRI_X + PRI_W / 2 ))
+
+# Create pipes
+[ -p "$PIPE_VOL" ] || mkfifo "$PIPE_VOL" 2>/dev/null
+[ -p "$PIPE_BRIGHT" ] || mkfifo "$PIPE_BRIGHT" 2>/dev/null
+
+# Launch xob instances overridden with primary monitor center
+tail -f "$PIPE_VOL" | xob --override "volume.x = { relative = 0.0; offset = $CENTER_X; }" -c "$CONFIG" &>/dev/null &
+tail -f "$PIPE_BRIGHT" | xob --override "brightness.x = { relative = 0.0; offset = $CENTER_X; }" -c "$CONFIG" &>/dev/null &
+
+wait

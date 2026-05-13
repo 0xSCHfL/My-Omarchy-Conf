@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+
+TERMINAL_BIN="${TERMINAL:-kitty}"
+
+# Array of disks and matching icons
+DISKS=("/" "/home")
+ICONS=("󰣇 " " ")
+
+# Define a file to save current disk and format, and initialize if not found
+DISKS_FILE="/tmp/dwmblocks_disk_info"
+[ -f "$DISKS_FILE" ] || echo "0 0" > "$DISKS_FILE"
+
+# Read INDEX number and FORMAT number from the file
+read INDEX FORMAT < "$DISKS_FILE"
+
+# Set the current disk and icon per INDEX #
+CURRENT_DISK="${DISKS[$INDEX]}"
+ICON="${ICONS[$INDEX]}"
+
+# Pull usage % and space remaining of that disk
+# Could add more display formats here
+PERCENT=$(df -h "$CURRENT_DISK" | awk 'NR==2 {print $5}')
+SPACE=$(df -h "$CURRENT_DISK" | awk 'NR==2 {print $4}')
+
+# If format is 0, display usage %, otherwise, space remaining
+# Could instead use a case statement if more formats are added
+[ "$FORMAT" -eq 0 ] && INFO="$PERCENT" || INFO="$SPACE"
+
+# Scroll up/down through disks array
+# Left-click for notification with lsblk
+# Middle-click to change format
+# Modulo used to wrap around when it reaches end of disks array or format
+case $BLOCK_BUTTON in
+		1) setsid -f "$TERMINAL_BIN" --class i3diskpopup bash -lc "selected='${DISKS[$INDEX]}'; read -r device mountpoint size used avail usepct < <(findmnt -T \"\$selected\" -no SOURCE,TARGET,SIZE,USED,AVAIL,USE%); printf 'Path: %s\n' \"\$selected\"; printf 'Device: %s\n' \"\$device\"; printf 'Mounted at: %s\n' \"\$mountpoint\"; printf 'Usage: %s used, %s free, %s of %s\n' \"\$used\" \"\$avail\" \"\$usepct\" \"\$size\"; if [ \"\$selected\" != \"\$mountpoint\" ]; then printf '\nThis path lives on the partition mounted at %s.\n' \"\$mountpoint\"; fi; printf '\nPress q to close...'; while IFS= read -rsn1 key; do [ \"\$key\" = 'q' ] && break; done" ;;
+		3) echo "$INDEX $(( ($FORMAT + 1) % 2 ))" > "$DISKS_FILE"
+		   notify-send -t 2000 "Disk: ${DISKS[$INDEX]}" "$([ $(( ($FORMAT + 1) % 2 )) -eq 0 ] && echo 'usage %' || echo 'free space')"
+		   pkill -RTMIN+3 i3blocks 2>/dev/null ;;
+		4) echo "$(( ($INDEX + 1) % ${#DISKS[@]} )) $FORMAT" > "$DISKS_FILE"
+		   pkill -RTMIN+3 i3blocks 2>/dev/null ;;
+		5) echo "$(( ($INDEX - 1) % ${#DISKS[@]} )) $FORMAT" > "$DISKS_FILE"
+		   pkill -RTMIN+3 i3blocks 2>/dev/null ;;
+		6) setsid -f "$TERMINAL" -e "$EDITOR" "$0" ;;
+esac
+
+
+# Send to bar
+echo "$ICON$INFO"
+
+# Can set this script to refresh on a timer in dwmblocks blocks.h
+# If you want this to cycle through visible disks on that timer, remove the (INDEX + 1) out of the case BLOCK_BUTTON and add it to the end of the script instead

@@ -4,6 +4,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(cd "$SCRIPT_DIR/../../../../" && pwd)"
 DEFAULT_WALLPAPER="$DOTFILES_DIR/wallpapers/0024.jpg"
 WAL_CACHE="$HOME/.cache/wal/wal"
+CURRENT_LINK="$HOME/.config/i3/current-wallpaper"
 
 if [[ -n $1 ]]; then
   WALLPAPER="$(realpath "$1")"
@@ -19,4 +20,18 @@ if [[ ! -f "$WALLPAPER" ]]; then
   exit 1
 fi
 
+mkdir -p "$(dirname "$CURRENT_LINK")"
+ln -nsf "$WALLPAPER" "$CURRENT_LINK"
 feh --bg-scale "$WALLPAPER"
+
+if command -v wal >/dev/null 2>&1; then
+  wal -q -n -i "$WALLPAPER"
+fi
+
+if [[ -f "$HOME/.cache/wal/colors.Xresources" ]] && command -v xrdb >/dev/null 2>&1; then
+  xrdb -merge "$HOME/.cache/wal/colors.Xresources"
+fi
+
+if command -v i3-msg >/dev/null 2>&1; then
+  i3-msg reload >/dev/null 2>&1
+fi

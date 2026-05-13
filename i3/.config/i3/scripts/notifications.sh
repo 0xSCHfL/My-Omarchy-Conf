@@ -2,10 +2,10 @@
 
 set -euo pipefail
 
-theme="$HOME/.config/rofi/dwm-launcher.rasi"
+theme="$HOME/.config/rofi/i3-launcher.rasi"
 
 choice=$(
-  python3 - <<'PY' | rofi -dmenu -i -p "Notifications" -theme "$HOME/.config/rofi/dwm-launcher.rasi"
+  python3 - <<'PY' | rofi -dmenu -i -p "Notifications" -theme "$HOME/.config/rofi/i3-launcher.rasi"
 import subprocess
 
 def run(*args):
@@ -34,7 +34,7 @@ case "$choice" in
     ;;
   "Notification history ("*)
     selected_id=$(
-      dunstctl history | python3 - <<'PY' | rofi -dmenu -i -p "History" -theme "$HOME/.config/rofi/dwm-launcher.rasi" | cut -f1
+      dunstctl history | python3 - <<'PY' | rofi -dmenu -i -p "History" -theme "$HOME/.config/rofi/i3-launcher.rasi" | cut -f1
 import json
 import sys
 

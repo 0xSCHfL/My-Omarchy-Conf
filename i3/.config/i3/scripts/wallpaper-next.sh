@@ -33,6 +33,5 @@ else
   NEXT="${WALLPAPERS[$(( (INDEX + 1) % TOTAL ))]}"
 fi
 
-ln -nsf "$NEXT" "$CURRENT_LINK"
-feh --bg-scale "$NEXT"
+"$SCRIPT_DIR/wallpaper-set.sh" "$NEXT"
 notify-send "Wallpaper" "$(basename "$NEXT")" -t 1500
