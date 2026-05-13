@@ -1,0 +1,20 @@
+#!/bin/bash
+I=$'\x04' V=$'\x05' SEP=$'\x03'
+if command -v pamixer &>/dev/null; then
+	muted=$(pamixer --get-mute 2>/dev/null)
+	vol=$(pamixer --get-volume 2>/dev/null)
+	[ "$muted" = "true" ] && printf "%s󰖁%s mute\n" "$I" "$SEP" && exit 0
+elif command -v pactl &>/dev/null; then
+	vol=$(pactl get-sink-volume @DEFAULT_SINK@ 2>/dev/null | grep -oP '\d+(?=%)' | head -1)
+	muted=$(pactl get-sink-mute @DEFAULT_SINK@ 2>/dev/null | grep -o 'yes')
+	[ "$muted" = "yes" ] && printf "%s󰖁%s mute\n" "$I" "$SEP" && exit 0
+else
+	vol=$(amixer get Master 2>/dev/null | grep -oP '\[\d+%\]' | head -1 | tr -d '[]%')
+	off=$(amixer get Master 2>/dev/null | grep -oP '\[off\]' | head -1)
+	[ "$off" = "[off]" ] && printf "%s󰖁%s mute\n" "$I" "$SEP" && exit 0
+fi
+[ -z "$vol" ] && printf "%s󰖁%s ?\n" "$I" "$V" && exit 0
+if   [ "$vol" -ge 70 ]; then icon="󰕾"
+elif [ "$vol" -ge 30 ]; then icon="󰖀"
+else icon="󰕿"; fi
+printf "%s%s%s %s%%\n" "$I" "$icon" "$V" "$vol"

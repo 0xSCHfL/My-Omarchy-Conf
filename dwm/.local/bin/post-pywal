@@ -20,8 +20,7 @@ xrdb -merge "$HOME/.cache/wal/colors.Xresources" 2>/dev/null
 [ -f "$HOME/.cache/wal/xrdb_extra" ] && xrdb -merge "$HOME/.cache/wal/xrdb_extra" 2>/dev/null
 
 # Write DWM color Xresources from pywal palette and restart DWM to pick them up
-# Only when DWM is actually managing the current display (not i3/hyprland)
-if [ -f "$HOME/.cache/wal/colors.sh" ] && pgrep -x dwm | xargs -I{} grep -q "DISPLAY=$DISPLAY" /proc/{}/environ 2>/dev/null; then
+if [ -f "$HOME/.cache/wal/colors.sh" ]; then
     . "$HOME/.cache/wal/colors.sh"
     xrdb -merge <<EOF
 dwm.normbgcolor:     $background
@@ -35,7 +34,7 @@ dwm.iconcolor:       $color4
 dwm.valcolor:        $foreground
 dwm.warncolor:       $color3
 EOF
-    [ $FROM_FZF -eq 0 ] && pkill -HUP dwm 2>/dev/null
+    pkill -USR2 dwm 2>/dev/null
 fi
 
 # Refresh st terminals (reload colors from X resources)
@@ -45,5 +44,15 @@ fi
 # Restart dunst
 pkill dunst 2>/dev/null
 dunst &>/dev/null &
+
+# Update xob colors from pywal
+if [ -f "$HOME/.cache/wal/xob-styles.cfg" ]; then
+    cp "$HOME/.cache/wal/xob-styles.cfg" "$HOME/.config/xob/styles.cfg"
+    pkill xob 2>/dev/null
+    mkfifo /tmp/xob-vol 2>/dev/null
+    mkfifo /tmp/xob-brightness 2>/dev/null
+    tail -f /tmp/xob-vol | xob &>/dev/null &
+    tail -f /tmp/xob-brightness | xob &>/dev/null &
+fi
 
 notify-send "Wallpaper set" "Colorscheme updated"

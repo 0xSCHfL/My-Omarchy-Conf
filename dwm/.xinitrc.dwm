@@ -6,6 +6,13 @@ xrandr --output eDP-1 --auto --output HDMI-1 --auto --right-of eDP-1 --primary
 # Fix Backspace key (remap keycode 22 to XK_BackSpace)
 xmodmap -e "keycode 22 = BackSpace BackSpace BackSpace BackSpace"
 
+# Touchpad — enable tap-to-click
+xinput set-prop "SYNA308F:00 06CB:CD77 Touchpad" "libinput Tapping Enabled" 1 2>/dev/null
+
+# Pass DISPLAY to systemd so xdg-desktop-portal-gtk can open file dialogs in browser
+systemctl --user import-environment DISPLAY XAUTHORITY
+systemctl --user restart xdg-desktop-portal-gtk
+
 # Wallpaper — restore last pywal wallpaper, fall back to default
 if [ -f ~/.cache/wal/wal ]; then
     feh --bg-scale "$(cat ~/.cache/wal/wal)" &
@@ -24,7 +31,13 @@ picom --daemon &
 dunst &
 
 # Status bar
-~/.local/bin/dwm-statusbar &
+dwmblocks &
+
+# Volume + brightness OSD
+mkfifo /tmp/xob-vol 2>/dev/null
+mkfifo /tmp/xob-brightness 2>/dev/null
+tail -f /tmp/xob-vol | xob &
+tail -f /tmp/xob-brightness | xob &
 
 # Network manager tray
 nm-applet &

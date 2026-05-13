@@ -8,7 +8,7 @@ static const unsigned int borderpx  = 1;        /* border pixel of windows */
 static const unsigned int snap      = 32;       /* snap pixel */
 static const int showbar            = 1;        /* 0 means no bar */
 static const int topbar             = 1;        /* 0 means bottom bar */
-static const char *fonts[]          = { "monospace:size=10" };
+static const char *fonts[]          = { "Iosevka:size=13", "Iosevka Term:size=13" };
 char col_gray1[]       = "#222222";
 char col_gray2[]       = "#444444";
 char col_gray3[]       = "#bbbbbb";
@@ -91,10 +91,13 @@ static const char *cliphistcmd[]    = { "/bin/sh", "-c", "cliphist list | rofi -
 static const char *imgpickercmd[]   = { "dwm-imgpicker", NULL };
 static const char *btopcmd[]        = { "dwm-btop", NULL };
 static const char *imgcliphistcmd[] = { "dwm-imgcliphist", NULL };
-static const char *chromiumcmd[]    = { "chromium", NULL };
+static const char *chromiumcmd[]    = { "/bin/sh", "-c", "chromium --ozone-platform=x11", NULL };
 static const char *restartcmd[]     = { "dwm-restart", NULL };
 static const char *keyscmd[]        = { "dwm-keys", NULL };
 static const char *filemanagercmd[] = { "st", "-e", "yazi", NULL };
+static const char *spotifyplaycmd[] = { "playerctl", "--player=spotify", "play-pause", NULL };
+static const char *spotifynextcmd[] = { "playerctl", "--player=spotify", "next", NULL };
+static const char *spotifyprevcmd[] = { "playerctl", "--player=spotify", "previous", NULL };
 
 static const Key keys[] = {
 	/* modifier                     key        function        argument */
@@ -155,6 +158,14 @@ static const Key keys[] = {
 	{ MODKEY|ShiftMask,             XK_v,      spawn,          {.v = imgcliphistcmd } },
 	{ MODKEY,                       XK_F1,     spawn,          {.v = keyscmd } },
 	{ MODKEY|ShiftMask,             XK_q,      quit,           {0} },
+	{ 0, XF86XK_AudioPlay,        spawn, {.v = spotifyplaycmd } },
+	{ 0, XF86XK_AudioNext,        spawn, {.v = spotifynextcmd } },
+	{ 0, XF86XK_AudioPrev,        spawn, {.v = spotifyprevcmd } },
+	{ 0, XF86XK_AudioRaiseVolume,   spawn, SHCMD("volnotify up") },
+	{ 0, XF86XK_AudioLowerVolume,   spawn, SHCMD("volnotify down") },
+	{ 0, XF86XK_AudioMute,          spawn, SHCMD("volnotify mute") },
+	{ 0, XF86XK_MonBrightnessUp,    spawn, SHCMD("brightnessnotify up") },
+	{ 0, XF86XK_MonBrightnessDown,  spawn, SHCMD("brightnessnotify down") },
 };
 
 /* button definitions */
@@ -172,5 +183,8 @@ static const Button buttons[] = {
 	{ ClkTagBar,            0,              Button3,        toggleview,     {0} },
 	{ ClkTagBar,            MODKEY,         Button1,        tag,            {0} },
 	{ ClkTagBar,            MODKEY,         Button3,        toggletag,      {0} },
+	{ ClkStatusText,        0,              Button1,        spawn,          {.v = spotifyplaycmd } },
+	{ ClkStatusText,        0,              Button3,        spawn,          {.v = spotifynextcmd } },
+	{ ClkStatusText,        0,              Button2,        spawn,          {.v = spotifyprevcmd } },
 };
 

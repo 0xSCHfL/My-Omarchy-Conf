@@ -1,0 +1,5 @@
+#!/bin/bash
+I=$'\x04' V=$'\x05' SEP=$'\x03'
+disk_free=$(df -h / | awk 'NR==2 {print $4}')
+disk_pct=$(df / | awk 'NR==2 {gsub(/%/,"",$5); print $5}')
+printf "%s%s %s %s%s%%\n" "$I" "$V" "$disk_free" "$SEP" "$disk_pct"

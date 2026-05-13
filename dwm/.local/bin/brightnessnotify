@@ -1,0 +1,15 @@
+#!/bin/bash
+case $1 in
+  up)   brightnessctl set +5% ;;
+  down) brightnessctl set 5%- ;;
+esac
+
+pct=$(brightnessctl | awk -F'[(%]' '/Current brightness/{print $2}' | tr -d ' ')
+
+PIPE="/tmp/xob-brightness"
+[ -p "$PIPE" ] || mkfifo "$PIPE"
+echo "$pct" > "$PIPE"
+
+notify-send -t 1500 \
+    -h string:x-dunst-stack-tag:brightness \
+    "󰃞  ${pct}%"

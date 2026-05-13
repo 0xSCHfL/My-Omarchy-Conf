@@ -1,0 +1,14 @@
+#!/bin/bash
+I=$'\x04' V=$'\x05' W=$'\x06'
+temp=$(sensors 2>/dev/null | awk '
+	/^(Tdie|Package id|Core 0|CPU|temp1)/ {
+		gsub(/[+°C]/, "")
+		for (i=1; i<=NF; i++)
+			if ($i ~ /^[0-9]+(\.[0-9]+)?$/) { gsub(/\..*/, "", $i); print $i; exit }
+	}')
+[ -z "$temp" ] && temp="?"
+if [ "$temp" != "?" ] && [ "$temp" -ge 80 ] 2>/dev/null; then
+	printf "%s󰍛 %s°\n" "$W" "$temp"
+else
+	printf "%s󰍛%s %s°\n" "$I" "$V" "$temp"
+fi

@@ -1,0 +1,13 @@
+#!/bin/bash
+I=$'\x04' V=$'\x05' SEP=$'\x03'
+ssid=$(iwgetid -r 2>/dev/null)
+if [ -n "$ssid" ]; then
+	printf "%s󰤨%s %s\n" "$I" "$V" "$ssid"
+	exit 0
+fi
+eth=$(ip -o link show up 2>/dev/null | awk -F': ' '/^[0-9]+: e/{print $2; exit}')
+if [ -n "$eth" ]; then
+	printf "%s󰈀%s eth\n" "$I" "$V"
+	exit 0
+fi
+printf "%s󰤭%s off\n" "$I" "$SEP"

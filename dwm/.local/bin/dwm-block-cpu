@@ -1,0 +1,19 @@
+#!/bin/bash
+I=$'\x04' V=$'\x05' W=$'\x06'
+CACHE="/tmp/.dwm-cpu-stat"
+read -r _ user nice system idle iowait irq softirq _ < /proc/stat
+total=$((user + nice + system + idle + iowait + irq + softirq))
+if [ -f "$CACHE" ]; then
+	read -r prev_idle prev_total < "$CACHE"
+	dtotal=$((total - prev_total))
+	didle=$((idle - prev_idle))
+	[ "$dtotal" -gt 0 ] && cpu=$(( (dtotal - didle) * 100 / dtotal )) || cpu=0
+else
+	cpu=0
+fi
+printf "%d %d\n" "$idle" "$total" > "$CACHE"
+if [ "$cpu" -ge 80 ]; then
+	printf "%s󰻠 %d%%\n" "$W" "$cpu"
+else
+	printf "%s󰻠%s %d%%\n" "$I" "$V" "$cpu"
+fi

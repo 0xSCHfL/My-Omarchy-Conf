@@ -8,8 +8,13 @@ esac
 vol=$(pactl get-sink-volume @DEFAULT_SINK@ | awk '/Volume/{printf "%d", $5}')
 mute=$(pactl get-sink-mute @DEFAULT_SINK@ | grep -q "yes" && echo 1 || echo 0)
 
+pkill -RTMIN+6 dwmblocks 2>/dev/null
+
+PIPE="/tmp/xob-vol"
+[ -p "$PIPE" ] || mkfifo "$PIPE"
+
 if [ "$mute" = 1 ]; then
-  notify-send -h int:value:0 "Volume" "Muted"
+  echo "${vol}!" > "$PIPE"
 else
-  notify-send -h int:value:$vol "Volume" "${vol}%"
+  echo "$vol" > "$PIPE"
 fi

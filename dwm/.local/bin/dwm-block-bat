@@ -1,0 +1,30 @@
+#!/bin/bash
+I=$'\x04' V=$'\x05' W=$'\x06'
+bat_path=""
+for p in /sys/class/power_supply/BAT{0,1,2}; do
+	[ -d "$p" ] && bat_path="$p" && break
+done
+[ -z "$bat_path" ] && exit 0
+
+cap=$(cat "$bat_path/capacity" 2>/dev/null)
+status=$(cat "$bat_path/status" 2>/dev/null)
+
+if   [ "$status" = "Charging" ];    then icon="󰂄"
+elif [ "${cap:-0}" -ge 90 ];        then icon="󰁹"
+elif [ "${cap:-0}" -ge 70 ];        then icon="󰂀"
+elif [ "${cap:-0}" -ge 50 ];        then icon="󰁾"
+elif [ "${cap:-0}" -ge 30 ];        then icon="󰁼"
+elif [ "${cap:-0}" -ge 15 ];        then icon="󰁺"
+else icon="󰂃"; fi
+
+FLAG="/tmp/.dwm-bat-low-notified"
+if [ "${cap:-0}" -le 15 ] && [ "$status" != "Charging" ]; then
+	if [ ! -f "$FLAG" ]; then
+		notify-send -u critical "Battery Low" "Battery at ${cap}% — plug in now" &
+		touch "$FLAG"
+	fi
+	printf "%s%s %s%%\n" "$W" "$icon" "$cap"
+else
+	rm -f "$FLAG"
+	printf "%s%s%s %s%%\n" "$I" "$icon" "$V" "$cap"
+fi

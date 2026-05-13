@@ -1,0 +1,4 @@
+#!/bin/bash
+I=$'\x04' V=$'\x05'
+mem_used=$(free -m | awk '/^Mem/ {printf "%.1fG", $3/1024}')
+printf "%s%s %s\n" "$I" "$V" "$mem_used"

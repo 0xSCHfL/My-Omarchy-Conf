@@ -32,6 +32,7 @@
 #include <sys/wait.h>
 #include <X11/cursorfont.h>
 #include <X11/keysym.h>
+#include <X11/XF86keysym.h>
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
 #include <X11/Xproto.h>
@@ -261,8 +262,9 @@ static void (*handler[LASTEvent]) (XEvent *) = {
 	[PropertyNotify] = propertynotify,
 	[UnmapNotify] = unmapnotify
 };
-static Atom wmatom[WMLast], netatom[NetLast];
+static Atom wmatom[WMLast], netatom[NetLast], dwmtags;
 static int running = 1;
+static int restart = 0;
 static Cur *cursor[CurLast];
 static Clr **scheme;
 static Display *dpy;
@@ -434,10 +436,17 @@ buttonpress(XEvent *e)
 		focus(NULL);
 	}
 	if (ev->window == selmon->barwin) {
+		unsigned int occ = 0;
+		for (c = selmon->clients; c; c = c->next)
+			occ |= c->tags;
 		i = x = 0;
-		do
+		for (i = 0; i < LENGTH(tags); i++) {
+			if (!(occ & 1 << i || selmon->tagset[selmon->seltags] & 1 << i))
+				continue;
 			x += TEXTW(tags[i]);
-		while (ev->x >= x && ++i < LENGTH(tags));
+			if (ev->x < x)
+				break;
+		}
 		if (i < LENGTH(tags)) {
 			click = ClkTagBar;
 			arg.ui = 1 << i;
@@ -763,6 +772,8 @@ drawbar(Monitor *m)
 	}
 	x = 0;
 	for (i = 0; i < LENGTH(tags); i++) {
+		if (!(occ & 1 << i || m->tagset[m->seltags] & 1 << i))
+			continue;
 		w = TEXTW(tags[i]);
 		drw_setscheme(drw, scheme[m->tagset[m->seltags] & 1 << i ? SchemeSel : SchemeNorm]);
 		drw_text(drw, x, 0, w, bh, lrpad / 2, tags[i], urg & 1 << i);
@@ -1092,8 +1103,18 @@ manage(Window w, XWindowAttributes *wa)
 		c->mon = t->mon;
 		c->tags = t->tags;
 	} else {
+		Atom type;
+		int fmt;
+		unsigned long nitems, bytes;
+		unsigned char *prop = NULL;
 		c->mon = selmon;
-		applyrules(c);
+		if (XGetWindowProperty(dpy, w, dwmtags, 0, 1, True, XA_CARDINAL,
+			&type, &fmt, &nitems, &bytes, &prop) == Success && prop) {
+			c->tags = *(unsigned int *)prop & TAGMASK;
+			XFree(prop);
+		} else {
+			applyrules(c);
+		}
 	}
 
 	if (c->x + WIDTH(c) > c->mon->wx + c->mon->ww)
@@ -1301,7 +1322,44 @@ propertynotify(XEvent *e)
 void
 quit(const Arg *arg)
 {
+	if (arg->i) restart = 1;
 	running = 0;
+}
+
+void
+sighup(int unused)
+{
+	Arg a = {.i = 1};
+	quit(&a);
+}
+
+void
+sigterm(int unused)
+{
+	Arg a = {.i = 0};
+	quit(&a);
+}
+
+void
+sigusr2(int unused)
+{
+	int i;
+	Monitor *m;
+	Client *c;
+
+	readxresources();
+	for (i = 0; i < LENGTH(colors); i++) {
+		drw_scm_free(drw, scheme[i], 3);
+		scheme[i] = drw_scm_create(drw, (const char **)colors[i], 3);
+	}
+	for (m = mons; m; m = m->next) {
+		for (c = m->clients; c; c = c->next)
+			XSetWindowBorder(dpy, c->win,
+				scheme[m->sel == c ? SchemeSel : SchemeNorm][ColBorder].pixel);
+		drawbar(m);
+	}
+	XFlush(dpy);
+	signal(SIGUSR2, sigusr2);
 }
 
 Monitor *
@@ -1660,6 +1718,7 @@ setup(void)
 	netatom[NetWMWindowType] = XInternAtom(dpy, "_NET_WM_WINDOW_TYPE", False);
 	netatom[NetWMWindowTypeDialog] = XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_DIALOG", False);
 	netatom[NetClientList] = XInternAtom(dpy, "_NET_CLIENT_LIST", False);
+	dwmtags = XInternAtom(dpy, "_DWM_TAGS", False);
 	/* init cursors */
 	cursor[CurNormal] = drw_cur_create(drw, XC_left_ptr);
 	cursor[CurResize] = drw_cur_create(drw, XC_sizing);
@@ -2254,6 +2313,9 @@ main(int argc, char *argv[])
 	if (!(dpy = XOpenDisplay(NULL)))
 		die("dwm: cannot open display");
 	checkotherwm();
+	signal(SIGHUP, sighup);
+	signal(SIGTERM, sigterm);
+	signal(SIGUSR2, sigusr2);
 	setup();
 #ifdef __OpenBSD__
 	if (pledge("stdio rpath proc exec", NULL) == -1)
@@ -2261,7 +2323,18 @@ main(int argc, char *argv[])
 #endif /* __OpenBSD__ */
 	scan();
 	run();
+	if (restart) {
+		Monitor *m;
+		Client *c;
+		for (m = mons; m; m = m->next)
+			for (c = m->clients; c; c = c->next)
+				XChangeProperty(dpy, c->win, dwmtags, XA_CARDINAL, 32,
+					PropModeReplace, (unsigned char *)&c->tags, 1);
+		XFlush(dpy);
+	}
 	cleanup();
 	XCloseDisplay(dpy);
+	if (restart)
+		execvp(argv[0], argv);
 	return EXIT_SUCCESS;
 }
