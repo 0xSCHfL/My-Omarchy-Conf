@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+
+ROFI_NAV='-kb-row-up "k,Up" -kb-row-down "j,Down" -kb-cancel "Escape,h,q"'
+ROFI_THEME="$HOME/.config/rofi/dwm-keys.rasi"
+
+rofi_menu() {
+  eval rofi -dmenu -no-sort -i -theme "$ROFI_THEME" $ROFI_NAV -p "$1"
+}
+
+window_keys() { cat <<'EOF'
+Super + Return       → Terminal (kitty)
+Super + w            → Close window
+Super + q            → qutebrowser
+Super + f            → Fullscreen toggle
+Super + h            → Split horizontal
+Super + o            → Layout stacking
+Super + e            → Toggle split layout
+Super + t            → Toggle floating
+Super + Shift + q    → Kill window
+Super + Shift + f    → Maximize window
+Super + Shift + space → Toggle floating
+Super + a            → Focus parent
+Super + r            → Resize mode
+Super + j / k        → Focus down / up
+Super + l / ;        → Focus left / right
+Super + Left/Down/Up/Right → Focus direction
+Super + Shift + j/k/l/; → Move window down/up/left/right
+EOF
+}
+
+workspace_keys() { cat <<'EOF'
+Super + 1-0          → Switch to workspace
+Super + Shift + 1-0  → Move window to workspace
+Super + Ctrl + g     → Gaps mode
+Super + Tab          → Cycle focus (alt-tab)
+EOF
+}
+
+scratchpad_keys() { cat <<'EOF'
+Super + s            → Move window to scratchpad
+Super + Alt + s      → Show/hide scratchpad
+EOF
+}
+
+apps_keys() { cat <<'EOF'
+Super + Return       → Terminal (kitty)
+Super + Space        → App launcher (rofi)
+Super + q            → qutebrowser
+Super + Shift + b    → Brave
+Super + Shift + c    → Chromium
+Super + Shift + o    → Obsidian
+Super + Shift + t    → btop
+Super + Shift + i    → Image picker
+Super + Shift + v    → Image clipboard history
+Super + Shift + s    → System menu
+Super + Shift + w    → WhatsApp
+Super + Shift + g    → ChatGPT
+Super + Shift + x    → Twitter / X
+Super + Shift + d    → Discord
+Super + v            → Text clipboard history
+Super + Ctrl + v     → Copyq show
+Super + n            → Notes
+Super + F1           → Keybindings help
+Super + Shift + r    → Restart i3
+Super + Shift + e    → Exit i3
+EOF
+}
+
+media_keys() { cat <<'EOF'
+XF86AudioRaiseVol    → Volume up
+XF86AudioLowerVol    → Volume down
+XF86AudioMute        → Mute/unmute
+XF86AudioMicMute     → Mute microphone
+Print                → Screenshot (flameshot)
+Alt + Print          → Screen recording
+Super + Ctrl + Print → OCR screenshot
+EOF
+}
+
+wallpaper_keys() { cat <<'EOF'
+Super + Ctrl + Space → Wallpaper picker (rofi)
+--- Inside image picker (Super+Shift+i) ---
+Alt + w              → Set as wallpaper (pywal)
+EOF
+}
+
+while true; do
+  CATEGORY=$(printf '%s\n' \
+      '  Windows & navigation' \
+      '  Workspaces' \
+      '  Scratchpad' \
+      '  Apps & launchers' \
+      '  Media & volume' \
+      '  Wallpaper' \
+      | rofi_menu 'i3 Keybindings')
+
+  [ -z "$CATEGORY" ] && break
+
+  case "$CATEGORY" in
+    *Windows*)   window_keys     | rofi_menu 'Windows' ;;
+    *Workspace*) workspace_keys  | rofi_menu 'Workspaces' ;;
+    *Scratch*)   scratchpad_keys | rofi_menu 'Scratchpad' ;;
+    *Apps*)      apps_keys       | rofi_menu 'Apps' ;;
+    *Media*)     media_keys      | rofi_menu 'Media' ;;
+    *Wallpaper*) wallpaper_keys  | rofi_menu 'Wallpaper' ;;
+  esac
+done

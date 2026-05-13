@@ -1,14 +1,26 @@
-#!/bin/bash
+#!/bin/sh
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOTFILES_DIR="$(cd "$SCRIPT_DIR/../../../../" && pwd)"
-WALLPAPERS_DIR="$DOTFILES_DIR/wallpapers"
-CURRENT_LINK="$HOME/.config/i3/current-wallpaper"
+DIR="${1:-$HOME/Work/dotfiles/wallpapers}"
 
-SELECTED=$(find "$WALLPAPERS_DIR" -type f \( -iname '*.jpg' -o -iname '*.png' \) | sort | rofi -dmenu -l 20 -p "Wallpaper" -theme-str 'window { width: 40%; location: center; anchor: center; }')
+case "$(uname -a)" in *Darwin*) T="/tmp" ;; *) T="/tmp" ;; esac
 
-if [[ -n "$SELECTED" ]]; then
-  ln -nsf "$SELECTED" "$CURRENT_LINK"
+cleanup() { ueberzugpp cmd -s "$SOCKET" -a exit; }
+trap cleanup HUP INT QUIT TERM EXIT
+
+PID_FILE="$T/.$(uuidgen)"
+ueberzugpp layer --no-stdin --silent --pid-file "$PID_FILE"
+while [ ! -s "$PID_FILE" ]; do sleep 0.05; done
+SOCKET="$T"/ueberzugpp-"$(cat "$PID_FILE")".socket
+
+SELECTED=$(find "$DIR" -type f \( -iname '*.jpg' -o -iname '*.png' \) | sort | \
+  fzf --reverse --delimiter / --with-nth -1 \
+    --preview="ueberzugpp cmd -s $SOCKET -i p -a add \
+      -x \$FZF_PREVIEW_LEFT -y \$FZF_PREVIEW_TOP \
+      --max-width \$FZF_PREVIEW_COLUMNS --max-height \$FZF_PREVIEW_LINES -f {}")
+
+ueberzugpp cmd -s "$SOCKET" -a exit
+
+if [ -n "$SELECTED" ]; then
   feh --bg-scale "$SELECTED"
   notify-send "Wallpaper" "$(basename "$SELECTED")" -t 1500
 fi

@@ -29,10 +29,14 @@ SPACE=$(df -h "$CURRENT_DISK" | awk 'NR==2 {print $4}')
 # Middle-click to change format
 # Modulo used to wrap around when it reaches end of disks array or format
 case $BLOCK_BUTTON in
-		1) notify-send -t 60000 "$(dysk --color no -c free+mp+use+size)" ;;
-		3) echo "$INDEX $(( ($FORMAT + 1) % 2 ))" > "$DISKS_FILE" ;;
-		4) echo "$(( ($INDEX + 1) % ${#DISKS[@]} )) $FORMAT" > "$DISKS_FILE" ;;
-		5) echo "$(( ($INDEX - 1) % ${#DISKS[@]} )) $FORMAT" > "$DISKS_FILE" ;;
+		1) notify-send -t 60000 "Disk: ${DISKS[$INDEX]}" "$(df -h ${DISKS[$INDEX]} | awk 'NR==2{print \"Used: \"$3\"/\"$2\" (\"$5\")\\nFree: \"$4}')" ;;
+		3) echo "$INDEX $(( ($FORMAT + 1) % 2 ))" > "$DISKS_FILE"
+		   notify-send -t 2000 "Disk: ${DISKS[$INDEX]}" "$([ $(( ($FORMAT + 1) % 2 )) -eq 0 ] && echo 'usage %' || echo 'free space')"
+		   pkill -RTMIN+3 i3blocks 2>/dev/null ;;
+		4) echo "$(( ($INDEX + 1) % ${#DISKS[@]} )) $FORMAT" > "$DISKS_FILE"
+		   pkill -RTMIN+3 i3blocks 2>/dev/null ;;
+		5) echo "$(( ($INDEX - 1) % ${#DISKS[@]} )) $FORMAT" > "$DISKS_FILE"
+		   pkill -RTMIN+3 i3blocks 2>/dev/null ;;
 		6) setsid -f "$TERMINAL" -e "$EDITOR" "$0" ;;
 esac
 

@@ -91,7 +91,7 @@ install_all() {
 
     if [[ -n "$PM_AUR" ]]; then
         echo "  → AUR packages..."
-        $PM_AUR -S --needed --noconfirm hyprland waybar ghostty python-pywal 2>/dev/null || true
+        $PM_AUR -S --needed --noconfirm hyprland waybar ghostty python-pywal xob 2>/dev/null || true
     fi
 }
 

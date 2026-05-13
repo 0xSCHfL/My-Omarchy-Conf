@@ -2,7 +2,8 @@
 
 cleanup() {
 echo "" > /tmp/timericon;
-pkill -RTMIN+3 dwmblocks;
+pkill -RTMIN+3 dwmblocks 2>/dev/null;
+pkill -RTMIN+3 i3blocks 2>/dev/null;
 exit 0
 }
 
@@ -12,7 +13,8 @@ while [ $TOTAL_SECONDS -gt 0 ]; do
     MIN=$(printf "%02d" $((TOTAL_SECONDS / 60)))
     SEC=$(printf "%02d" $((TOTAL_SECONDS % 60)))
     echo "  $MIN $SEC " > /tmp/timericon;
-    pkill -RTMIN+3 dwmblocks;
+    pkill -RTMIN+3 dwmblocks 2>/dev/null;
+    pkill -RTMIN+3 i3blocks 2>/dev/null;
     sleep 1
     ((TOTAL_SECONDS--))
 done
