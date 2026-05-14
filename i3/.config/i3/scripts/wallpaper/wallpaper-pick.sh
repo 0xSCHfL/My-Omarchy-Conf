@@ -5,7 +5,7 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
 COLS=60
 ROWS=18
 
-# Liberation Mono pixelsize=16 ≈ 9px wide, 20px tall per cell
+# Iosevka pixelsize=16 is slightly narrower than Liberation Mono, so the box stays compact.
 WW=$(( COLS * 9 ))
 WH=$(( ROWS * 20 ))
 
@@ -26,7 +26,7 @@ Y=$(( CY - WH / 2 ))
 DIR="${1:-$HOME/Work/dotfiles/wallpapers}"
 
 st \
-    -f 'Liberation Mono:pixelsize=16:antialias=true:autohint=true' \
+    -f 'Iosevka:pixelsize=16:antialias=true:autohint=true' \
     -c fzfmenu -n fzfmenu -T fzf \
     -g "${COLS}x${ROWS}+${X}+${Y}" \
     -e "$SCRIPT_DIR/wallpaper-pick-fzf.sh" "$DIR"

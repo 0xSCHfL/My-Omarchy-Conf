@@ -47,8 +47,8 @@ exec --no-startup-id dunst
 exec --no-startup-id env XDG_SESSION_TYPE=x11 QT_QPA_PLATFORM=xcb flameshot
 exec --no-startup-id /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
 exec --no-startup-id copyq
-exec_always --no-startup-id $HOME/.config/i3/scripts/volume-osd.sh
-exec --no-startup-id $HOME/.config/i3/scripts/wallpaper-set.sh
+exec_always --no-startup-id $HOME/.config/i3/scripts/media/volume-osd.sh
+exec --no-startup-id $HOME/.config/i3/scripts/wallpaper/wallpaper-set.sh
 exec_always --no-startup-id $HOME/.local/bin/i3-cliphist
 exec_always --no-startup-id $HOME/.local/bin/i3-imgclipwatch
 exec_always --no-startup-id $HOME/.local/bin/batmon
@@ -61,16 +61,19 @@ bindsym XF86AudioMicMute exec --no-startup-id pactl set-source-mute @DEFAULT_SOU
 
 # use these keys for focus, movement, and resize directions when reaching for
 # the arrows is not convenient
-set $up l
-set $down k
-set $left j
-set $right semicolon
+set $up k
+set $down j
+set $left h
+set $right l
 
 # use Mouse+Mod4 to drag floating windows to their wanted position
 floating_modifier Mod4
 for_window [class="Nsxiv"] floating enable, resize set 1200 700, move position center
 for_window [class="fzfmenu"] floating enable, move position center
 for_window [class="fzf"] floating enable, move position center
+for_window [class="Walker"] floating enable, resize set 644 300, move position center
+for_window [class="walker"] floating enable, resize set 644 300, move position center
+for_window [title="Walker"] floating enable, resize set 644 300, move position center
 for_window [class="copyq"] floating enable, resize set 500 400, move position 3330 640
 for_window [class="i3statspopup"] floating enable, resize set 900 650, move position center
 for_window [class="i3diskpopup"] floating enable, resize set 760 360, move position center
@@ -124,22 +127,24 @@ bindsym Mod4+Shift+Up move up
 bindsym Mod4+Shift+Right move right
 
 # split in horizontal orientation
-bindsym Mod4+h split h
+bindsym Mod4+Ctrl+h split h
+# split in vertical orientation
+bindsym Mod4+Ctrl+l split v
 
 
 # enter fullscreen mode for the focused container
 bindsym Mod4+f fullscreen toggle
 
 # maximize (fill workspace, bar stays visible)
-bindsym Mod4+Shift+f exec ~/.config/i3/maximize.sh
-bindsym Mod4+Mod1+f exec --no-startup-id ~/.config/i3/maximize.sh
+bindsym Mod4+Shift+f exec ~/.config/i3/scripts/utils/maximize.sh
+bindsym Mod4+Mod1+f exec --no-startup-id ~/.config/i3/scripts/utils/maximize.sh
 
 # change container layout (stacked, tabbed, toggle split)
 bindsym Mod4+o layout stacking
 bindsym Mod4+e layout toggle split
 
 # toggle tiling / floating
-bindsym Mod4+t exec --no-startup-id $HOME/.config/i3/scripts/float-toggle.sh
+bindsym Mod4+t exec --no-startup-id $HOME/.config/i3/scripts/utils/float-toggle.sh
 bindsym Mod4+Shift+space floating toggle
 
 # change focus between tiling / floating windows
@@ -199,7 +204,7 @@ bindsym Mod4+Shift+0 move container to workspace number $ws10; workspace number 
 bindsym Mod4+Shift+r restart
 # exit i3 (logs you out of your X session)
 bindsym Mod4+Shift+e exec "i3-nagbar -t warning -m 'You pressed the exit shortcut. Do you really want to exit i3? This will end your X session.' -B 'Yes, exit i3' 'i3-msg exit'"
-bindsym Mod4+Ctrl+space exec --no-startup-id $HOME/.config/i3/scripts/wallpaper-pick.sh
+bindsym Mod4+Ctrl+space exec --no-startup-id $HOME/.config/i3/scripts/wallpaper/wallpaper-pick.sh
 bindsym Mod4+Ctrl+v exec --no-startup-id copyq show
 bindsym Print exec --no-startup-id i3-screenshot
 bindsym Mod1+Print exec --no-startup-id i3-screenrecord
@@ -214,11 +219,13 @@ bindsym Mod4+Shift+g exec --no-startup-id i3-webapp "https://chatgpt.com/"
 bindsym Mod4+Shift+x exec --no-startup-id i3-webapp "https://x.com/"
 bindsym Mod4+Shift+d exec --no-startup-id i3-webapp "https://discord.com/channels/@me"
 bindsym Mod4+n exec --no-startup-id notes
-bindsym Mod4+Ctrl+n exec --no-startup-id bash $HOME/.config/i3/scripts/notifications.sh
-bindsym Mod4+v exec --no-startup-id sh -c "cliphist list | rofi -dmenu -i -theme ~/.config/rofi/dwm-clip.rasi -p 'Clipboard' | cliphist decode | xclip -selection clipboard -i"
+bindsym Mod4+Ctrl+n exec --no-startup-id bash $HOME/.config/i3/scripts/notifications/notifications.sh
+# Clipboard history via Walker. Inside the menu, Ctrl+d deletes the selected item.
+bindsym Mod4+v exec --no-startup-id $HOME/.config/i3/scripts/launchers/i3-launch-walker -m clipboard
+bindsym Mod4+Escape exec --no-startup-id i3-sys
 
-bindsym Mod1+Tab exec --no-startup-id $HOME/.config/i3/scripts/focus-next.sh
-bindsym Mod1+Shift+Tab exec --no-startup-id $HOME/.config/i3/scripts/focus-next.sh prev
+bindsym Mod1+Tab exec --no-startup-id $HOME/.config/i3/scripts/utils/focus-next.sh
+bindsym Mod1+Shift+Tab exec --no-startup-id $HOME/.config/i3/scripts/utils/focus-next.sh prev
 
 # resize window (you can also use the mouse for that)
 mode "resize" {

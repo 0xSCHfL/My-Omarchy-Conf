@@ -10,7 +10,7 @@
 COLS=100
 ROWS=30
 
-# Liberation Mono pixelsize=16 ≈ 9px wide, 20px tall per cell
+# Iosevka pixelsize=16 is slightly narrower than Liberation Mono, so the box stays compact.
 WW=$(( COLS * 9 ))
 WH=$(( ROWS * 20 ))
 
@@ -32,7 +32,7 @@ PICS="${PICS:-$HOME/Work/dotfiles/wallpapers}"
 export PICS
 
 st \
-    -f 'Liberation Mono:pixelsize=16:antialias=true:autohint=true' \
+    -f 'Iosevka:pixelsize=16:antialias=true:autohint=true' \
     -c fzfmenu -n fzfmenu -T fzf \
     -g "${COLS}x${ROWS}+${X}+${Y}" \
     -e fzfub "$PICS" m

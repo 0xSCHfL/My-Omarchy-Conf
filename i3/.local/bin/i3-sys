@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
 
-case "$(printf "kill\nsuspend\nreboot\nshutdown" | dmenu -i -l 4 -p "System:")" in
-    kill) ps -u "$USER" -o pid,comm,%cpu,%mem | dmenu -i -l 10 -p "Kill:" | awk '{print $1}' | xargs -r kill ;;
+theme="$HOME/.config/rofi/i3-launcher.rasi"
+
+choose() {
+  rofi -dmenu -no-sort -i -theme "$theme" -p "$1"
+}
+
+case "$(printf "kill\nsuspend\nreboot\nshutdown" | choose "System:")" in
+    kill) ps -u "$USER" -o pid,comm,%cpu,%mem | choose "Kill:" | awk '{print $1}' | xargs -r kill ;;
     suspend) systemctl suspend ;;
     reboot) systemctl reboot ;;
     shutdown) shutdown now ;;

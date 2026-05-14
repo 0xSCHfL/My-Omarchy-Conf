@@ -13,7 +13,12 @@ Super + w            → Close window
 Super + q            → qutebrowser
 Super + f            → Fullscreen toggle
 Super + Alt + f      → Full-width maximize toggle
-Super + h            → Split horizontal
+Super + h            → Focus left
+Super + j            → Focus down
+Super + k            → Focus up
+Super + l            → Focus right
+Super + Ctrl + h     → Split horizontal
+Super + Ctrl + l     → Split vertical
 Super + o            → Layout stacking
 Super + e            → Toggle split layout
 Super + t            → Toggle floating
@@ -22,10 +27,8 @@ Super + Shift + f    → Maximize window
 Super + Shift + space → Toggle floating
 Super + a            → Focus parent
 Super + r            → Resize mode
-Super + j / k        → Focus down / up
-Super + l / ;        → Focus left / right
 Super + Left/Down/Up/Right → Focus direction
-Super + Shift + j/k/l/; → Move window down/up/left/right
+Super + Shift + h/j/k/l → Move window left/down/up/right
 EOF
 }
 
@@ -52,13 +55,14 @@ Super + Shift + c    → Chromium
 Super + Shift + o    → Obsidian
 Super + Shift + t    → btop
 Super + Shift + i    → Image picker
-Super + Shift + v    → Image clipboard history
+Super + Shift + v    → Image clipboard history (Space select, Ctrl+d deletes selected)
 Super + Shift + s    → System menu
+Super + Escape       → System menu
 Super + Shift + w    → WhatsApp
 Super + Shift + g    → ChatGPT
 Super + Shift + x    → Twitter / X
 Super + Shift + d    → Discord
-Super + v            → Text clipboard history
+Super + v            → Clipboard manager (Walker, Ctrl+d deletes)
 Super + Ctrl + v     → Copyq show
 Super + n            → Notes
 Super + F1           → Keybindings help

@@ -2,7 +2,7 @@
 COLS=107
 ROWS=12
 
-# Liberation Mono pixelsize=16 ≈ 9px wide, 20px tall per cell
+# Iosevka pixelsize=16 is slightly narrower than Liberation Mono, so the box stays compact.
 WW=$(( COLS * 9 ))
 WH=$(( ROWS * 20 ))
 
@@ -21,7 +21,7 @@ X=$(( CX - WW / 2 ))
 Y=$(( CY - WH / 2 ))
 
 st \
-    -f 'Liberation Mono:pixelsize=16:antialias=true:autohint=true' \
+    -f 'Iosevka:pixelsize=16:antialias=true:autohint=true' \
     -c fzfmenu -n fzfmenu -T fzf \
     -g "${COLS}x${ROWS}+${X}+${Y}" \
     -e fzfub ~/.cache/hist c --tac
