@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+path="${1:-}"
+if [ -z "$path" ] || [ ! -f "$path" ]; then
+  echo "usage: $0 <image-file>" >&2
+  exit 1
+fi
+
+mime="$(file -b --mime-type -- "$path" 2>/dev/null || true)"
+case "$mime" in
+  image/*) ;;
+  *)
+    case "${path##*.}" in
+      png) mime="image/png" ;;
+      jpg|jpeg) mime="image/jpeg" ;;
+      webp) mime="image/webp" ;;
+      bmp) mime="image/bmp" ;;
+      tif|tiff) mime="image/tiff" ;;
+      *) mime="image/png" ;;
+    esac
+    ;;
+esac
+
+exec xclip -selection clipboard -t "$mime" < "$path"

@@ -2,7 +2,7 @@
 
 STATE_FILE="/tmp/timericon"
 PID_FILE="/tmp/i3blocks_timer.pid"
-SIGNAL_NUM=4
+SIGNAL_NUM=3
 TERMINAL_BIN="${TERMINAL:-kitty}"
 
 if command -v readlink >/dev/null 2>&1; then
@@ -53,7 +53,6 @@ print_status() {
 
 cleanup() {
     clear_state
-    pkill -RTMIN+3 dwmblocks 2>/dev/null
     refresh_bar
     exit 0
 }
@@ -66,7 +65,6 @@ timer () {
         MIN=$(printf "%02d" $((TOTAL_SECONDS / 60)))
         SEC=$(printf "%02d" $((TOTAL_SECONDS % 60)))
         echo "󰔛 $MIN:$SEC" > "$STATE_FILE"
-        pkill -RTMIN+3 dwmblocks 2>/dev/null
         refresh_bar
         sleep 1
         ((TOTAL_SECONDS--))

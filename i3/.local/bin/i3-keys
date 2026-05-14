@@ -56,7 +56,6 @@ Super + Shift + o    → Obsidian
 Super + Shift + t    → btop
 Super + Shift + i    → Image picker
 Super + Shift + v    → Image clipboard history (Space select, Ctrl+d deletes selected)
-Super + Shift + s    → System menu
 Super + Escape       → System menu
 Super + Shift + w    → WhatsApp
 Super + Shift + g    → ChatGPT
@@ -72,9 +71,9 @@ EOF
 }
 
 media_keys() { cat <<'EOF'
-XF86AudioRaiseVol    → Volume up
-XF86AudioLowerVol    → Volume down
-XF86AudioMute        → Mute/unmute
+XF86AudioRaiseVol    → Volume up (popup)
+XF86AudioLowerVol    → Volume down (popup)
+XF86AudioMute        → Mute/unmute (popup)
 XF86AudioMicMute     → Mute microphone
 Print                → Screenshot (flameshot)
 Alt + Print          → Screen recording

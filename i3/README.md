@@ -9,6 +9,7 @@ My [i3](https://i3wm.org/) window manager configuration for Arch Linux.
 - **Kitty** as default terminal
 - **Dunst** for notifications
 - **CopyQ** for clipboard management
+- **Floating volume popup** for audio feedback
 - **i3blocks** status bar with custom scripts
 - **Pywal** integration for dynamic colorschemes
 - **fzf/st** wallpaper picker with previews
@@ -31,7 +32,7 @@ My [i3](https://i3wm.org/) window manager configuration for Arch Linux.
 │   ├── notifications/
 │   │   └── notifications.sh   # Dunst controls and history
 │   ├── media/
-│   │   └── volume-osd.sh      # Volume OSD
+│   │   └── volume-osd.sh      # Floating volume popup wrapper
 │   └── utils/
 │       ├── float-toggle.sh    # Toggle floating/tiling
 │       ├── focus-next.sh      # Cycle focus between windows
@@ -65,7 +66,6 @@ My [i3](https://i3wm.org/) window manager configuration for Arch Linux.
 | `Super+Shift+e` | Exit i3 |
 | `Super+Ctrl+Space` | Wallpaper picker (rofi) |
 | `Super+Shift+i` | Image picker |
-| `Super+Shift+s` | System menu (kill/reboot/shutdown) |
 | `Super+Shift+v` | Image clipboard history (`Space` selects, `Ctrl+d` deletes selected) |
 | `Super+v` | Clipboard history (Walker) |
 | `Super+Ctrl+v` | CopyQ show |
