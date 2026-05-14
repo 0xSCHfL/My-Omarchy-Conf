@@ -18,8 +18,9 @@ My [i3](https://i3wm.org/) window manager configuration for Arch Linux.
 ## Structure
 
 ```
-~/.config/i3/
-├── config                     # Main i3 configuration
+~
+├── .config/i3/                # Main i3 configuration
+├── .config/swayosd/           # Optional SwayOSD theme/config files
 ├── scripts/
 │   ├── launchers/
 │   │   ├── i3-launch-walker   # Walker launcher for clipboard and menus
