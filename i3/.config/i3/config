@@ -132,6 +132,7 @@ bindsym Mod4+f fullscreen toggle
 
 # maximize (fill workspace, bar stays visible)
 bindsym Mod4+Shift+f exec ~/.config/i3/maximize.sh
+bindsym Mod4+Mod1+f exec --no-startup-id ~/.config/i3/maximize.sh
 
 # change container layout (stacked, tabbed, toggle split)
 bindsym Mod4+o layout stacking
@@ -198,7 +199,7 @@ bindsym Mod4+Shift+0 move container to workspace number $ws10; workspace number 
 bindsym Mod4+Shift+r restart
 # exit i3 (logs you out of your X session)
 bindsym Mod4+Shift+e exec "i3-nagbar -t warning -m 'You pressed the exit shortcut. Do you really want to exit i3? This will end your X session.' -B 'Yes, exit i3' 'i3-msg exit'"
-bindsym Mod4+Ctrl+space exec --no-startup-id kitty --class fzfmenu -e $HOME/.config/i3/scripts/wallpaper-pick.sh
+bindsym Mod4+Ctrl+space exec --no-startup-id $HOME/.config/i3/scripts/wallpaper-pick.sh
 bindsym Mod4+Ctrl+v exec --no-startup-id copyq show
 bindsym Print exec --no-startup-id i3-screenshot
 bindsym Mod1+Print exec --no-startup-id i3-screenrecord

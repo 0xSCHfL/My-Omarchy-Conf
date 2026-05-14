@@ -12,6 +12,7 @@ Super + Return       → Terminal (kitty)
 Super + w            → Close window
 Super + q            → qutebrowser
 Super + f            → Fullscreen toggle
+Super + Alt + f      → Full-width maximize toggle
 Super + h            → Split horizontal
 Super + o            → Layout stacking
 Super + e            → Toggle split layout

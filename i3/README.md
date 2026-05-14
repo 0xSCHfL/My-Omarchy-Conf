@@ -40,6 +40,7 @@ My [i3](https://i3wm.org/) window manager configuration for Arch Linux.
 | `Super+j/k` | Focus next/prev window |
 | `Super+h/l` | Split horizontal / layout toggle |
 | `Super+f` | Fullscreen toggle |
+| `Super+Alt+f` | Full-width maximize toggle |
 | `Super+t` | Toggle floating |
 | `Super+1-0` | Switch workspace |
 | `Super+Shift+q` | Kill window |
