@@ -3,9 +3,9 @@ set -euo pipefail
 
 action="${1:-}"
 case "$action" in
-  up)   wpctl set-volume @DEFAULT_AUDIO_SINK 5%+ ;;
-  down) wpctl set-volume @DEFAULT_AUDIO_SINK 5%- ;;
-  mute) wpctl set-mute @DEFAULT_AUDIO_SINK toggle ;;
+  up)   pactl set-sink-volume @DEFAULT_SINK@ +5% ;;
+  down) pactl set-sink-volume @DEFAULT_SINK@ -5% ;;
+  mute) pactl set-sink-mute @DEFAULT_SINK@ toggle ;;
   *)
     echo "usage: $0 {up|down|mute}" >&2
     exit 1
@@ -14,14 +14,14 @@ esac
 
 pkill -RTMIN+10 i3blocks
 
-vol="$(wpctl get-volume @DEFAULT_AUDIO_SINK | awk '{print int($2 * 100)}')"
-mute="$(wpctl get-volume @DEFAULT_AUDIO_SINK | grep -q 'MUTED' && echo 1 || echo 0)"
+vol="$(pactl get-sink-volume @DEFAULT_SINK@ | awk '/Volume/{print $5}' | tr -d '%')"
+muted="$(pactl get-sink-mute @DEFAULT_SINK@ | awk '{print $2}')"
 
 bar_width=20
 filled=$(( vol * bar_width / 100 ))
 empty=$(( bar_width - filled ))
 
-if [ "$mute" = 1 ]; then
+if [ "$muted" = "yes" ]; then
   label="Muted"
   bar="$(printf '%*s' "$bar_width" '' | tr ' ' '▇')"
   percent=0
