@@ -3,17 +3,17 @@ set -euo pipefail
 
 action="${1:-}"
 case "$action" in
-  up)   pactl set-sink-volume @DEFAULT_SINK@ +5% ;;
-  down) pactl set-sink-volume @DEFAULT_SINK@ -5% ;;
-  mute) pactl set-sink-mute @DEFAULT_SINK@ toggle ;;
+  up)   wpctl set-volume @DEFAULT_AUDIO_SINK 5%+ ;;
+  down) wpctl set-volume @DEFAULT_AUDIO_SINK 5%- ;;
+  mute) wpctl set-mute @DEFAULT_AUDIO_SINK toggle ;;
   *)
     echo "usage: $0 {up|down|mute}" >&2
     exit 1
     ;;
 esac
 
-vol="$(pactl get-sink-volume @DEFAULT_SINK@ | awk '/Volume/ {print int($5)}' | tail -n1)"
-mute="$(pactl get-sink-mute @DEFAULT_SINK@ | grep -q yes && echo 1 || echo 0)"
+vol="$(wpctl get-volume @DEFAULT_AUDIO_SINK | awk '{print int($2 * 100)}')"
+mute="$(wpctl get-volume @DEFAULT_AUDIO_SINK | grep -q 'MUTED' && echo 1 || echo 0)"
 
 bar_width=20
 filled=$(( vol * bar_width / 100 ))

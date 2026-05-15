@@ -30,6 +30,9 @@ for_window [class=".*"] border none
 # Start XDG autostart .desktop files using dex. See also
 # https://wiki.archlinux.org/index.php/XDG_Autostart
 exec --no-startup-id dex --autostart --environment i3
+exec --no-startup-id dbus-run-session -- /usr/bin/pipewire
+exec --no-startup-id dbus-run-session -- /usr/bin/wireplumber
+exec --no-startup-id dbus-run-session -- /usr/bin/pipewire-pulse
 
 # The combination of xss-lock, nm-applet and pactl is a popular choice, so
 # they are included here as an example. Modify as you see fit.
@@ -51,12 +54,19 @@ exec --no-startup-id $HOME/.config/i3/scripts/wallpaper/wallpaper-set.sh
 exec_always --no-startup-id $HOME/.local/bin/i3-cliphist
 exec_always --no-startup-id $HOME/.local/bin/i3-imgclipwatch
 exec_always --no-startup-id $HOME/.local/bin/batmon
+exec_always --no-startup-id ~/.config/i3blocks/scripts/battery-monitor
 
 # Volume keys with a real i3 floating popup
 bindsym XF86AudioRaiseVolume exec --no-startup-id $HOME/.config/i3/scripts/media/volume-osd.sh up
 bindsym XF86AudioLowerVolume exec --no-startup-id $HOME/.config/i3/scripts/media/volume-osd.sh down
 bindsym XF86AudioMute exec --no-startup-id $HOME/.config/i3/scripts/media/volume-osd.sh mute
 bindsym XF86AudioMicMute exec --no-startup-id pactl set-source-mute @DEFAULT_SOURCE@ toggle
+
+# Notification controls (dunst)
+bindsym Mod4+comma exec dunstctl close
+bindsym Mod4+Shift+comma exec dunstctl close-all
+bindsym Mod4+Ctrl+comma exec dunstctl set-paused toggle
+bindsym Mod4+Alt+comma exec dunstctl invoke
 
 # use these keys for focus, movement, and resize directions when reaching for
 # the arrows is not convenient
@@ -85,8 +95,8 @@ tiling_drag modifier titlebar
 
 # start a terminal
 bindsym Mod4+Return exec kitty
-bindsym Mod4+Shift+b exec brave
-bindsym Mod4+Shift+c exec chromium
+bindsym Mod4+Shift+b exec brave --ozone-platform=x11
+bindsym Mod4+Shift+c exec chromium --ozone-platform=x11
 bindsym Mod4+Shift+v exec --no-startup-id i3-imgcliphist
 bindsym Mod4+Shift+t exec --no-startup-id i3-btop
 
@@ -135,8 +145,9 @@ bindsym Mod4+Ctrl+l split v
 # enter fullscreen mode for the focused container
 bindsym Mod4+f fullscreen toggle
 
+# file manager
+bindsym Mod4+Shift+f exec --no-startup-id nautilus --new-window
 # maximize (fill workspace, bar stays visible)
-bindsym Mod4+Shift+f exec ~/.config/i3/scripts/utils/maximize.sh
 bindsym Mod4+Mod1+f exec --no-startup-id ~/.config/i3/scripts/utils/maximize.sh
 
 # change container layout (stacked, tabbed, toggle split)
@@ -213,6 +224,7 @@ bindsym Mod4+F1 exec --no-startup-id i3-keys
 bindsym Mod4+q exec --no-startup-id qutebrowser
 bindsym Mod4+Shift+o exec --no-startup-id obsidian
 bindsym Mod4+Shift+i exec --no-startup-id i3-imgpicker
+bindsym Mod4+Alt+t exec --no-startup-id Telegram -theme dark
 bindsym Mod4+Shift+w exec --no-startup-id i3-webapp "https://web.whatsapp.com/"
 bindsym Mod4+Shift+g exec --no-startup-id i3-webapp "https://chatgpt.com/"
 bindsym Mod4+Shift+x exec --no-startup-id i3-webapp "https://x.com/"
@@ -256,7 +268,7 @@ bindsym Mod4+r mode "resize"
 bar {
     status_command i3blocks -c ~/.config/i3blocks/config
     position bottom
-    font pango:Iosevka 11
+    font pango:Iosevka 12
     separator_symbol "▏"
     padding 2px
     colors {

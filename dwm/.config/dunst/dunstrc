@@ -25,17 +25,17 @@
     timeout = 5
 
 [urgency_low]
-    background = "#20170e"
-    foreground = "#D1B68C"
+    background = "#0a0903"
+    foreground = "#AB8F52"
     timeout = 5
 
 [urgency_normal]
-    background = "#20170e"
-    foreground = "#D1B68C"
+    background = "#0a0903"
+    foreground = "#AB8F52"
     timeout = 5
 
 [urgency_critical]
-    background = "#20170e"
-    foreground = "#D1B68C"
+    background = "#0a0903"
+    foreground = "#AB8F52"
     frame_color = "#ff0000"
     timeout = 0

@@ -26,6 +26,11 @@ feh --bg-scale "$WALLPAPER"
 
 if command -v wal >/dev/null 2>&1; then
   wal -q -n -i "$WALLPAPER"
+  if [[ -f "$HOME/.cache/wal/colors.sh" ]]; then
+    source "$HOME/.cache/wal/colors.sh"
+    FLAMESHOT_CONF="$HOME/.config/flameshot/flameshot.ini"
+    [[ -f "$FLAMESHOT_CONF" ]] && sed -i "s/^drawColor=.*/drawColor=${color15}/" "$FLAMESHOT_CONF" 2>/dev/null
+  fi
 fi
 
 if [[ -f "$HOME/.cache/wal/colors.Xresources" ]] && command -v xrdb >/dev/null 2>&1; then

@@ -39,6 +39,11 @@ command=~/.config/i3blocks/scripts/timer
 interval=once
 signal=3
 
+[battery]
+command=BAT=/sys/class/power_supply/BAT0; [ -d "$BAT" ] && echo "🔋 $(cat $BAT/capacity)%" || echo "N/A"
+interval=5
+signal=3
+
 [time]
 command=~/.config/i3blocks/scripts/timedate
 interval=1

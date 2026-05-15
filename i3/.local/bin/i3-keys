@@ -12,7 +12,6 @@ Super + Return       → Terminal (kitty)
 Super + w            → Close window
 Super + q            → qutebrowser
 Super + f            → Fullscreen toggle
-Super + Alt + f      → Full-width maximize toggle
 Super + h            → Focus left
 Super + j            → Focus down
 Super + k            → Focus up
@@ -23,7 +22,8 @@ Super + o            → Layout stacking
 Super + e            → Toggle split layout
 Super + t            → Toggle floating
 Super + Shift + q    → Kill window
-Super + Shift + f    → Maximize window
+Super + Alt + f      → Full-width maximize toggle
+Super + Shift + f    → Nautilus file manager
 Super + Shift + space → Toggle floating
 Super + a            → Focus parent
 Super + r            → Resize mode
@@ -55,6 +55,7 @@ Super + Shift + c    → Chromium
 Super + Shift + o    → Obsidian
 Super + Shift + t    → btop
 Super + Shift + i    → Image picker
+Super + Alt + t      → Telegram
 Super + Shift + v    → Image clipboard history (Space select, Ctrl+d deletes selected)
 Super + Escape       → System menu
 Super + Shift + w    → WhatsApp
@@ -81,6 +82,13 @@ Super + Ctrl + Print → OCR screenshot
 EOF
 }
 
+notification_keys() { cat <<'EOF'
+Super + ,            → Dismiss last notification
+Super + Shift + ,    → Dismiss all notifications
+Super + Ctrl + ,     → Toggle notifications
+EOF
+}
+
 wallpaper_keys() { cat <<'EOF'
 Super + Ctrl + Space → Wallpaper picker (rofi)
 --- Inside image picker (Super+Shift+i) ---
@@ -95,17 +103,19 @@ while true; do
       '  Scratchpad' \
       '  Apps & launchers' \
       '  Media & volume' \
+      '  Notifications' \
       '  Wallpaper' \
       | rofi_menu 'i3 Keybindings')
 
   [ -z "$CATEGORY" ] && break
 
   case "$CATEGORY" in
-    *Windows*)   window_keys     | rofi_menu 'Windows' ;;
-    *Workspace*) workspace_keys  | rofi_menu 'Workspaces' ;;
-    *Scratch*)   scratchpad_keys | rofi_menu 'Scratchpad' ;;
-    *Apps*)      apps_keys       | rofi_menu 'Apps' ;;
-    *Media*)     media_keys      | rofi_menu 'Media' ;;
-    *Wallpaper*) wallpaper_keys  | rofi_menu 'Wallpaper' ;;
+    *Windows*)   window_keys         | rofi_menu 'Windows' ;;
+    *Workspace*) workspace_keys      | rofi_menu 'Workspaces' ;;
+    *Scratch*)   scratchpad_keys     | rofi_menu 'Scratchpad' ;;
+    *Apps*)      apps_keys           | rofi_menu 'Apps' ;;
+    *Media*)     media_keys          | rofi_menu 'Media' ;;
+    *Notif*)     notification_keys   | rofi_menu 'Notifications' ;;
+    *Wallpaper*) wallpaper_keys       | rofi_menu 'Wallpaper' ;;
   esac
 done
