@@ -30,9 +30,7 @@ for_window [class=".*"] border none
 # Start XDG autostart .desktop files using dex. See also
 # https://wiki.archlinux.org/index.php/XDG_Autostart
 exec --no-startup-id dex --autostart --environment i3
-exec --no-startup-id dbus-run-session -- /usr/bin/pipewire
-exec --no-startup-id dbus-run-session -- /usr/bin/wireplumber
-exec --no-startup-id dbus-run-session -- /usr/bin/pipewire-pulse
+exec --no-startup-id systemctl --user start pipewire pipewire-pulse wireplumber
 
 # The combination of xss-lock, nm-applet and pactl is a popular choice, so
 # they are included here as an example. Modify as you see fit.
@@ -231,6 +229,7 @@ bindsym Mod4+Shift+x exec --no-startup-id i3-webapp "https://x.com/"
 bindsym Mod4+Shift+d exec --no-startup-id i3-webapp "https://discord.com/channels/@me"
 bindsym Mod4+n exec --no-startup-id notes
 bindsym Mod4+Ctrl+n exec --no-startup-id bash $HOME/.config/i3/scripts/notifications/notifications.sh
+bindsym Mod4+Shift+n exec --no-startup-id nvim
 # Clipboard history via Walker. Inside the menu, Ctrl+d deletes the selected item.
 bindsym Mod4+v exec --no-startup-id $HOME/.config/i3/scripts/launchers/i3-launch-walker -m clipboard
 bindsym Mod4+Escape exec --no-startup-id i3-sys

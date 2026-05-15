@@ -32,7 +32,8 @@ signal=3
 
 [audio]
 command=vol=$(pactl get-sink-volume @DEFAULT_SINK@ | awk '/Volume/{printf "%d%%", $5}'); mute=$(pactl get-sink-mute @DEFAULT_SINK@); [ "$mute" = "Mute: yes" ] && echo "Vol: $vol [M]" || echo "Vol: $vol"
-interval=1
+interval=once
+signal=10
 
 [timer]
 command=~/.config/i3blocks/scripts/timer
