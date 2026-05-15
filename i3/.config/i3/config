@@ -64,6 +64,10 @@ bindsym XF86AudioMicMute exec --no-startup-id pactl set-source-mute @DEFAULT_SOU
 bindsym XF86MonBrightnessUp exec --no-startup-id brightnessctl set +5%
 bindsym XF86MonBrightnessDown exec --no-startup-id brightnessctl set 5%-
 
+# WiFi and Audio controls
+bindsym Mod4+Ctrl+w exec --no-startup-id $HOME/.config/i3/scripts/media/i3-launch-wifi.sh
+bindsym Mod4+Ctrl+a exec --no-startup-id $HOME/.config/i3/scripts/media/i3-launch-audio.sh
+
 # Notification controls (dunst)
 bindsym Mod4+comma exec dunstctl close
 bindsym Mod4+Shift+comma exec dunstctl close-all
@@ -90,6 +94,8 @@ for_window [title="volume-osd"] floating enable, resize set 360 100, move positi
 for_window [class="i3statspopup"] floating enable, resize set 900 650, move position center
 for_window [class="i3diskpopup"] floating enable, resize set 760 360, move position center
 for_window [class="i3timerpopup"] floating enable, resize set 520 220, move position center
+for_window [class="i3-wifi"] floating enable, resize set 800 600, move position center
+for_window [class="i3-audio"] floating enable, resize set 800 600, move position center
 
 # move tiling windows via drag & drop by left-clicking into the title bar,
 # or left-clicking anywhere into the window while holding the floating modifier.
@@ -214,6 +220,7 @@ bindsym Mod4+Shift+0 move container to workspace number $ws10; workspace number 
 
 # restart i3 inplace (preserves your layout/session, can be used to upgrade i3)
 bindsym Mod4+Shift+r restart
+bindsym Mod4+Ctrl+r exec i3-msg reload
 # exit i3 (logs you out of your X session)
 bindsym Mod4+Shift+q exec "echo -e 'No\nYes' | rofi -dmenu -no-sort -i -theme ~/.config/rofi/dwm-keys.rasi -kb-row-up 'k,Up' -kb-row-down 'j,Down' -kb-cancel 'Escape,h,q' -p 'Exit i3?' | grep -q 'Yes' && i3-msg exit"
 bindsym Mod4+Ctrl+space exec --no-startup-id $HOME/.config/i3/scripts/wallpaper/wallpaper-pick.sh

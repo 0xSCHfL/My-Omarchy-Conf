@@ -67,6 +67,7 @@ Super + Ctrl + v     → Copyq show
 Super + n            → Notes
 Super + Ctrl + k     → Keybindings help
 Super + Shift + r    → Restart i3
+Super + Ctrl + r     → Reload i3 config
 Super + Shift + q    → Exit i3
 EOF
 }
