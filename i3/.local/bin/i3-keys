@@ -21,7 +21,6 @@ Super + Ctrl + l     → Split vertical
 Super + o            → Layout stacking
 Super + e            → Toggle split layout
 Super + t            → Toggle floating
-Super + Shift + q    → Kill window
 Super + Alt + f      → Full-width maximize toggle
 Super + Shift + f    → Nautilus file manager
 Super + Shift + space → Toggle floating
@@ -62,12 +61,13 @@ Super + Shift + w    → WhatsApp
 Super + Shift + g    → ChatGPT
 Super + Shift + x    → Twitter / X
 Super + Shift + d    → Discord
+Super + Shift + n    → Neovim
 Super + v            → Clipboard manager (Walker, Ctrl+d deletes)
 Super + Ctrl + v     → Copyq show
 Super + n            → Notes
-Super + F1           → Keybindings help
+Super + Ctrl + k     → Keybindings help
 Super + Shift + r    → Restart i3
-Super + Shift + e    → Exit i3
+Super + Shift + q    → Exit i3
 EOF
 }
 
@@ -76,6 +76,7 @@ XF86AudioRaiseVol    → Volume up (popup)
 XF86AudioLowerVol    → Volume down (popup)
 XF86AudioMute        → Mute/unmute (popup)
 XF86AudioMicMute     → Mute microphone
+Brightness Up/Down   → Brightness +/- (Fn keys)
 Print                → Screenshot (flameshot)
 Alt + Print          → Screen recording
 Super + Ctrl + Print → OCR screenshot
