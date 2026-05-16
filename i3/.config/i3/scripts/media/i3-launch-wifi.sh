@@ -2,5 +2,5 @@
 
 # i3 WiFi Manager - Launch Impala TUI
 
-rfkill unblock wifi
-exec alacritty --class i3-wifi -e impala
+rfkill unblock wifi 2>/dev/null
+alacritty --class i3-wifi -e impala &
