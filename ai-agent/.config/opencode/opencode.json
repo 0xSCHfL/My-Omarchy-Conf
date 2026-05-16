@@ -1,0 +1,21 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "autoupdate": false,
+  "plugin": ["superpowers@git+https://github.com/obra/superpowers.git"],
+  "model": "ollama/phi3-local:latest",
+  "provider": {
+    "ollama": {
+      "models": {
+        "phi3-local:latest": {
+          "_launch": true,
+          "name": "phi3-local:latest"
+        }
+      },
+      "name": "Ollama",
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "http://127.0.0.1:11434/v1"
+      }
+    }
+  }
+}
