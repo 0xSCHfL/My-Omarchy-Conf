@@ -4,15 +4,10 @@ markup=pango
 interval=5
 separator_block_width=2
 
-[workspace]
-command=~/.config/i3blocks/scripts/workspaces
-interval=1
-separator_block_width=10
-
 [window_title]
 command=~/.config/i3blocks/scripts/window-title
 interval=1
-min_width=300
+min_width=320
 separator_block_width=20
 
 [spotify]
