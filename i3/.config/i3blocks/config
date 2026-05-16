@@ -10,9 +10,8 @@ interval=2
 color=#1DB954
 
 [wireless]
-command=essid=$(iwgetid -r 2>/dev/null); [ -n "$essid" ] && echo "W: $essid" || echo "W: down"
+command=~/.config/i3blocks/scripts/wifi
 interval=10
-on_click=$HOME/.config/i3/scripts/media/i3-launch-wifi.sh
 
 [ethernet]
 command=ip=$(ip addr show eno1 2>/dev/null | awk '/inet /{print $2}' | cut -d/ -f1); [ -n "$ip" ] && echo "E: Leaked IP: $ip" || echo "E: N/A"
@@ -32,10 +31,9 @@ interval=30
 signal=3
 
 [audio]
-command=vol=$(pactl get-sink-volume @DEFAULT_SINK@ | awk '/Volume/{printf "%d%%", $5}'); mute=$(pactl get-sink-mute @DEFAULT_SINK@); [ "$mute" = "Mute: yes" ] && echo "Vol: $vol [M]" || echo "Vol: $vol"
-interval=once
+command=~/.config/i3blocks/scripts/audio
+interval=2
 signal=10
-on_click=$HOME/.config/i3/scripts/media/i3-launch-audio.sh
 
 [timer]
 command=~/.config/i3blocks/scripts/timer
