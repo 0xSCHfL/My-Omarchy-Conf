@@ -41,6 +41,10 @@ My [i3](https://i3wm.org/) window manager configuration for Arch Linux.
 ├── .local/bin/
 │   ├── i3-keys                # Manual keybinding menu
 │   └── i3-sys                 # System menu
+├── shell/
+│   ├── .zshenv                # Exports (PATH, XDG, EDITOR, etc.)
+│   ├── .zshrc                 # Zsh config, functions, keybinds
+│   └── .zsh_aliases           # Aliases only (sourced by .zshrc)
 ```
 
 ## Keybindings
@@ -88,10 +92,10 @@ See the [CLAUDE.md](./CLAUDE.md) for a full reference.
 
 ## Skills
 
-- `default/i3-skill` is the source skill for i3 workflow guidance
-- `default/i3-dotfiles-runtime-check` is the source skill for runtime-path debugging
-- `~/.codex/skills/i3` should symlink to `default/i3-skill`
-- `~/.codex/skills/i3-dotfiles-runtime-check` should symlink to `default/i3-dotfiles-runtime-check`
+- `default/i3` is the merged i3 skill (config + runtime debugging) symlinked to `~/.config/opencode/skill/i3`
+  - `references/keybindings.md` — full keybinding reference
+  - `references/wallpaper.md` — wallpaper & pywal docs
+  - `references/runtime-check.md` — live session debugging guide
 
 ## Installation
 
@@ -100,6 +104,14 @@ The i3 config is managed with GNU Stow:
 ```bash
 cd ~/Work/dotfiles && stow i3
 ```
+
+The `shell/` sub-package is stowed separately:
+
+```bash
+cd ~/Work/dotfiles && stow -d i3 -t $HOME shell
+```
+
+This creates `~/.zshenv`, `~/.zshrc`, and `~/.zsh_aliases` as symlinks.
 
 ## Session
 
