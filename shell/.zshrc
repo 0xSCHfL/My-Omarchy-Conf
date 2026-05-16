@@ -56,3 +56,9 @@ eval "$(zoxide init --cmd cd zsh)"
 if [[ -z $DISPLAY ]] && [[ $(tty) = /dev/tty1 ]]; then
   exec startx
 fi
+
+# Dark mode for all applications
+export GTK_THEME=Adwaita-dark
+export GTK_APPLICATIONS_PREFER_DARK_THEME=1
+export QT_STYLE_OVERRIDE=adwaita-dark
+export QT_QPA_PLATFORMTHEME=qt5ct

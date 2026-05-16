@@ -13,6 +13,12 @@
 # is used in the bar {} block below.
 font pango:Iosevka 10
 
+# Dark mode for all applications
+exec --no-startup-id export GTK_THEME=Adwaita-dark
+exec --no-startup-id export GTK_APPLICATIONS_PREFER_DARK_THEME=1
+exec --no-startup-id export QT_STYLE_OVERRIDE=adwaita-dark
+exec --no-startup-id export QT_QPA_PLATFORMTHEME=qt5ct
+
 set_from_resource $wal_bg background #262626
 set_from_resource $wal_fg foreground #c0b18b
 set_from_resource $wal_dim color8 #656565
