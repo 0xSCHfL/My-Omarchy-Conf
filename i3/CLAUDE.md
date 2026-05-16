@@ -17,9 +17,9 @@ Multi-WM dotfiles for Arch Linux with Hyprland (Wayland), i3, and DWM (X11). SDD
 
 ```
 dotfiles/
-├── shell/        # Shared shell config (aliases, .zshrc) — stowed by all WMs
+├── ai-agent/     # Shared AI agent configs (OpenCode, Codex, Claude)
 ├── hyprland/     # Hyprland + Wayland config (bashrc managed here)
-├── i3/           # i3 config
+├── i3/           # i3 config (also includes shell/ sub-package)
 ├── dwm/          # DWM config + suckless tools + scripts
 │   ├── dwm/      # Patched dwm source (config.h, compiled binary)
 │   ├── st/       # Patched st terminal source
@@ -42,9 +42,9 @@ startx         # launch the selected WM
 
 | Package | Contents |
 |---------|----------|
-| `shell` | `.config/shell/aliases`, `.zshrc`, `.local/bin/xsession` |
+| `ai-agent` | OpenCode, Codex, and Claude configs + 33 shared skills |
 | `hyprland` | `.bashrc`, Hyprland/Wayland configs |
-| `i3` | i3 config, scripts |
+| `i3` | i3 config, scripts, `shell/` sub-package (`.zshenv`, `.zshrc`, `.zsh_aliases`) |
 | `dwm` | DWM config, suckless tools, `.local/bin/` scripts, `.xinitrc.dwm` |
 
 Install via `./install.sh` (stows all + installs packages).
@@ -174,7 +174,7 @@ Adjust output names as needed for your hardware.
 | DWM config | `cd ~/Work/dotfiles/dwm/dwm && make && sudo make install && pkill -HUP dwm` |
 | DWM restart | `Super+Shift+r` (builds + installs + restarts) |
 | Scripts | `cd ~/Work/dotfiles && stow --restow dwm` |
-| Shell aliases | `cd ~/Work/dotfiles && stow --restow shell` |
+| Shell aliases | `cd ~/Work/dotfiles && stow -d i3 -t $HOME shell` |
 | picom | `pkill picom && picom --daemon` |
 | dunst | `pkill dunst && dunst &` |
 | xsession | `xsession dwm` or `xsession i3` |
