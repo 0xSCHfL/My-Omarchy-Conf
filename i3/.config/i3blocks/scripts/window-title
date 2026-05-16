@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# Display currently focused window title
+
+# Get focused window title
+FOCUSED_WINDOW=$(i3-msg -t get_tree | jq -r '.. | select(.focused?) | .name' 2>/dev/null)
+
+# Truncate to reasonable length if needed
+MAX_LENGTH=60
+if [ ${#FOCUSED_WINDOW} -gt $MAX_LENGTH ]; then
+    FOCUSED_WINDOW="${FOCUSED_WINDOW:0:$((MAX_LENGTH-3))}..."
+fi
+
+echo "$FOCUSED_WINDOW"
