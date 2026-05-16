@@ -11,4 +11,9 @@ if [ ${#FOCUSED_WINDOW} -gt $MAX_LENGTH ]; then
     FOCUSED_WINDOW="${FOCUSED_WINDOW:0:$((MAX_LENGTH-3))}..."
 fi
 
+# Escape Pango markup special chars to prevent i3bar segfault
+FOCUSED_WINDOW="${FOCUSED_WINDOW//&/&amp;}"
+FOCUSED_WINDOW="${FOCUSED_WINDOW//</&lt;}"
+FOCUSED_WINDOW="${FOCUSED_WINDOW//>/&gt;}"
+
 echo "$FOCUSED_WINDOW"

@@ -37,6 +37,9 @@ for_window [class=".*"] border none
 # https://wiki.archlinux.org/index.php/XDG_Autostart
 exec --no-startup-id dex --autostart --environment i3
 exec --no-startup-id systemctl --user start pipewire pipewire-pulse wireplumber
+exec_always --no-startup-id xinput set-prop "SYNA308F:00 06CB:CD77 Touchpad" "libinput Tapping Enabled" 1
+exec_always --no-startup-id xinput set-prop "SYNA308F:00 06CB:CD77 Touchpad" "libinput Natural Scrolling Enabled" 1
+exec_always --no-startup-id xset s off -dpms
 
 # The combination of xss-lock, nm-applet and pactl is a popular choice, so
 # they are included here as an example. Modify as you see fit.
@@ -54,9 +57,9 @@ exec --no-startup-id dunst
 exec --no-startup-id /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
 exec --no-startup-id copyq
 exec --no-startup-id $HOME/.config/i3/scripts/wallpaper/wallpaper-set.sh
-exec --no-startup-id $HOME/.local/bin/i3-cliphist
-exec --no-startup-id $HOME/.local/bin/i3-imgclipwatch
-exec --no-startup-id $HOME/.local/bin/batmon
+exec_always --no-startup-id bash -c 'pkill -f "\.local/bin/i3-cliphist$" 2>/dev/null; sleep 0.1; exec $HOME/.local/bin/i3-cliphist'
+exec_always --no-startup-id bash -c 'pkill -f "\.local/bin/i3-imgclipwatch$" 2>/dev/null; sleep 0.1; exec $HOME/.local/bin/i3-imgclipwatch'
+exec_always --no-startup-id bash -c 'pkill -f "\.local/bin/batmon$" 2>/dev/null; sleep 0.1; exec $HOME/.local/bin/batmon'
 exec_always --no-startup-id ~/.config/i3blocks/scripts/battery-monitor
 
 # Volume keys with a real i3 floating popup
@@ -108,10 +111,11 @@ tiling_drag modifier titlebar
 
 # start a terminal
 bindsym Mod4+Return exec kitty
-bindsym Mod4+Shift+b exec brave --ozone-platform=x11
-bindsym Mod4+Shift+Alt+b exec brave --incognito --ozone-platform=x11
-bindsym Mod4+Shift+c exec chromium --ozone-platform=x11
-bindsym Mod4+Shift+v exec --no-startup-id i3-imgcliphist
+bindsym Mod4+Shift+b exec bash -c 'rm -f ~/.config/BraveSoftware/Brave-Browser/Singleton* && brave --ozone-platform=x11'
+bindsym Mod4+Shift+s exec bash -c 'rm -f ~/.var/app/com.spotify.Client/cache/spotify/Singleton* && flatpak run com.spotify.Client'
+bindsym Mod4+Shift+Alt+b exec bash -c 'rm -f ~/.config/BraveSoftware/Brave-Browser/Singleton* && brave --incognito --ozone-platform=x11'
+bindsym Mod4+Shift+c exec bash -c 'rm -f ~/.config/chromium/Singleton* && chromium --ozone-platform=x11'
+# Super+Shift+v merged into Super+v (combined text+image picker)
 bindsym Mod4+Shift+t exec --no-startup-id kitty -e btop
 bindsym Mod4+Shift+m exec --no-startup-id ~/.config/i3blocks/scripts/timer menu
 
@@ -244,14 +248,16 @@ bindsym Mod4+Alt+t exec --no-startup-id Telegram -theme dark
 bindsym Mod4+Shift+w exec --no-startup-id i3-webapp "https://web.whatsapp.com/"
 bindsym Mod4+Shift+g exec --no-startup-id i3-webapp "https://chatgpt.com/"
 bindsym Mod4+Shift+x exec --no-startup-id i3-webapp "https://x.com/"
-bindsym Mod4+Shift+d exec --no-startup-id i3-webapp "https://discord.com/channels/@me"
+bindsym Mod4+Shift+d exec --no-startup-id discord
 bindsym Mod4+Shift+e exec --no-startup-id $HOME/.config/i3/scripts/launchers/i3-email-picker.sh
 bindsym Mod4+n exec --no-startup-id notes
 bindsym Mod4+Ctrl+n exec --no-startup-id bash $HOME/.config/i3/scripts/notifications/notifications.sh
 bindsym Mod4+Shift+n exec --no-startup-id kitty -e nvim
 # Clipboard history via rofi
-bindsym Mod4+v exec --no-startup-id "cliphist list| rofi -dmenu -no-sort -i -theme ~/.config/rofi/dwm-keys.rasi -kb-row-up 'k,Up' -kb-row-down 'j,Down' -kb-cancel 'Escape,h,q' -p 'Clipboard:'| cliphist decode| xclip -selection clipboard"
+bindsym Mod4+v exec --no-startup-id i3-cliphist-pick
+bindsym Mod4+Shift+v exec --no-startup-id i3-imgcliphist
 bindsym Mod4+Escape exec --no-startup-id i3-sys
+bindsym Mod4+Delete exec --no-startup-id i3-kill
 
 bindsym Mod1+Tab exec --no-startup-id $HOME/.config/i3/scripts/utils/focus-next.sh
 bindsym Mod1+Shift+Tab exec --no-startup-id $HOME/.config/i3/scripts/utils/focus-next.sh prev
@@ -294,7 +300,7 @@ bar {
         background $wal_bg
         statusline $wal_fg
         separator  $wal_dim
-        focused_workspace  $wal_bg $wal_bg $wal_accent
+        focused_workspace  $wal_accent $wal_accent $wal_bg
         active_workspace   $wal_bg $wal_bg $wal_fg
         inactive_workspace $wal_bg $wal_bg $wal_dim
         urgent_workspace   $wal_alert $wal_alert $wal_bg

@@ -38,7 +38,8 @@ while :; do
                 OUTFILE="$HIST_DIR/$(date +%Y-%m-%d_%H-%M-%S).$ext"
                 mv "$TMPFILE" "$OUTFILE"
                 echo "[$(date)] Saved to $OUTFILE" >> "$LOGFILE"
-                xclip -selection clipboard -t "$mime" < "$OUTFILE" &
+                pkill -f "xclip -selection clipboard -loops" 2>/dev/null || true
+                xclip -selection clipboard -t "$mime" -loops 0 < "$OUTFILE" &
             else
                 echo "[$(date)] Duplicate, skipping" >> "$LOGFILE"
                 rm -f "$TMPFILE"

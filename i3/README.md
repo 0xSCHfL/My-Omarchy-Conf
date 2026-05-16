@@ -4,47 +4,44 @@ My [i3](https://i3wm.org/) window manager configuration for Arch Linux.
 
 ## Features
 
-- **Rofi** as application launcher (Super+Space)
-- **Picom** compositor for transparency and smooth transitions
-- **Kitty** as default terminal
-- **Dunst** for notifications
-- **CopyQ** for clipboard management
-- **Floating volume popup** for audio feedback
-- **i3blocks** status bar with custom scripts
-- **Pywal** integration for dynamic colorschemes
-- **fzf/st** wallpaper picker with previews
-- Gaps, smart borders, floating window management
+- **Rofi** — app launcher, clipboard history, system menus
+- **Picom** — compositor (transparency, shadows)
+- **Kitty** — primary terminal; **Alacritty** for popup TUIs (wifi, audio)
+- **Dunst** — notifications with pywal colors
+- **CopyQ** — clipboard manager (tray)
+- **cliphist** — text clipboard history daemon
+- **i3blocks** — status bar with custom scripts
+- **Polybar** — secondary bar launcher (starts nm-applet, copyq, flameshot)
+- **Pywal** — dynamic colorschemes synced to kitty, alacritty, dunst, SDDM, rofi
+- **SDDM i3-login theme** — custom login screen with pywal colors + wallpaper
+- **i3lock-color** — lock screen with blurred background and bar indicator
+- **fzfub + ueberzugpp** — image picker with previews
+- **impala** — wifi TUI (AUR); **wiremix** — audio TUI (AUR)
 
 ## Structure
 
 ```
-~
-├── .config/i3/                # Main i3 configuration
-├── .config/swayosd/           # Optional SwayOSD theme/config files
-├── scripts/
-│   ├── launchers/
-│   │   ├── i3-launch-walker   # Walker launcher for clipboard and menus
-│   │   └── show-keybindings.sh # Display keybinding cheatsheet
-│   ├── wallpaper/
-│   │   ├── wallpaper-set.sh   # Restore wallpaper and pywal state
-│   │   ├── wallpaper-pick.sh  # Wallpaper picker
-│   │   ├── wallpaper-pick-fzf.sh
-│   │   └── wallpaper-next.sh  # Cycle to next wallpaper
-│   ├── notifications/
-│   │   └── notifications.sh   # Dunst controls and history
-│   ├── media/
-│   │   └── volume-osd.sh      # Floating volume popup wrapper
-│   └── utils/
-│       ├── float-toggle.sh    # Toggle floating/tiling
-│       ├── focus-next.sh      # Cycle focus between windows
-│       └── maximize.sh        # Full-width maximize toggle
-├── .local/bin/
-│   ├── i3-keys                # Manual keybinding menu
-│   └── i3-sys                 # System menu
-├── shell/
-│   ├── .zshenv                # Exports (PATH, XDG, EDITOR, etc.)
-│   ├── .zshrc                 # Zsh config, functions, keybinds
-│   └── .zsh_aliases           # Aliases only (sourced by .zshrc)
+dotfiles/i3/
+├── .config/i3/
+│   ├── config                    # All keybindings, startup, window rules
+│   └── scripts/
+│       ├── wallpaper/            # wallpaper-set.sh, wallpaper-pick.sh, wallpaper-next.sh
+│       ├── media/                # volume-osd.sh (yad), i3-launch-wifi.sh, i3-launch-audio.sh
+│       ├── launchers/            # i3-email-picker.sh
+│       ├── notifications/        # notifications.sh
+│       └── utils/                # float-toggle.sh, focus-next.sh, maximize.sh
+├── .config/i3blocks/             # Bar config + scripts (audio, wifi, battery, timer, etc.)
+├── .config/polybar/              # Polybar config + launch.sh
+├── .config/rofi/                 # Launcher themes (.rasi)
+├── .config/kitty/                # kitty config (pywal include)
+├── .config/alacritty/            # alacritty config (pywal include)
+├── .config/dunst/                # Notification config + pywal generation
+├── .config/tmux/                 # tmux config
+├── .config/nvim/                 # Neovim config
+├── .local/bin/                   # Custom scripts (see below)
+├── shell/                        # .zshrc, .zshenv, .zsh_aliases (stowed separately)
+├── .xinitrc.i3                   # X session startup
+└── sddm-theme/i3-login/          # SDDM login theme (symlinked to /usr/share/sddm/themes/)
 ```
 
 ## Keybindings
@@ -52,94 +49,133 @@ My [i3](https://i3wm.org/) window manager configuration for Arch Linux.
 | Key | Action |
 |-----|--------|
 | `Super+Return` | Terminal (kitty) |
-| `Super+Space` | Application launcher (rofi) |
-| `Super+q` | Browser (qutebrowser) |
+| `Super+Space` | App launcher (rofi) |
 | `Super+w` | Close window |
+| `Super+q` | Browser (qutebrowser) |
+| `Super+Shift+b` | Brave |
+| `Super+Shift+c` | Chromium |
+| `Super+Shift+o` | Obsidian |
+| `Super+Alt+t` | Telegram |
+| `Super+Shift+n` | Neovim |
+| `Super+Shift+f` | File manager (nautilus) |
 | `Super+h/j/k/l` | Focus left/down/up/right |
-| `Super+Shift+h/j/k/l` | Move window left/down/up/right |
-| `Super+Ctrl+h` | Split horizontal |
-| `Super+Ctrl+l` | Split vertical |
-| `Super+f` | Fullscreen toggle |
-| `Super+Alt+f` | Full-width maximize toggle |
+| `Super+Shift+h/j/k/l` | Move window |
+| `Super+Ctrl+h/l` | Split horizontal/vertical |
+| `Super+f` | Fullscreen |
+| `Super+Alt+f` | Full-width maximize |
 | `Super+t` | Toggle floating |
-| `Super+Escape` | System menu |
 | `Super+1-0` | Switch workspace |
-| `Super+Shift+q` | Kill window |
-| `Super+Shift+Space` | Toggle floating |
 | `Super+Shift+1-0` | Move window to workspace |
 | `Super+Shift+r` | Restart i3 |
-| `Super+Shift+e` | Exit i3 |
-| `Super+Ctrl+Space` | Wallpaper picker (rofi) |
-| `Super+Shift+i` | Image picker |
-| `Super+Shift+v` | Image clipboard history (`Space` selects, `Ctrl+d` deletes selected) |
-| `Super+v` | Clipboard history (Walker) |
+| `Super+Ctrl+r` | Reload i3 config |
+| `Super+Shift+q` | Exit i3 |
+| `Super+Escape` | System menu (suspend/reboot/shutdown) |
+| `Super+Delete` | Process killer |
+| `Super+x` | Lock screen |
+| `Super+Ctrl+k` | Keybinding cheatsheet |
+| `Super+Ctrl+Space` | Wallpaper picker |
+| `Super+Shift+i` | Image picker (fzfub) |
+| `Super+Shift+v` | Image clipboard history |
+| `Super+v` | Text clipboard history (cliphist) |
 | `Super+Ctrl+v` | CopyQ show |
 | `Super+n` | Notes |
-| `Super+F1` | Keybinding cheatsheet |
-| `Print` | Screenshot (flameshot) |
-| `Alt+Print` | Screen recording |
-| `Super+Ctrl+Print` | OCR screenshot |
-| `Alt+Tab` | Cycle focus between windows |
+| `Super+Ctrl+n` | Notification history |
+| `Print` | Screenshot → clipboard (maim) |
+| `Alt+Print` | Screen recording (ffmpeg) |
+| `Super+Ctrl+Print` | OCR screenshot (tesseract) |
+| `Alt+Tab` | Cycle focus |
+| `Super+Ctrl+w` | WiFi TUI (impala) |
+| `Super+Ctrl+a` | Audio TUI (wiremix) |
+| `Super+comma` | Close notification |
+| `Super+Ctrl+comma` | Toggle pause notifications |
 
-See the [CLAUDE.md](./CLAUDE.md) for a full reference.
+Web apps (`Super+Shift+w/g/x/d/e`): WhatsApp, ChatGPT, X, Discord, Email
 
-## Wallpaper
+## Custom Scripts (`~/.local/bin/`)
 
-- Restored from `~/.cache/wal/wal` on startup (last pywal selection)
-- Default: `../wallpapers/0024.jpg`
-- Pick via Rofi with `Super+Ctrl+Space`
-- Set with pywal via `Super+Shift+i` → select image → `Alt+w`
+| Script | Purpose |
+|--------|---------|
+| `i3-screenshot` | Area screenshot → clipboard (maim + xclip) |
+| `i3-screenrecord` | Screen recording (ffmpeg) |
+| `i3-ocr` | Area OCR → clipboard (maim + tesseract) |
+| `i3-lock` | Lock screen with blur (maim + magick + i3lock-color) |
+| `i3-sys` | System menu: suspend/reboot/shutdown |
+| `i3-kill` | Fuzzy process killer (rofi) |
+| `i3-keys` | Keybinding cheatsheet (rofi) |
+| `i3-webapp` | Launch Brave as webapp (`--app=<url>`) |
+| `i3-imgpicker` | Image browser with ueberzugpp preview |
+| `i3-imgcliphist` | Image clipboard history viewer |
+| `i3-imgclipwatch` | Image clipboard watcher daemon |
+| `i3-cliphist` | Text clipboard history daemon (cliphist) |
+| `batmon` | Battery low alert daemon |
+| `fzfub` | fzf + ueberzugpp image browser |
+| `notes` | Notes manager (rofi) |
+| `xsession` | Switch between i3/DWM/Hyprland |
 
-## Skills
+## Wallpaper & Pywal
 
-- `default/i3` is the merged i3 skill (config + runtime debugging) symlinked to `~/.config/opencode/skill/i3`
-  - `references/keybindings.md` — full keybinding reference
-  - `references/wallpaper.md` — wallpaper & pywal docs
-  - `references/runtime-check.md` — live session debugging guide
+`wallpaper-set.sh` is the central hub — it sets the wallpaper and propagates colors to:
+kitty, alacritty, dunst, rofi, SDDM login theme, flameshot, and X resources.
+
+```bash
+wallpaper-set.sh [/path/to/image]   # Set wallpaper + run pywal
+wallpaper-set.sh --no-wal [path]    # Set wallpaper only, skip pywal
+```
+
+## SDDM Login Theme
+
+Custom `i3-login` theme at `sddm-theme/i3-login/` — **symlinked** directly into
+`/usr/share/sddm/themes/i3-login/` so edits are immediately live.
+
+- Colors update automatically with each wallpaper change via `wallpaper-set.sh`
+- Wallpaper syncs to `bg.jpg` on each change
+- Built with `QtQuick 2.0` + `SddmComponents 2.0` only
 
 ## Installation
 
-The i3 config is managed with GNU Stow:
-
 ```bash
-cd ~/Work/dotfiles && stow i3
+# Install packages + stow everything
+./install.sh all
+
+# Stow only
+./install.sh stow
 ```
 
-The `shell/` sub-package is stowed separately:
+The install script handles:
+- Stowing i3 main package and shell sub-package
+- Symlinking the SDDM theme
+- Writing `/etc/sddm.conf.d/autologin.conf`
 
+Manual stow:
 ```bash
-cd ~/Work/dotfiles && stow -d i3 -t $HOME shell
-```
+# i3 main package
+cd ~/Work/dotfiles && stow -t $HOME --restow \
+  --ignore='^shell$' --ignore='^sddm-theme$' --ignore='^default$' i3
 
-This creates `~/.zshenv`, `~/.zshrc`, and `~/.zsh_aliases` as symlinks.
+# Shell sub-package
+cd ~/Work/dotfiles && stow -d i3 -t $HOME --restow shell
+```
 
 ## Tmux
 
-Config lives at `.config/tmux/tmux.conf` (XDG path — tmux auto-discovers it).
+Config at `.config/tmux/tmux.conf` (XDG path, auto-discovered).
 
-**On a fresh machine:**
-
+Fresh machine setup:
 ```bash
-# 1. Stow links ~/.config/tmux/tmux.conf automatically
-cd ~/Work/dotfiles && stow i3
-
-# 2. Install TPM
 git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
-
-# 3. Start tmux and install plugins
-tmux
-# then press: prefix + I  (Ctrl+Space + I)
+tmux  # then: prefix + I  (Ctrl+Space + I) to install plugins
 ```
-
-Plugins are installed by TPM into `~/.tmux/plugins/` and are not tracked in dotfiles.
 
 ## Session
 
-Start via `.xinitrc`:
-
 ```bash
-xsession i3    # symlinks .xinitrc → .xinitrc.i3
-startx
+xsession i3    # symlinks ~/.xinitrc → .xinitrc.i3
+startx         # launch i3
 ```
 
-Or select i3 from your display manager (SDDM).
+Or select i3 from SDDM login screen.
+
+## Reference
+
+See [CLAUDE.md](./CLAUDE.md) for full technical reference including startup sequence,
+pywal color flow, stow rules, and applying changes.

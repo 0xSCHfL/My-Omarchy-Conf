@@ -1,0 +1,17 @@
+#!/bin/bash
+while true; do
+    sel=$(cliphist list | rofi -dmenu -no-sort -i \
+        -theme ~/.config/rofi/dwm-keys.rasi \
+        -kb-row-up 'k,Up' \
+        -kb-row-down 'j,Down' \
+        -kb-cancel 'Escape,h,q' \
+        -kb-remove-char-forward '' \
+        -kb-custom-1 'ctrl+d' \
+        -p 'Clipboard:')
+
+    case $? in
+        0)  cliphist decode <<< "$sel" | xclip -selection clipboard; break ;;
+        10) cliphist delete <<< "$sel" ;;  # delete and loop back
+        *)  break ;;                        # Escape/cancel → close
+    esac
+done

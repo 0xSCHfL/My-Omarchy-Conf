@@ -35,6 +35,9 @@ mkdir -p "$(dirname "$CURRENT_LINK")"
 ln -nsf "$WALLPAPER" "$CURRENT_LINK"
 feh --bg-scale "$WALLPAPER"
 
+# Sync wallpaper to SDDM login theme
+cp "$WALLPAPER" /usr/share/sddm/themes/i3-login/bg.jpg 2>/dev/null || true
+
 if [[ "$NO_WAL" == "0" ]] && command -v wal >/dev/null 2>&1; then
   wal -q -n -i "$WALLPAPER"
   if [[ -f "$HOME/.cache/wal/colors.sh" ]]; then
@@ -76,6 +79,23 @@ PYEOF
 
   # Kill rofi so it picks up new pywal colors
   pkill -9 rofi 2>/dev/null || true
+
+  # Update SDDM login theme colors with pywal
+  if [[ -f "$HOME/.cache/wal/colors.json" ]]; then
+    python3 << 'PYEOF'
+import json, os
+with open(os.path.expanduser('~/.cache/wal/colors.json')) as f:
+    c = json.load(f)
+conf = "[General]\n"
+conf += f"background={c['special']['background']}\n"
+conf += f"foreground={c['special']['foreground']}\n"
+conf += f"accent={c['colors']['color3']}\n"
+conf += f"error={c['colors']['color1']}\n"
+conf += f"dimmed={c['colors']['color8']}\n"
+with open('/usr/share/sddm/themes/i3-login/theme.conf', 'w') as f:
+    f.write(conf)
+PYEOF
+  fi
 fi
 
 if [[ -f "$HOME/.cache/wal/colors.Xresources" ]] && command -v xrdb >/dev/null 2>&1; then

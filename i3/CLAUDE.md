@@ -1,186 +1,203 @@
-# CLAUDE.md
+# CLAUDE.md — i3 Dotfiles
 
-This file provides guidance to Claude Code when working with code in this repository.
-
-## Project Overview
-
-Multi-WM dotfiles for Arch Linux with Hyprland (Wayland), i3, and DWM (X11). SDDM handles session switching. Primary motivation for X11 WMs is Veyon Master compatibility.
+This file provides guidance to Claude Code when working with the i3 package of this dotfiles repo.
 
 ## System Context
 
 - **OS:** Arch Linux
-- **Display Manager:** SDDM
+- **WM:** i3 (X11) — also has DWM and Hyprland; this package is i3-only
+- **Display Manager:** SDDM — custom `i3-login` theme lives in `i3/sddm-theme/i3-login/`
+- **Shell:** zsh (configs in `i3/shell/` sub-package)
 - **AUR helper:** yay
-- **Session entries:** `/usr/share/xsessions/i3.desktop` (+ dwm & hyprland)
+- **Terminal:** kitty (primary), alacritty (popup windows for wifi/audio TUIs)
+- **Hostname:** `0xSSfN`
 
-## Dotfiles Structure
+## Dotfiles Structure (i3 package)
 
 ```
-dotfiles/
-├── ai-agent/     # Shared AI agent configs (OpenCode, Codex, Claude)
-├── hyprland/     # Hyprland + Wayland config (bashrc managed here)
-├── i3/           # i3 config (also includes shell/ sub-package)
-├── dwm/          # DWM config + suckless tools + scripts
-│   ├── dwm/      # Patched dwm source (config.h, compiled binary)
-│   ├── st/       # Patched st terminal source
-│   ├── dmenu/    # Patched dmenu source
-│   ├── .local/bin/  # 47 custom scripts
-│   └── scripts/  # Status bar, audio, wallpaper tools
-└── wallpapers/
+dotfiles/i3/
+├── .config/
+│   ├── i3/
+│   │   ├── config                    # Main i3 config — all keybindings, startup, rules
+│   │   └── scripts/
+│   │       ├── wallpaper/            # wallpaper-set.sh, wallpaper-pick.sh, wallpaper-next.sh
+│   │       ├── media/                # volume-osd.sh, i3-launch-wifi.sh, i3-launch-audio.sh
+│   │       ├── launchers/            # i3-email-picker.sh
+│   │       ├── notifications/        # notifications.sh
+│   │       └── utils/                # float-toggle.sh, focus-next.sh, maximize.sh
+│   ├── i3blocks/
+│   │   ├── config                    # i3blocks bar config
+│   │   └── scripts/                  # battery, audio, wifi, disks, systemstats, window-title, timer, spotify
+│   ├── rofi/                         # Launcher themes (.rasi files)
+│   ├── kitty/                        # kitty config (includes pywal colors-kitty.conf)
+│   ├── alacritty/                    # alacritty config (includes alacritty-wal.toml)
+│   ├── dunst/                        # Notification daemon config + pywal generation
+│   ├── picom/                        # Compositor config
+│   ├── tmux/                         # tmux config
+│   ├── nvim/                         # Neovim config
+│   ├── polybar/                      # Polybar config + launch.sh
+│   └── wal/                          # pywal templates
+├── .local/bin/                       # Custom scripts (see Scripts section below)
+├── .xinitrc.i3                       # X session startup script
+├── .xprofile                         # X profile
+├── .gtkrc-2.0                        # GTK2 theme
+├── shell/                            # Shell sub-package (stowed separately)
+│   ├── .zshrc
+│   ├── .zshenv
+│   └── .zsh_aliases
+└── sddm-theme/
+    └── i3-login/                     # SDDM login theme (symlinked, not stowed)
+        ├── Main.qml                  # QML login screen (QtQuick 2.0 + SddmComponents 2.0 only)
+        ├── theme.conf                # Color config — overwritten by pywal on wallpaper change
+        ├── metadata.desktop
+        ├── logo.svg                  # Pixel-art logo in #c0b18b color
+        └── bg.jpg                    # Wallpaper — synced by wallpaper-set.sh
 ```
 
-## Switching WMs (from TTY)
+## Stow Rules
+
+The i3 package has sub-packages that must be stowed separately:
 
 ```bash
-xsession dwm   # symlink ~/.xinitrc → .xinitrc.dwm
-xsession i3    # symlink ~/.xinitrc → .xinitrc.i3
-xsession       # show current session
-startx         # launch the selected WM
+# Main i3 package (excludes shell/, sddm-theme/, default/)
+cd ~/Work/dotfiles && stow -t $HOME --restow \
+  --ignore='^shell$' --ignore='^sddm-theme$' --ignore='^default$' i3
+
+# Shell sub-package
+cd ~/Work/dotfiles && stow -d i3 -t $HOME --restow shell
 ```
 
-## Stow Packages
+The install script (`./install.sh stow`) handles both correctly.
 
-| Package | Contents |
-|---------|----------|
-| `ai-agent` | OpenCode, Codex, and Claude configs + 33 shared skills |
-| `hyprland` | `.bashrc`, Hyprland/Wayland configs |
-| `i3` | i3 config, scripts, `shell/` sub-package (`.zshenv`, `.zshrc`, `.zsh_aliases`) |
-| `dwm` | DWM config, suckless tools, `.local/bin/` scripts, `.xinitrc.dwm` |
+## SDDM Theme
 
-Install via `./install.sh` (stows all + installs packages).
-
-## DWM Config
-
-**Source:** `dwm/dwm/config.h` — edit, then:
-
-```bash
-cd ~/Work/dotfiles/dwm/dwm && make && sudo make install
+The login theme is a symlink, not stowed:
+```
+/usr/share/sddm/themes/i3-login → ~/Work/dotfiles/i3/sddm-theme/i3-login/
 ```
 
-**Restart DWM in-place** (rebuilds + installs + reloads):
-- Keybind: `Super+Shift+r`
-- Script: `dwm-restart` (runs `make && sudo make install && pkill -HUP dwm`)
+Edits to `sddm-theme/i3-login/Main.qml` are **immediately live** — no copy needed.
 
-**Autostart** (`.xinitrc.dwm`): wallpaper, picom, dunst, dwm-statusbar, nm-applet, polkit, xss-lock+i3lock, copyq, flameshot, dex, autocutsel, xrandr monitor setup.
+**QML constraint:** Only `QtQuick 2.0` and `SddmComponents 2.0` are available in SDDM.
+No `QtQuick.Controls`, no `QtQuick.Layouts`. Use `Rectangle + TextInput`, `Column`, `Row`, `MouseArea`.
 
-## DWM Keybindings
+**Config:** `/etc/sddm.conf.d/autologin.conf`
+```ini
+[Autologin]
+User=sohaib
+Session=i3
 
-| Key | Action |
-|-----|--------|
-| `Super+Space` | dmenu launcher |
-| `Super+Return` | Terminal (st) |
-| `Super+q` | Browser (qutebrowser) |
-| `Super+w` | Close window |
-| `Super+j/k` | Focus next/prev window |
-| `Super+h/l` | Resize master area |
-| `Super+t` | Toggle floating |
-| `Super+p` | Cycle layouts |
-| `Super+b` | Toggle bar |
-| `Super+f` / `Super+m` | Monocle layout |
-| `Super+,/.` | Focus prev/next monitor |
-| `Super+1-9` | Switch to tag |
-| `Super+Shift+c` | Chromium |
-| `Super+Shift+b` | Brave |
-| `Super+Shift+r` | Rebuild + restart DWM |
-| `Super+Shift+q` | Quit DWM |
-| `Super+Shift+s` | System menu (kill/reboot/shutdown) |
-| `Super+Shift+t` | btop (floating, centered on active window) |
-| `Super+Shift+i` | Image picker (fzfub with ueberzugpp previews) |
-| `Super+Shift+v` | Image clipboard history |
-| `Super+Shift+w/g/x/d/e` | Web apps (WhatsApp, ChatGPT, X, Discord, Email) |
-| `Super+Shift+o` | Obsidian |
-| `Super+Shift+,/.` | Move window to prev/next monitor |
-| `Super+Shift+1-9` | Move window to tag |
-| `Super+v` | Clipboard text history |
-| `Super+n` | Notes manager |
-| `Super+F1` | Show all keybindings |
-| `Super+Ctrl+Delete` | Quit DWM (close all) |
-| `Print` | Screenshot (flameshot) |
-| `Alt+Print` | Screen recording |
-| `Super+Ctrl+Print` | OCR screenshot |
+[Theme]
+Current=i3-login
 
-## Image Picker (Mod+Shift+i — fzfub)
-
-| Key | Action |
-|-----|--------|
-| `Alt+w` | Set wallpaper (pywal) |
-| `Enter` | Select / copy path |
-| `Ctrl+g` | GIMP |
-| `Ctrl+d` | Delete |
-| `Ctrl+e` | Strip EXIF |
-| `Ctrl+b` | B&W convert |
-| `Ctrl+f/v` | Flip H/V |
-| `Ctrl+l/h` | Black/white border |
-| `Alt+j/p` | Convert JPG/PNG |
-| `Ctrl+r` | Refresh |
-
-Both `dwm-imgpicker` and `dwm-btop` center on the active window (not screen center).
-
-## System Menu (Mod+Shift+s)
-
-```
-kill       → fzf process killer
-suspend    → systemctl suspend
-reboot     → systemctl reboot
-shutdown   → shutdown now
+[X11]
+XkbLayout=fr
+XkbModel=pc105
 ```
 
-## Status Bar
+## Pywal Color Flow
 
-`dwm-statusbar` shows: CPU% | Temp | RAM | Disk | Network | Volume | Battery | Time
+`wallpaper-set.sh` orchestrates everything when wallpaper changes:
 
-Uses `xsetroot -name` with Nord-inspired colors (SchemeSep, SchemeIcon, SchemeVal, SchemeWarn).
+1. `feh --bg-scale` sets wallpaper
+2. Copies wallpaper → `/usr/share/sddm/themes/i3-login/bg.jpg`
+3. Runs `wal -q -n -i <wallpaper>`
+4. Updates **alacritty** → `~/.config/alacritty/alacritty-wal.toml`
+5. Updates **dunst** → runs `dunst/generate-from-pywal.sh`
+6. Updates **SDDM theme** → writes colors to `/usr/share/sddm/themes/i3-login/theme.conf`
+   - `background`, `foreground`, `accent` (color3), `error` (color1), `dimmed` (color8)
+7. Updates **flameshot** draw color → `flameshot.ini`
+8. Merges `colors.Xresources` via `xrdb`
 
-## Custom Scripts (~/.local/bin/)
+SDDM `Main.qml` reads colors via `config.accent`, `config.foreground`, etc. with hardcoded fallbacks.
+
+## i3 Startup Sequence (`.config/i3/config` exec lines)
+
+| Order | Command | Purpose |
+|-------|---------|---------|
+| 1 | `dex --autostart` | XDG autostart apps |
+| 2 | `systemctl --user start pipewire pipewire-pulse wireplumber` | Audio |
+| 3 | `xinput set-prop "SYNA308F:00 06CB:CD77 Touchpad" "libinput Tapping Enabled" 1` | Tap-to-click |
+| 4 | `xss-lock -- i3-lock` | Screen lock on suspend |
+| 5 | `picom --daemon` | Compositor |
+| 6 | `nm-applet` | Network manager tray |
+| 7 | `dunst` | Notifications |
+| 8 | `/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1` | Polkit |
+| 9 | `copyq` | Clipboard manager |
+| 10 | `wallpaper-set.sh` | Wallpaper + pywal restore |
+| 11 | `i3-cliphist` | Clipboard history daemon |
+| 12 | `i3-imgclipwatch` | Image clipboard watcher |
+| 13 | `batmon` | Battery alert daemon |
+| 14 | `~/.config/i3blocks/scripts/battery-monitor` | Battery bar monitor |
+
+## Custom Scripts (`~/.local/bin/`)
 
 | Script | Purpose |
 |--------|---------|
-| `dwm-statusbar` | Status bar loop |
-| `dwm-screenshot` | Screenshot via flameshot |
-| `dwm-screenrecord` | Screen recording |
-| `dwm-ocr` | OCR from screenshot |
-| `dwm-sys` | System menu |
-| `dwm-webapp` | Web apps via Brave |
-| `dwm-btop` | Floating btop |
-| `dwm-imgpicker` | Image browser with previews |
-| `dwm-imgcliphist` | Image clipboard history |
-| `dwm-cliphist` | Clipboard text history |
-| `dwm-restart` | Rebuild + restart DWM |
-| `dwm-keys` | Show all keybindings |
-| `xsession` | Switch between dwm/i3 |
+| `i3-screenshot` | Area screenshot → clipboard (maim + xclip) |
+| `i3-screenrecord` | Screen recording (ffmpeg) |
+| `i3-ocr` | Area screenshot → OCR text → clipboard (maim + tesseract) |
+| `i3-lock` | Lock screen with blurred background (maim + magick + i3lock-color) |
+| `i3-sys` | System menu: suspend/reboot/shutdown (rofi) |
+| `i3-kill` | Process killer (rofi + fzf) |
+| `i3-keys` | Show all keybindings (rofi) |
+| `i3-webapp` | Launch Brave as a webapp: `WAYLAND_DISPLAY= GDK_BACKEND=x11 brave --app=<url>` |
+| `i3-imgpicker` | Image browser with ueberzugpp preview (fzfub) |
+| `i3-imgcliphist` | Image clipboard history viewer |
+| `i3-imgclipwatch` | Watch clipboard for images, save to history |
+| `i3-imgcliphist-copy` | Copy image from clipboard history |
+| `i3-imgcliphist-refresh` | Refresh image clipboard history |
+| `i3-cliphist` | Text clipboard history daemon (cliphist) |
+| `i3-btop` | Floating btop in kitty |
+| `batmon` | Battery monitor daemon (notify-send alerts) |
 | `fzfub` | fzf + ueberzugpp image browser |
-| `notes` | dmenu notes manager |
-| `random_wallpaper` | Random wallpaper downloader |
+| `notes` | Notes manager (rofi) |
+| `xsession` | Switch between i3/DWM/Hyprland (symlinks ~/.xinitrc) |
 
-## Monitor Setup
+## i3blocks Bar Scripts (`.config/i3blocks/scripts/`)
 
-`.xinitrc.dwm` runs:
-```bash
-xrandr --output eDP-1 --auto --output HDMI-1 --auto --right-of eDP-1 --primary
-```
-
-Adjust output names as needed for your hardware.
-
-## Clipboard
-
-- `autocutsel -fork` in `.xinitrc.dwm` syncs PRIMARY ↔ CLIPBOARD
-- Mouse selection in st → available for Ctrl+V everywhere
+| Script | Shows |
+|--------|-------|
+| `window-title` | Focused window title (Pango-escaped — & < > must be &amp; &lt; &gt;) |
+| `audio` | Volume % — click opens wiremix in alacritty |
+| `wifi` | SSID + signal — click opens impala in alacritty |
+| `battery` | Battery % + charging status |
+| `battery-monitor` | Low battery notification daemon |
+| `disks` | Disk usage |
+| `systemstats` | CPU% + temp + RAM (iostat + sensors) |
+| `timer` | Countdown timer with menu |
+| `spotify` | Now playing (playerctl) |
+| `notifications` | Dunst paused/active indicator |
+| `timedate` | Clock |
 
 ## Applying Changes
 
 | Component | Command |
 |-----------|---------|
-| DWM config | `cd ~/Work/dotfiles/dwm/dwm && make && sudo make install && pkill -HUP dwm` |
-| DWM restart | `Super+Shift+r` (builds + installs + restarts) |
-| Scripts | `cd ~/Work/dotfiles && stow --restow dwm` |
-| Shell aliases | `cd ~/Work/dotfiles && stow -d i3 -t $HOME shell` |
+| i3 config | `i3-msg reload` or `Super+Ctrl+r` |
+| i3 restart | `i3-msg restart` or `Super+Shift+r` |
+| i3 syntax check | `i3 -C -c ~/.config/i3/config` |
+| Restow i3 | `cd ~/Work/dotfiles && stow -t $HOME --restow --ignore='^shell$' --ignore='^sddm-theme$' --ignore='^default$' i3` |
+| Restow shell | `cd ~/Work/dotfiles && stow -d i3 -t $HOME --restow shell` |
 | picom | `pkill picom && picom --daemon` |
 | dunst | `pkill dunst && dunst &` |
-| xsession | `xsession dwm` or `xsession i3` |
+| i3blocks | `pkill i3blocks && i3blocks &` |
+| polybar | `~/.config/polybar/launch.sh` |
+| Wallpaper + pywal | `wallpaper-set.sh [path]` |
+
+## Key Package Facts
+
+- **Screenshot:** `maim` (not flameshot — flameshot is started as tray app via polybar/launch.sh)
+- **Lock screen:** `i3lock-color` (AUR) — plain `i3lock` lacks `--bar-indicator` and `--clock`
+- **Clipboard history:** `cliphist` daemon + rofi for text; custom scripts for images
+- **Wifi TUI:** `impala` (AUR) — launched in alacritty via `i3-launch-wifi.sh`
+- **Audio TUI:** `wiremix` (AUR) — launched in alacritty via `i3-launch-audio.sh`
+- **Brave:** keybinding clears `~/.config/BraveSoftware/Brave-Browser/Singleton*` before launching to avoid stale lock crashes
+- **Touchpad:** tap-to-click set via `xinput` in `exec_always` (survives i3 reload)
 
 ## Veyon
 
 ```bash
 veyon-master
 ```
-Requires X11 — works in DWM and i3, not Hyprland (Wayland).
+Requires X11 — works in i3 and DWM, not Hyprland (Wayland).

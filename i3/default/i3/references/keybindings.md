@@ -1,33 +1,124 @@
-# Keybindings
+# i3 Keybindings
+
+Mod = Super (Windows key)
+
+## Apps & Launchers
 
 | Key | Action |
 |-----|--------|
-| `Super+Return` | Terminal (kitty) |
-| `Super+Space` | Application launcher (rofi) |
-| `Super+q` | Browser (qutebrowser) |
-| `Super+w` | Close window |
-| `Super+h/j/k/l` | Focus left/down/up/right |
-| `Super+Shift+h/j/k/l` | Move window left/down/up/right |
-| `Super+Ctrl+h` | Split horizontal |
-| `Super+Ctrl+l` | Split vertical |
-| `Super+f` | Fullscreen toggle |
-| `Super+Alt+f` | Full-width maximize toggle |
-| `Super+t` | Toggle floating |
-| `Super+Escape` | System menu |
-| `Super+1-0` | Switch workspace |
-| `Super+Shift+q` | Kill window |
-| `Super+Shift+Space` | Toggle floating |
-| `Super+Shift+1-0` | Move window to workspace |
-| `Super+Shift+r` | Restart i3 |
-| `Super+Shift+e` | Exit i3 |
-| `Super+Ctrl+Space` | Wallpaper picker (rofi) |
-| `Super+Shift+i` | Image picker |
-| `Super+Shift+v` | Image clipboard history (`Space` selects, `Ctrl+d` deletes) |
-| `Super+v` | Clipboard history (Walker) |
-| `Super+Ctrl+v` | CopyQ show |
-| `Super+n` | Notes |
-| `Super+F1` | Keybinding cheatsheet |
-| `Print` | Screenshot (flameshot) |
-| `Alt+Print` | Screen recording |
-| `Super+Ctrl+Print` | OCR screenshot |
-| `Alt+Tab` | Cycle focus between windows |
+| `Mod+Return` | Terminal (kitty) |
+| `Mod+Space` | App launcher (rofi drun) |
+| `Mod+q` | Browser (qutebrowser) |
+| `Mod+Shift+b` | Brave (clears Singleton lock first) |
+| `Mod+Shift+Alt+b` | Brave incognito |
+| `Mod+Shift+c` | Chromium |
+| `Mod+Shift+o` | Obsidian |
+| `Mod+Alt+t` | Telegram |
+| `Mod+Shift+n` | Neovim (kitty) |
+| `Mod+n` | Notes manager |
+| `Mod+Shift+f` | File manager (nautilus) |
+
+## Web Apps (i3-webapp → Brave --app)
+
+| Key | URL |
+|-----|-----|
+| `Mod+Shift+w` | WhatsApp |
+| `Mod+Shift+g` | ChatGPT |
+| `Mod+Shift+x` | X (Twitter) |
+| `Mod+Shift+d` | Discord |
+| `Mod+Shift+e` | Email picker |
+
+## Window Management
+
+| Key | Action |
+|-----|--------|
+| `Mod+w` | Close window |
+| `Mod+h/j/k/l` | Focus left/down/up/right |
+| `Mod+Shift+h/j/k/l` | Move window left/down/up/right |
+| `Mod+Left/Down/Up/Right` | Focus (arrow keys) |
+| `Mod+Shift+Left/Down/Up/Right` | Move (arrow keys) |
+| `Mod+Ctrl+h` | Split horizontal |
+| `Mod+Ctrl+l` | Split vertical |
+| `Mod+f` | Fullscreen toggle |
+| `Mod+Alt+f` | Full-width maximize (maximize.sh) |
+| `Mod+t` | Float-toggle (float-toggle.sh) |
+| `Mod+Shift+Space` | Floating toggle |
+| `Mod+o` | Layout stacking |
+| `Mod+e` | Layout toggle split |
+| `Mod+a` | Focus parent |
+| `Mod+s` | Move to scratchpad |
+| `Mod+Alt+s` | Show scratchpad |
+| `Alt+Tab` | Cycle focus next (focus-next.sh) |
+| `Alt+Shift+Tab` | Cycle focus prev |
+
+## Workspaces
+
+| Key | Action |
+|-----|--------|
+| `Mod+1-0` | Switch to workspace |
+| `Mod+Shift+1-0` | Move window to workspace (and follow) |
+
+## System
+
+| Key | Action |
+|-----|--------|
+| `Mod+Shift+r` | Restart i3 |
+| `Mod+Ctrl+r` | Reload i3 config |
+| `Mod+Shift+q` | Exit i3 (rofi confirm) |
+| `Mod+Escape` | System menu: suspend/reboot/shutdown (i3-sys) |
+| `Mod+Delete` | Process killer (i3-kill) |
+| `Mod+x` | Lock screen (i3lock-color + maim blur) |
+| `Mod+Ctrl+k` | Keybinding cheatsheet (i3-keys) |
+
+## Media & Volume
+
+| Key | Action |
+|-----|--------|
+| `XF86AudioRaiseVolume` | Volume up (volume-osd.sh + yad OSD) |
+| `XF86AudioLowerVolume` | Volume down |
+| `XF86AudioMute` | Toggle mute |
+| `XF86AudioMicMute` | Toggle mic mute (pactl) |
+| `XF86MonBrightnessUp` | Brightness +5% (brightnessctl) |
+| `XF86MonBrightnessDown` | Brightness -5% |
+| `Mod+Ctrl+w` | WiFi TUI (impala in alacritty) |
+| `Mod+Ctrl+a` | Audio mixer TUI (wiremix in alacritty) |
+| `Mod+Shift+t` | btop (kitty) |
+
+## Notifications (dunst)
+
+| Key | Action |
+|-----|--------|
+| `Mod+comma` | Close last notification |
+| `Mod+Shift+comma` | Close all notifications |
+| `Mod+Ctrl+comma` | Toggle pause notifications |
+| `Mod+Alt+comma` | Invoke last notification action |
+| `Mod+Ctrl+n` | Notification history (notifications.sh) |
+
+## Screenshot & OCR
+
+| Key | Action |
+|-----|--------|
+| `Print` | Area screenshot → clipboard (maim + xclip) |
+| `Alt+Print` | Screen recording (i3-screenrecord + ffmpeg) |
+| `Mod+Ctrl+Print` | Area OCR → clipboard (maim + tesseract) |
+
+## Clipboard & Images
+
+| Key | Action |
+|-----|--------|
+| `Mod+v` | Text clipboard history (cliphist + rofi) |
+| `Mod+Ctrl+v` | CopyQ show |
+| `Mod+Shift+v` | Image clipboard history (i3-imgcliphist) |
+| `Mod+Shift+i` | Image picker (fzfub + ueberzugpp) |
+
+## Wallpaper
+
+| Key | Action |
+|-----|--------|
+| `Mod+Ctrl+Space` | Wallpaper picker (wallpaper-pick.sh) |
+
+## Timer
+
+| Key | Action |
+|-----|--------|
+| `Mod+Shift+m` | Timer menu (i3blocks timer) |

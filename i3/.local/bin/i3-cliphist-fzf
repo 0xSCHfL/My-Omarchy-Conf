@@ -1,0 +1,90 @@
+#!/bin/bash
+# Combined text + image clipboard picker with ueberzugpp preview
+
+set -e
+trap 'echo "Error on line $LINENO — press enter to close"; read' ERR
+
+HIST="$HOME/.cache/hist"
+
+# Setup ueberzugpp
+UB_TMP="/tmp/.ub-clip-$$"
+ueberzugpp layer --no-stdin --silent --pid-file "$UB_TMP"
+while [ ! -s "$UB_TMP" ]; do sleep 0.05; done
+UB_PID=$(cat "$UB_TMP")
+export SOCKET="/tmp/ueberzugpp-${UB_PID}.socket"
+
+cleanup() {
+    ueberzugpp cmd -s "$SOCKET" -a exit 2>/dev/null
+    rm -f "$UB_TMP" "$LIST_BIN" "$COPY_BIN" "$DEL_BIN" "$PREV_BIN"
+}
+trap cleanup EXIT
+
+# Write action helpers to temp scripts (avoids quoting hell in fzf --bind)
+LIST_BIN=$(mktemp /tmp/clip-list-XXXX)
+COPY_BIN=$(mktemp /tmp/clip-copy-XXXX)
+DEL_BIN=$(mktemp /tmp/clip-del-XXXX)
+PREV_BIN=$(mktemp /tmp/clip-prev-XXXX)
+
+# List: images (newest first) then text entries
+cat > "$LIST_BIN" << 'EOF'
+#!/bin/bash
+HIST="$HOME/.cache/hist"
+[ -d "$HIST" ] && find "$HIST" -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" -o -name "*.webp" \) 2>/dev/null \
+    | sort -rV \
+    | while IFS= read -r f; do
+        printf 'IMG\t%s\t\033[35m[img]\033[0m %s\n' "$f" "$(basename "$f")"
+    done
+cliphist list | while IFS=$'\t' read -r id content; do
+    printf 'TXT\t%s\t%s\n' "$id" "$content"
+done
+EOF
+
+# Copy: reads one tab-delimited line from stdin
+cat > "$COPY_BIN" << 'EOF'
+#!/bin/bash
+IFS=$'\t' read -r type ref content
+case "$type" in
+    IMG) i3-imgcliphist-copy "$ref" ;;
+    TXT) cliphist decode <<< "${ref}"$'\t'"${content}" | xclip -selection clipboard ;;
+esac
+EOF
+
+# Delete: reads one tab-delimited line from stdin
+cat > "$DEL_BIN" << 'EOF'
+#!/bin/bash
+IFS=$'\t' read -r type ref content
+case "$type" in
+    IMG) rm -f "$ref" ;;
+    TXT) cliphist delete <<< "${ref}"$'\t'"${content}" ;;
+esac
+EOF
+
+# Preview: takes type and ref as args
+cat > "$PREV_BIN" << EOF
+#!/bin/bash
+type="\$1"; ref="\$2"
+if [ "\$type" = "IMG" ]; then
+    ueberzugpp cmd -s "$SOCKET" -i p -a add \\
+        -x \$FZF_PREVIEW_LEFT -y \$FZF_PREVIEW_TOP \\
+        --max-width \$FZF_PREVIEW_COLUMNS --max-height \$FZF_PREVIEW_LINES \\
+        -f "\$ref" 2>/dev/null
+else
+    cliphist decode <<< "\${ref}"$'\\t'"\${@:3}" 2>/dev/null | head -40 || echo "(binary)"
+fi
+EOF
+
+chmod +x "$LIST_BIN" "$COPY_BIN" "$DEL_BIN" "$PREV_BIN"
+export COPY_BIN DEL_BIN LIST_BIN PREV_BIN
+
+bash "$LIST_BIN" | fzf \
+    --ansi \
+    --reverse \
+    --prompt "  Clipboard ❯ " \
+    --delimiter=$'\t' \
+    --with-nth=3 \
+    --header="enter:copy  ctrl-d:delete  esc:quit" \
+    --preview-border \
+    --preview="bash $PREV_BIN {1} {2} {3..}" \
+    --bind "enter:execute-silent(echo -e {} | bash $COPY_BIN)+abort" \
+    --bind "ctrl-d:execute-silent(echo -e {} | bash $DEL_BIN)+reload(bash $LIST_BIN)" \
+    --bind "esc:abort,q:abort"

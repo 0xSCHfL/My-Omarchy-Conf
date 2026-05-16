@@ -8,7 +8,7 @@ trap "rm -f '$TMPFILE'" EXIT
 # Use maim for interactive selection - simpler than flameshot raw
 if maim -s "$TMPFILE" 2>/dev/null; then
   if [ -f "$TMPFILE" ] && [ -s "$TMPFILE" ]; then
-    xclip -selection clipboard -t image/png < "$TMPFILE"
+    xclip -selection clipboard -t image/png -loops 0 < "$TMPFILE" &
     dunstify -u critical -t 3000 "📷 Screenshot" "✓ Copied to clipboard" >/dev/null 2>&1 || notify-send "📷 Screenshot" "Copied"
   fi
 else

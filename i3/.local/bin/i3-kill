@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+theme="$HOME/.config/rofi/i3-launcher.rasi"
+
+choose() {
+    rofi -dmenu -no-sort -i -theme "$theme" \
+         -kb-row-up 'k,Up' -kb-row-down 'j,Down' \
+         -kb-cancel 'Escape,h,q' -p "$1"
+}
+
+MODE=$(printf "󰄛  Processes\n󰒔  Services" | choose "Kill:")
+
+case "$MODE" in
+    *Processes)
+        SELECTED=$(ps -u "$USER" -o pid,comm,%cpu,%mem --sort=-%cpu \
+            | awk 'NR>1 {printf "%-8s %-30s CPU:%-6s MEM:%s\n", $1, $2, $3, $4}' \
+            | choose "󰄛  Kill Process:")
+        PID=$(echo "$SELECTED" | awk '{print $1}')
+        [ -n "$PID" ] && kill "$PID" && notify-send -t 2000 "󰚌 Killed" "PID $PID"
+        ;;
+    *Services)
+        SELECTED=$(systemctl --user list-units --state=running --no-legend \
+            | awk '{print $1}' \
+            | choose "󰒔  Stop Service:")
+        [ -n "$SELECTED" ] && systemctl --user stop "$SELECTED" && \
+            notify-send -t 2000 "󰒔 Stopped" "$SELECTED"
+        ;;
+esac

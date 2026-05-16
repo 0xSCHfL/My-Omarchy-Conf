@@ -51,18 +51,47 @@ fi
 
 # --- Package lists by distro ---
 if [[ "$PM" == "pacman" ]]; then
-    COMMON_PKGS=(stow feh picom dunst flameshot copyq network-manager-applet xss-lock polkit-gnome pipewire-pulse ttf-nerd-fonts-symbols noto-fonts noto-fonts-emoji brightnessctl playerctl pulsemixer autocutsel wmctrl)
-    I3_PKGS=(i3-wm polybar rofi kitty i3status i3blocks i3lock nsxiv btop pulseaudio-utils)
-    DWM_PKGS=(base-devel imv mpv ueberzugpp python-pywal clipnotify)
-    HYPR_PKGS=(hyprland waybar ghostty neovim tmux fastfetch starship python-pywal)
+    COMMON_PKGS=(
+        # Core
+        stow feh picom dunst network-manager-applet xss-lock polkit-gnome
+        pipewire-pulse brightnessctl playerctl
+        # Fonts
+        noto-fonts noto-fonts-emoji ttf-jetbrains-mono-nerd
+        # Shell/Dev
+        python-pywal fzf jq libnotify
+    )
+    I3_PKGS=(
+        # WM & bar
+        i3-wm i3blocks polybar rofi
+        # Terminals & apps
+        kitty alacritty btop neovim tmux copyq flameshot
+        # Screenshot & OCR
+        maim xclip tesseract
+        # Clipboard & image preview
+        cliphist ueberzugpp
+        # Window/display utils
+        xdotool xorg-xdpyinfo dex
+        # Audio/volume OSD
+        yad xob
+        # System info (i3blocks scripts)
+        sysstat wireless_tools imagemagick
+        # Image processing (i3-lock)
+        bat
+    )
+    DWM_PKGS=(
+        base-devel imv mpv autocutsel ueberzugpp
+    )
+    HYPR_PKGS=(
+        hyprland waybar ghostty neovim tmux fastfetch starship
+    )
 elif [[ "$PM" == "apt" ]]; then
-    COMMON_PKGS=(stow feh picom dunst flameshot copyq network-manager-gnome policykit-1-gnome pipewire-pulse fonts-noto fonts-noto-color-emoji brightnessctl playerctl)
-    I3_PKGS=(i3-wm polybar rofi kitty i3status i3lock btop pulseaudio-utils)
-    DWM_PKGS=(build-essential imv mpv)
+    COMMON_PKGS=(stow feh picom dunst copyq network-manager-gnome policykit-1-gnome pipewire-pulse fonts-noto fonts-noto-color-emoji brightnessctl playerctl fzf jq libnotify-bin)
+    I3_PKGS=(i3 i3blocks polybar rofi kitty alacritty btop neovim tmux maim xclip xdotool flameshot tesseract-ocr imagemagick x11-utils sysstat wireless-tools)
+    DWM_PKGS=(build-essential imv mpv autocutsel)
     HYPR_PKGS=(neovim tmux fastfetch starship)
 elif [[ "$PM" == "dnf" ]]; then
-    COMMON_PKGS=(stow feh picom dunst flameshot copyq network-manager-applet polkit-gnome pipewire-pulse jetbrains-mono-fonts fira-code-fonts noto-fonts-emoji brightnessctl playerctl)
-    I3_PKGS=(i3 polybar rofi kitty i3status i3lock btop pulseaudio-utils)
+    COMMON_PKGS=(stow feh picom dunst network-manager-applet polkit-gnome pipewire-pulse jetbrains-mono-fonts noto-fonts-emoji brightnessctl playerctl fzf jq libnotify)
+    I3_PKGS=(i3 i3blocks polybar rofi kitty alacritty btop neovim tmux maim xclip xdotool flameshot tesseract ImageMagick xdpyinfo sysstat)
     DWM_PKGS=(make gcc imv mpv libX11-devel libXft-devel libXinerama-devel)
     HYPR_PKGS=(neovim tmux fastfetch starship)
 else
@@ -91,21 +120,27 @@ install_all() {
 
     if [[ -n "$PM_AUR" ]]; then
         echo "  → AUR packages..."
-        $PM_AUR -S --needed --noconfirm hyprland waybar ghostty python-pywal xob 2>/dev/null || true
+        $PM_AUR -S --needed --noconfirm \
+            hyprland waybar ghostty \
+            i3lock-color \
+            impala wiremix \
+            python-pywal xob 2>/dev/null || true
     fi
 }
 
 # --- Stow ---
 stow_all() {
-    IGNORE="--ignore=wallpapers --ignore=CLAUDE.md"
-
-    stow_ok() {
-        local pkg=$1
-        if stow -t "$HOME" --restow $IGNORE "$pkg" 2>/dev/null; then
+    # stow_pkg <dir> <pkg> [extra stow args]
+    stow_pkg() {
+        local dir=$1 pkg=$2
+        shift 2
+        local extra=("$@")
+        local ignore="--ignore=CLAUDE.md --ignore=AGENTS.md --ignore=README.md --ignore=wallpapers"
+        if stow -d "$dir" -t "$HOME" --restow $ignore "${extra[@]}" "$pkg" 2>/dev/null; then
             echo "  ✓ $pkg"
         else
             local conflicts
-            conflicts=$(stow -t "$HOME" -n $IGNORE "$pkg" 2>&1 | grep "existing target")
+            conflicts=$(stow -d "$dir" -t "$HOME" -n $ignore "${extra[@]}" "$pkg" 2>&1 | grep "existing target")
             if [[ -n "$conflicts" ]]; then
                 echo "  ! $pkg conflicts:"
                 echo "$conflicts" | sed 's/.*existing target is not owned by stow: //' | sed 's/^/      - /'
@@ -116,10 +151,12 @@ stow_all() {
     }
 
     echo "Stowing dotfiles to $HOME..."
-    stow_ok "shell"
-    stow_ok "hyprland"
-    stow_ok "i3"
-    stow_ok "dwm"
+    # i3 main package — exclude sub-packages and non-stow dirs
+    stow_pkg "$DOTFILES" i3 --ignore='^shell$' --ignore='^sddm-theme$' --ignore='^default$'
+    # shell sub-package lives inside i3/
+    stow_pkg "$DOTFILES/i3" shell
+    stow_pkg "$DOTFILES" hyprland
+    stow_pkg "$DOTFILES" dwm
 
     if [[ ! -f "$HOME/.xinitrc" ]]; then
         ln -sf "Work/dotfiles/i3/.xinitrc.i3" "$HOME/.xinitrc"
@@ -127,6 +164,37 @@ stow_all() {
     fi
 
     echo "Wallpapers are at $DOTFILES/wallpapers/"
+
+    # SDDM login theme
+    echo "Setting up SDDM login theme..."
+    if [[ -d "$DOTFILES/i3/sddm-theme/i3-login" ]]; then
+        sudo rm -rf /usr/share/sddm/themes/i3-login
+        sudo ln -sf "$DOTFILES/i3/sddm-theme/i3-login" /usr/share/sddm/themes/i3-login
+        echo "  ✓ SDDM theme linked"
+    else
+        echo "  ! SDDM theme not found at $DOTFILES/i3/sddm-theme/i3-login"
+    fi
+
+    # SDDM config
+    if [[ ! -f /etc/sddm.conf.d/autologin.conf ]]; then
+        sudo mkdir -p /etc/sddm.conf.d
+        sudo tee /etc/sddm.conf.d/autologin.conf > /dev/null << 'EOF'
+[Autologin]
+User=sohaib
+Session=i3
+
+[Theme]
+Current=i3-login
+
+[X11]
+XkbLayout=fr
+XkbModel=pc105
+XkbOptions=terminate:ctrl_alt_bksp
+EOF
+        echo "  ✓ SDDM config written"
+    else
+        echo "  ~ SDDM config already exists, skipping"
+    fi
 }
 
 # --- CLI ---

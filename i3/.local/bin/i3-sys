@@ -6,10 +6,11 @@ choose() {
   rofi -dmenu -no-sort -i -theme "$theme" -p "$1"
 }
 
-case "$(printf "kill\nsuspend\nreboot\nshutdown" | choose "System:")" in
-    kill) ps -u "$USER" -o pid,comm,%cpu,%mem | choose "Kill:" | awk '{print $1}' | xargs -r kill ;;
-    suspend) systemctl suspend ;;
-    reboot) systemctl reboot ;;
-    shutdown) shutdown now ;;
+case "$(printf "󰌾  Lock\n󰍃  Logout\n󰒲  Suspend\n󰜉  Reboot\n󰐥  Shutdown" | choose "System:")" in
+    *Lock)     i3-lock ;;
+    *Logout)   i3-msg exit ;;
+    *Suspend)  systemctl suspend ;;
+    *Reboot)   systemctl reboot ;;
+    *Shutdown) shutdown now ;;
     *) exit 1 ;;
 esac

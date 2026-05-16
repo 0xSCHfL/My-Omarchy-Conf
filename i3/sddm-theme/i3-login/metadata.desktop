@@ -1,0 +1,6 @@
+[SddmGreeterTheme]
+Name=i3-login
+Description=Minimal i3-themed SDDM login screen
+Author=sohaib
+Type=sddm-theme
+Version=1.0
