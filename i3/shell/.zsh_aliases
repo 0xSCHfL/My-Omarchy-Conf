@@ -1,0 +1,117 @@
+#######################################################
+# MACHINE SPECIFIC ALIASES
+#######################################################
+alias callexpat='ssh -p 3202 root@142.132.160.246'
+alias vocallremote='ssh -p 7202 root@46.225.182.112'
+alias ais='ssh -p 7264 sadhg@195.201.130.179'
+alias kb='ssh -p 2520 root@49.13.236.152'
+alias fw='ssh -p 3920 root@5.75.147.151'
+alias crm='ssh -p 4810 root@91.98.140.68'
+alias ht='ssh 2xsr8y@www512.your-server.de -p222'
+
+#######################################################
+# GENERAL ALIASES
+#######################################################
+alias alert='notify-send --urgency=low -i "$([[ $? = 0 ]] && echo terminal || echo error)" "$(fc -ln -1)"'
+alias ezsh='edit ~/.zshrc'
+alias da='date "+%Y-%m-%d %A %T %Z"'
+alias cp='cp -i'
+alias mv='mv -i'
+alias rm='trash -v'
+alias mkdir='mkdir -p'
+alias ps='ps auxf'
+alias ping='ping -c 10'
+alias less='less -R'
+alias c='clear'
+alias cl='trash-empty'
+alias q='exit'
+alias multitail='multitail --no-repeat -c'
+alias vi='nvim'
+alias svi='sudo vi'
+alias vis='nvim "+set si"'
+alias opc="opencode"
+
+# Change directory
+alias home='cd ~'
+alias cd..='cd ..'
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias .....='cd ../../../..'
+alias bd='cd "$OLDPWD"'
+alias rmd='/bin/rm --recursive --force --verbose'
+
+# Directory listing
+alias ls='ls -aFh --color=always'
+alias la='ls -Alh'
+alias lx='ls -lXBh'
+alias lk='ls -lSrh'
+alias lc='ls -ltcrh'
+alias lu='ls -lturh'
+alias lr='ls -lRh'
+alias lt='ls -ltrh'
+alias lm='ls -alh |more'
+alias lw='ls -xAh'
+alias ll='ls -Fls'
+alias labc='ls -lap'
+alias lf="ls -l | egrep -v '^d'"
+alias ld="ls -l | egrep '^d'"
+alias lla='ls -Al'
+alias las='ls -A'
+alias lls='ls -l'
+
+# chmod shortcuts
+alias mx='chmod a+x'
+alias 000='chmod -R 000'
+alias 644='chmod -R 644'
+alias 666='chmod -R 666'
+alias 755='chmod -R 755'
+alias 777='chmod -R 777'
+
+# Search
+alias h="history | grep "
+alias p="ps aux | grep "
+alias topcpu="/bin/ps -eo pcpu,pid,user,args | sort -k 1 -r | head -10"
+alias f="find . | grep "
+alias ff="fzf --preview 'bat --style=numbers --color=always {}'"
+alias y="yazi"
+alias countfiles="for t in files links directories; do echo \`find . -type \${t:0:1} | wc -l\` \$t; done 2> /dev/null"
+alias checkcommand="type -t"
+alias openports='netstat -nape --inet'
+
+# System
+alias rebootsafe='sudo shutdown -r now'
+alias rebootforce='sudo shutdown -r -n now'
+alias diskspace="sudo ncdu /"
+alias folders='du -h --max-depth=1'
+alias folderssort='find . -maxdepth 1 -type d -print0 | xargs -0 du -sk | sort -rn'
+alias tree='tree -CAhF --dirsfirst'
+alias treed='tree -CAFd'
+alias mountedinfo='df -hT'
+
+# Archives
+alias mktar='tar -cvf'
+alias mkbz2='tar -cvjf'
+alias mkgz='tar -cvzf'
+alias untar='tar -xvf'
+alias unbz2='tar -xvjf'
+alias ungz='tar -xvzf'
+
+# Utilities
+alias logs="sudo find /var/log -type f -exec file {} \; | grep 'text' | cut -d' ' -f1 | sed -e's/:$//g' | grep -v '[0-9]$' | xargs tail -f"
+alias sha1='openssl sha1'
+alias clickpaste='sleep 3; xdotool type "$(xclip -o -selection clipboard)"'
+alias kssh="kitty +kitten ssh"
+alias docker-clean=' \
+  docker container prune -f ; \
+  docker image prune -f ; \
+  docker network prune -f ; \
+  docker volume prune -f '
+alias whatismyip="whatsmyip"
+
+# Services
+alias hug="systemctl --user restart hugo"
+alias lanm="systemctl --user restart lan-mouse"
+
+# Dotfiles
+alias dupdate='dotfiles_update'
