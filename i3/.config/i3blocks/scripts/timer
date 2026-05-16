@@ -77,8 +77,13 @@ timer () {
 menu () {
     if command -v rofi >/dev/null 2>&1 && [ -f "$HOME/.config/rofi/i3-launcher.rasi" ]; then
         MINUTES="$(printf '' | rofi -dmenu -p 'Timer minutes' -theme "$HOME/.config/rofi/i3-launcher.rasi")"
-        if [ $? -eq 0 ] && [ -n "$MINUTES" ]; then
+        ROFI_EXIT=$?
+        if [ "$ROFI_EXIT" -eq 0 ] && [ -n "$MINUTES" ]; then
             start_minutes "$MINUTES"
+            return
+        elif [ "$ROFI_EXIT" -ne 0 ]; then
+            clear_state
+            refresh_bar
             return
         fi
     fi
@@ -91,10 +96,13 @@ menu () {
 }
 
 prompt_timer() {
+    trap 'clear_state; refresh_bar; exit 0' EXIT INT TERM
     printf 'Timer minutes: '
     IFS= read -r MINUTES
     case "$MINUTES" in
         ''|*[!0-9]*)
+            clear_state
+            refresh_bar
             printf '\nInvalid input. Press Enter to close...'
             IFS= read -r _
             exit 0
@@ -103,6 +111,8 @@ prompt_timer() {
 
     TOTAL_SECONDS=$((MINUTES * 60))
     if [ "$TOTAL_SECONDS" -le 0 ]; then
+        clear_state
+        refresh_bar
         printf '\nTimer must be greater than 0. Press Enter to close...'
         IFS= read -r _
         exit 0
