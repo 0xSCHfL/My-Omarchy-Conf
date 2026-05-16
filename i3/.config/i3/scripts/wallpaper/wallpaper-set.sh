@@ -73,6 +73,9 @@ PYEOF
   if [[ -f "$HOME/.config/dunst/generate-from-pywal.sh" ]]; then
     bash "$HOME/.config/dunst/generate-from-pywal.sh"
   fi
+
+  # Kill rofi so it picks up new pywal colors
+  pkill -9 rofi 2>/dev/null || true
 fi
 
 if [[ -f "$HOME/.cache/wal/colors.Xresources" ]] && command -v xrdb >/dev/null 2>&1; then
