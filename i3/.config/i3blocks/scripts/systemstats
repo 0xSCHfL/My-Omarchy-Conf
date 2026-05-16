@@ -8,7 +8,7 @@ sensors >> /tmp/dwmblocks_debug.log
 echo "---" >> /tmp/dwmblocks_debug.log
 
 
-CPU_TEMP=$(sensors | awk '
+CPU_TEMP=$(sensors| awk '
     /^Tdie|^Package id|^Core 0|^CPU|^temp1/ {
         gsub(/[+°C]/, "");
         for (i=1; i<=NF; i++) {
@@ -23,7 +23,7 @@ CPU_TEMP=$(sensors | awk '
 # Debug CPU temperature detection, if not found, return N/A
 if [ -z "$CPU_TEMP" ]; then
     # Try simpler pattern as fallback
-    CPU_TEMP=$(sensors | grep -E '^(Core 0|Package id 0|CPU)' | awk '{print $3}' | tr -d '+°C' | head -n1)
+    CPU_TEMP=$(sensors| grep -E '^(Core 0|Package id 0|CPU)'| awk '{print $3}'| tr -d '+°C'| head -n1)
 fi
 
 [ -z "$CPU_TEMP" ] && CPU_TEMP="N/A"
@@ -36,21 +36,21 @@ if command -v nvidia-smi >/dev/null 2>&1; then
     GPU_TEMP=$(nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader)
 else
     # AMD GPU
-    GPU_TEMP=$(sensors | awk '/^edge|^junction/ {gsub(/\+/,""); gsub(/\..*/,"",$2); print $2}')
+    GPU_TEMP=$(sensors| awk '/^edge|^junction/ {gsub(/\+/,""); gsub(/\..*/,"",$2); print $2}')
 fi
 
 [ -z "$GPU_TEMP" ] && GPU_TEMP="N/A"
 
 
 # Try different fan sensors
-FAN_SPEED=$(sensors | awk '/^fan|^cpu_fan/ {print $2" "$3}')
+FAN_SPEED=$(sensors| awk '/^fan|^cpu_fan/ {print $2" "$3}')
 [ -z "$FAN_SPEED" ] && FAN_SPEED="N/A"
 
 
 # Memory and CPU usage
-MEM_USE=$(free -m | awk '/^Mem/ {printf "%.1f", ($3)/1024}')
+MEM_USE=$(free -m| awk '/^Mem/ {printf "%.1f", ($3)/1024}')
 if command -v iostat >/dev/null 2>&1; then
-    CPU_USE=$(iostat -c | awk '/avg-cpu:/{getline; print "User CPU: "$1"%\n\nSystem CPU: "$3"%"}')
+    CPU_USE=$(iostat -c| awk '/avg-cpu:/{getline; print "User CPU: "$1"%\n\nSystem CPU: "$3"%"}')
 else
     CPU_USE="CPU usage details unavailable (missing iostat)"
 fi
@@ -71,11 +71,13 @@ case $GPU_TEMP in
     *) GPU_ICON="󰢮" ;;                          # 50 or below
 esac
 
-[ -n "$GPU_DISPLAY" ] || GPU_DISPLAY="${GPU_TEMP}°C"
+[ -n "$GPU_DISPLAY" ]|| GPU_DISPLAY="${GPU_TEMP}°C"
 
 
 # Send to bar
-echo " $GPU_ICON $GPU_DISPLAY | $CPU_ICON $CPU_TEMP°C |  ${MEM_USE}g"
+# GPU line commented out - Intel iGPU doesn't expose temperature data
+# echo "| $GPU_ICON $GPU_DISPLAY  |  $CPU_ICON $CPU_TEMP°C  |  󰘚 ${MEM_USE}g"
+echo "| $CPU_ICON $CPU_TEMP°C  |  󰘚 ${MEM_USE}g"
 
 
 # Clicking on bar

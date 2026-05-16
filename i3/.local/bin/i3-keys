@@ -53,6 +53,7 @@ Super + Shift + b    → Brave
 Super + Shift + c    → Chromium
 Super + Shift + o    → Obsidian
 Super + Shift + t    → btop
+Super + Shift + m    → Timer
 Super + Shift + i    → Image picker
 Super + Alt + t      → Telegram
 Super + Shift + v    → Image clipboard history (Space select, Ctrl+d deletes selected)
@@ -61,6 +62,7 @@ Super + Shift + w    → WhatsApp
 Super + Shift + g    → ChatGPT
 Super + Shift + x    → Twitter / X
 Super + Shift + d    → Discord
+Super + Shift + e    → Email picker (Gmail app window)
 Super + Shift + n    → Neovim
 Super + v            → Clipboard manager (Walker, Ctrl+d deletes)
 Super + Ctrl + v     → Copyq show
@@ -68,6 +70,7 @@ Super + n            → Notes
 Super + Ctrl + k     → Keybindings help
 Super + Shift + r    → Restart i3
 Super + Ctrl + r     → Reload i3 config
+Super + x            → Lock screen (i3lock)
 Super + Shift + q    → Exit i3
 EOF
 }

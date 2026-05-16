@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+
+# Load pywal colors
+if [ -f ~/.cache/wal/colors.sh ]; then
+    source ~/.cache/wal/colors.sh
+else
+    background='#1e1e1e'
+    foreground='#e9c1ab'
+    color1='#d75f5f'
+    color5='#CC7755'
+fi
+
+bg() { echo "${1#\#}${2:-ff}"; }
+
+TMPBG=/tmp/i3lock-bg.png
+maim "$TMPBG"
+magick "$TMPBG" -fill black -colorize 90 "$TMPBG"
+
+i3lock \
+    --image="$TMPBG" \
+    --clock \
+    \
+    --time-str="%H:%M" \
+    --time-font="Iosevka Term" \
+    --time-size=120 \
+    --time-color="$(bg "$foreground" ff)" \
+    --time-pos="ix:iy-20" \
+    \
+    --date-str="%A, %d %Y" \
+    --date-font="Iosevka Term" \
+    --date-size=22 \
+    --date-color="$(bg "$foreground" 99)" \
+    --date-pos="ix:iy+80" \
+    \
+    --radius=1 \
+    --ring-width=0 \
+    --inside-color="00000000" \
+    --insidever-color="00000000" \
+    --insidewrong-color="00000000" \
+    --ring-color="00000000" \
+    --ringver-color="$(bg "$foreground" ff)" \
+    --ringwrong-color="$(bg "$color1" ff)" \
+    --keyhl-color="00000000" \
+    --bshl-color="00000000" \
+    --separator-color="00000000" \
+    --line-color="00000000" \
+    \
+    --bar-indicator \
+    --bar-pos="x+0:h" \
+    --bar-direction=1 \
+    --bar-max-height=20 \
+    --bar-base-width=2 \
+    --bar-step=10 \
+    --bar-periodic-step=5 \
+    --bar-color="$(bg "$foreground" 33)" \
+    --keyhl-color="$(bg "$foreground" ff)" \
+    --bar-count=50 \
+    \
+    --verif-text="Verifying..." \
+    --verif-color="$(bg "$color5" ff)" \
+    --verif-font="Iosevka Term" \
+    --verif-size=20 \
+    \
+    --wrong-text="Wrong password, try again" \
+    --wrong-color="$(bg "$color1" ff)" \
+    --wrong-font="Iosevka Term" \
+    --wrong-size=20 \
+    \
+    --noinput-text="" \
+    \
+    --nofork

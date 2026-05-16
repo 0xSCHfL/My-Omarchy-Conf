@@ -43,7 +43,7 @@ exec --no-startup-id systemctl --user start pipewire pipewire-pulse wireplumber
 
 # xss-lock grabs a logind suspend inhibit lock and will use i3lock to lock the
 # screen before suspend. Use loginctl lock-session to lock your screen.
-exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork
+exec --no-startup-id xss-lock --transfer-sleep-lock -- i3-lock
 
 # NetworkManager is the most popular way to manage wireless networks on Linux,
 # and nm-applet is a desktop environment-independent system tray GUI for it.
@@ -113,6 +113,7 @@ bindsym Mod4+Shift+Alt+b exec brave --incognito --ozone-platform=x11
 bindsym Mod4+Shift+c exec chromium --ozone-platform=x11
 bindsym Mod4+Shift+v exec --no-startup-id i3-imgcliphist
 bindsym Mod4+Shift+t exec --no-startup-id kitty -e btop
+bindsym Mod4+Shift+m exec --no-startup-id ~/.config/i3blocks/scripts/timer menu
 
 # kill focused window
 bindsym Mod4+w kill
@@ -228,7 +229,8 @@ bindsym Mod4+Shift+0 move container to workspace number $ws10; workspace number 
 bindsym Mod4+Shift+r restart
 bindsym Mod4+Ctrl+r exec i3-msg reload
 # exit i3 (logs you out of your X session)
-bindsym Mod4+Shift+q exec "echo -e 'No\nYes' | rofi -dmenu -no-sort -i -theme ~/.config/rofi/dwm-keys.rasi -kb-row-up 'k,Up' -kb-row-down 'j,Down' -kb-cancel 'Escape,h,q' -p 'Exit i3?' | grep -q 'Yes' && i3-msg exit"
+bindsym Mod4+x exec --no-startup-id i3-lock
+bindsym Mod4+Shift+q exec "echo -e 'No\nYes'| rofi -dmenu -no-sort -i -theme ~/.config/rofi/dwm-keys.rasi -kb-row-up 'k,Up' -kb-row-down 'j,Down' -kb-cancel 'Escape,h,q' -p 'Exit i3?'| grep -q 'Yes' && i3-msg exit"
 bindsym Mod4+Ctrl+space exec --no-startup-id $HOME/.config/i3/scripts/wallpaper/wallpaper-pick.sh
 bindsym Mod4+Ctrl+v exec --no-startup-id copyq show
 bindsym Print exec --no-startup-id i3-screenshot
@@ -243,11 +245,12 @@ bindsym Mod4+Shift+w exec --no-startup-id i3-webapp "https://web.whatsapp.com/"
 bindsym Mod4+Shift+g exec --no-startup-id i3-webapp "https://chatgpt.com/"
 bindsym Mod4+Shift+x exec --no-startup-id i3-webapp "https://x.com/"
 bindsym Mod4+Shift+d exec --no-startup-id i3-webapp "https://discord.com/channels/@me"
+bindsym Mod4+Shift+e exec --no-startup-id $HOME/.config/i3/scripts/launchers/i3-email-picker.sh
 bindsym Mod4+n exec --no-startup-id notes
 bindsym Mod4+Ctrl+n exec --no-startup-id bash $HOME/.config/i3/scripts/notifications/notifications.sh
 bindsym Mod4+Shift+n exec --no-startup-id kitty -e nvim
 # Clipboard history via rofi
-bindsym Mod4+v exec --no-startup-id "cliphist list | rofi -dmenu -no-sort -i -theme ~/.config/rofi/dwm-keys.rasi -kb-row-up 'k,Up' -kb-row-down 'j,Down' -kb-cancel 'Escape,h,q' -p 'Clipboard:' | cliphist decode | xclip -selection clipboard"
+bindsym Mod4+v exec --no-startup-id "cliphist list| rofi -dmenu -no-sort -i -theme ~/.config/rofi/dwm-keys.rasi -kb-row-up 'k,Up' -kb-row-down 'j,Down' -kb-cancel 'Escape,h,q' -p 'Clipboard:'| cliphist decode| xclip -selection clipboard"
 bindsym Mod4+Escape exec --no-startup-id i3-sys
 
 bindsym Mod1+Tab exec --no-startup-id $HOME/.config/i3/scripts/utils/focus-next.sh
@@ -286,6 +289,7 @@ bar {
     font pango:Iosevka 12
     separator_symbol "▏"
     padding 2px
+    tray_padding 2px
     colors {
         background $wal_bg
         statusline $wal_fg

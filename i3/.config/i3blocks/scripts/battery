@@ -1,0 +1,28 @@
+#!/bin/bash
+
+BAT=/sys/class/power_supply/BAT0
+NOTIFY_THRESHOLD=20
+NOTIFY_FILE="/tmp/battery_notified"
+
+if [ -d "$BAT" ]; then
+    CAPACITY=$(cat $BAT/capacity)
+    STATUS=$(cat $BAT/status)
+
+    # Show notification only once per battery drop below threshold
+    if [ "$CAPACITY" -le "$NOTIFY_THRESHOLD" ] && [ "$STATUS" = "Discharging" ]; then
+        # Check if we already notified at this level or higher
+        LAST_NOTIFIED=$(cat "$NOTIFY_FILE" 2>/dev/null || echo 0)
+        if [ "$CAPACITY" -lt "$LAST_NOTIFIED" ] || [ ! -f "$NOTIFY_FILE" ]; then
+            pgrep dunst >/dev/null || dunst &
+            notify-send -u critical -t 5000 "Low Battery" "Battery at ${CAPACITY}%"
+            echo "$CAPACITY" > "$NOTIFY_FILE"
+        fi
+    elif [ "$STATUS" = "Charging" ]; then
+        # Reset when charging
+        rm -f "$NOTIFY_FILE"
+    fi
+
+    echo "| 🔋 ${CAPACITY}%"
+else
+    echo "| N/A"
+fi

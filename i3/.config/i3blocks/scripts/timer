@@ -19,11 +19,11 @@ clear_state() {
 }
 
 valid_timer_pid() {
-    [ -f "$PID_FILE" ] || return 1
+    [ -f "$PID_FILE" ]||return 1
 
     pid="$(cat "$PID_FILE" 2>/dev/null)"
-    [ -n "$pid" ] || return 1
-    [ -r "/proc/$pid/cmdline" ] || return 1
+    [ -n "$pid" ]||return 1
+    [ -r "/proc/$pid/cmdline" ]||return 1
 
     cmdline="$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null)"
     case "$cmdline" in
@@ -45,9 +45,7 @@ is_running() {
 print_status() {
     is_running >/dev/null 2>&1 || true
     if [ -s "$STATE_FILE" ] && grep -q '[^[:space:]]' "$STATE_FILE"; then
-        cat "$STATE_FILE"
-    else
-        echo "󰔛"
+        echo "| $(cat "$STATE_FILE")"
     fi
 }
 
@@ -70,7 +68,9 @@ timer () {
         ((TOTAL_SECONDS--))
     done
 
+    pgrep dunst >/dev/null || dunst &
     notify-send "Timer ended, take a break"
+    paplay /usr/share/sounds/freedesktop/stereo/complete.oga 2>/dev/null &
     cleanup
 }
 
@@ -100,7 +100,7 @@ prompt_timer() {
     printf 'Timer minutes: '
     IFS= read -r MINUTES
     case "$MINUTES" in
-        ''|*[!0-9]*)
+        '' |*[!0-9]*)
             clear_state
             refresh_bar
             printf '\nInvalid input. Press Enter to close...'
@@ -135,11 +135,11 @@ stop_timer() {
 start_minutes() {
     MINUTES="${1:-}"
     case "$MINUTES" in
-        ''|*[!0-9]*) exit 1 ;;
+        '' |*[!0-9]*) exit 1 ;;
     esac
 
     TOTAL_SECONDS=$((MINUTES * 60))
-    [ "$TOTAL_SECONDS" -gt 0 ] || exit 1
+    [ "$TOTAL_SECONDS" -gt 0 ]||exit 1
 
     setsid -f "$SCRIPT_PATH" run "$TOTAL_SECONDS" >/dev/null 2>&1
     refresh_bar
@@ -149,7 +149,7 @@ case "$1" in
     run)
         TOTAL_SECONDS="${2:-0}"
         case "$TOTAL_SECONDS" in
-            ''|*[!0-9]*) exit 1 ;;
+            '' |*[!0-9]*) exit 1 ;;
         esac
         timer
         ;;
@@ -161,6 +161,9 @@ case "$1" in
         ;;
     prompt)
         prompt_timer
+        ;;
+    menu)
+        menu
         ;;
     *)
         case "${BLOCK_BUTTON:-0}" in

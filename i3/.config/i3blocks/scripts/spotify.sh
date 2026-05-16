@@ -21,4 +21,4 @@ else
     icon="⏸"
 fi
 
-echo "$icon $artist - $title"
+echo "| $icon $artist - $title"

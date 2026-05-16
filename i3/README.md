@@ -113,6 +113,26 @@ cd ~/Work/dotfiles && stow -d i3 -t $HOME shell
 
 This creates `~/.zshenv`, `~/.zshrc`, and `~/.zsh_aliases` as symlinks.
 
+## Tmux
+
+Config lives at `.config/tmux/tmux.conf` (XDG path — tmux auto-discovers it).
+
+**On a fresh machine:**
+
+```bash
+# 1. Stow links ~/.config/tmux/tmux.conf automatically
+cd ~/Work/dotfiles && stow i3
+
+# 2. Install TPM
+git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+
+# 3. Start tmux and install plugins
+tmux
+# then press: prefix + I  (Ctrl+Space + I)
+```
+
+Plugins are installed by TPM into `~/.tmux/plugins/` and are not tracked in dotfiles.
+
 ## Session
 
 Start via `.xinitrc`:

@@ -9,9 +9,9 @@ VOL=$(pactl get-sink-volume @DEFAULT_SINK@ 2>/dev/null | awk '/Volume/{printf "%
 MUTE=$(pactl get-sink-mute @DEFAULT_SINK@ 2>/dev/null)
 
 if [ "$MUTE" = "Mute: yes" ]; then
-    echo "Vol: $VOL [M]"
+    echo "| Vol: $VOL [M]"
 else
-    echo "Vol: $VOL"
+    echo "| Vol: $VOL"
 fi
 
 # Click handler

@@ -2,54 +2,64 @@
 output_format=i3bar
 markup=pango
 interval=5
-separator_block_width=2
+separator_block_width=0
+separator=false
 
 [window_title]
 command=~/.config/i3blocks/scripts/window-title
 interval=1
-min_width=320
-separator_block_width=20
+separator_block_width=0
+separator=false
 
 [spotify]
 command=~/.config/i3blocks/scripts/spotify.sh
 interval=2
 color=#1DB954
+separator=false
 
 [wireless]
 command=~/.config/i3blocks/scripts/wifi
 interval=10
+separator=false
 
 [ethernet]
-command=ip=$(ip addr show eno1 2>/dev/null | awk '/inet /{print $2}' | cut -d/ -f1); [ -n "$ip" ] && echo "E: Leaked IP: $ip" || echo "E: N/A"
+command=ip=$(ip addr show eno1 2>/dev/null| awk '/inet /{print $2}'| cut -d/ -f1); [ -n "$ip" ] && echo "| E: Leaked IP: $ip"|| echo "| E: N/A"
 interval=10
+separator=false
 
 [load]
-command=echo "Load: $(awk '{print $1}' /proc/loadavg)"
+command=echo "| Load: $(awk '{print $1}' /proc/loadavg)"
 interval=2
+separator=false
 
 [systemstats]
 command=~/.config/i3blocks/scripts/systemstats
 interval=2
+separator=false
 
 [disks]
 command=~/.config/i3blocks/scripts/disks
 interval=30
 signal=3
+separator=false
 
 [audio]
 command=~/.config/i3blocks/scripts/audio
 interval=2
 signal=10
+separator=false
 
 [timer]
 command=~/.config/i3blocks/scripts/timer
 interval=once
 signal=3
+separator=false
 
 [battery]
-command=BAT=/sys/class/power_supply/BAT0; [ -d "$BAT" ] && echo "🔋 $(cat $BAT/capacity)%" || echo "N/A"
+command=~/.config/i3blocks/scripts/battery
 interval=5
 signal=3
+separator=false
 
 [time]
 command=~/.config/i3blocks/scripts/timedate

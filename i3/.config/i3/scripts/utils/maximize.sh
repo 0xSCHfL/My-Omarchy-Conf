@@ -19,5 +19,6 @@ print(focused.get('floating', '') if focused else '')
 if [[ "$is_floating" == user_on* ]]; then
     i3-msg "floating disable"
 else
-    i3-msg "floating enable, resize set width 100 ppt, move position center"
+    # Maximize but leave space for i3blocks bar at bottom
+    i3-msg "floating enable, resize set width 100 ppt height 93 ppt, move position center"
 fi

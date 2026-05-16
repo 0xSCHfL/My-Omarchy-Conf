@@ -82,3 +82,4 @@ if [[ -f "$HOME/.cache/wal/colors.Xresources" ]] && command -v xrdb >/dev/null 2
   xrdb -merge "$HOME/.cache/wal/colors.Xresources"
 fi
 
+

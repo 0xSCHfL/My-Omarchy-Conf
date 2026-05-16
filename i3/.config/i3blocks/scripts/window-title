@@ -1,17 +1,14 @@
 #!/bin/bash
 
-# Display workspace number and focused window title combined
-
-# Get current workspace
-WORKSPACE=$(i3-msg -t get_workspaces | jq -r '.[] | select(.focused == true) | .name' 2>/dev/null)
+# Display focused window title with separator
 
 # Get focused window title
 FOCUSED_WINDOW=$(i3-msg -t get_tree | jq -r '.. | select(.focused?) | .name' 2>/dev/null)
 
 # Truncate to reasonable length if needed
-MAX_LENGTH=55
+MAX_LENGTH=60
 if [ ${#FOCUSED_WINDOW} -gt $MAX_LENGTH ]; then
     FOCUSED_WINDOW="${FOCUSED_WINDOW:0:$((MAX_LENGTH-3))}..."
 fi
 
-echo "$WORKSPACE: $FOCUSED_WINDOW"
+echo "$FOCUSED_WINDOW"
