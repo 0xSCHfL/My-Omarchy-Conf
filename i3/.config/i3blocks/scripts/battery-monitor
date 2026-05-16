@@ -1,6 +1,6 @@
 #!/bin/bash
 
-THRESHOLD=15
+THRESHOLD=20
 NOTIFICATION_FLAG="/tmp/i3_battery_notified"
 BATTERY_PATH="/sys/class/power_supply/BAT0"
 
@@ -11,7 +11,7 @@ while true; do
 
     if [[ -n "$capacity" && "$status" == "Discharging" && "$capacity" -le "$THRESHOLD" ]]; then
       if [ ! -f "$NOTIFICATION_FLAG" ]; then
-        notify-send -u critical "🔋 Low Battery" "Battery is at ${capacity}%" -t 30000
+        notify-send -u critical "🔋 Low Battery" "Battery at ${capacity}% — You have to plugin the charger!" -t 30000
         touch "$NOTIFICATION_FLAG"
       fi
     elif [[ "$status" == "Charging" || "$capacity" -gt "$THRESHOLD" ]]; then

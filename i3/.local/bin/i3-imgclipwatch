@@ -3,6 +3,7 @@
 # Polling is more reliable than clipnotify for image clipboard owners that exit quickly.
 
 HIST_DIR="$HOME/.cache/hist"
+LOGFILE="/tmp/i3-imgclipwatch.log"
 mkdir -p "$HIST_DIR"
 
 prev_checksum=""
@@ -27,18 +28,23 @@ while :; do
     done
 
     if [ -n "$mime" ]; then
+        echo "[$(date)] Found $mime in clipboard" >> "$LOGFILE"
         TMPFILE=$(mktemp "/tmp/imgclip-XXXXXX.$ext")
         if xclip -selection clipboard -t "$mime" -o 2>/dev/null > "$TMPFILE" && [ -s "$TMPFILE" ]; then
             checksum=$(md5sum "$TMPFILE" | cut -d' ' -f1)
+            echo "[$(date)] Checksum: $checksum (prev: $prev_checksum)" >> "$LOGFILE"
             if [ "$checksum" != "$prev_checksum" ]; then
                 prev_checksum="$checksum"
                 OUTFILE="$HIST_DIR/$(date +%Y-%m-%d_%H-%M-%S).$ext"
                 mv "$TMPFILE" "$OUTFILE"
+                echo "[$(date)] Saved to $OUTFILE" >> "$LOGFILE"
                 xclip -selection clipboard -t "$mime" < "$OUTFILE" &
             else
+                echo "[$(date)] Duplicate, skipping" >> "$LOGFILE"
                 rm -f "$TMPFILE"
             fi
         else
+            echo "[$(date)] Failed to extract image from clipboard" >> "$LOGFILE"
             rm -f "$TMPFILE"
         fi
     fi

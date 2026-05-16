@@ -68,6 +68,11 @@ with open(os.path.expanduser('~/.config/alacritty/alacritty-wal.toml'), 'w') as 
     f.write(output)
 PYEOF
   fi
+
+  # Update dunst colors with pywal
+  if [[ -f "$HOME/.config/dunst/generate-from-pywal.sh" ]]; then
+    bash "$HOME/.config/dunst/generate-from-pywal.sh"
+  fi
 fi
 
 if [[ -f "$HOME/.cache/wal/colors.Xresources" ]] && command -v xrdb >/dev/null 2>&1; then

@@ -1,5 +1,16 @@
 #!/bin/bash
 sleep 0.3
-dunstify -u critical -t 8000 " Screenshot" "Flameshot opened" >/dev/null 2>&1 || notify-send " Screenshot" "Flameshot opened"
-env XDG_SESSION_TYPE=x11 QT_QPA_PLATFORM=xcb /usr/bin/flameshot gui
-dunstify -u critical -t 8000 " Screenshot" "Flameshot closed" >/dev/null 2>&1 || notify-send " Screenshot" "Flameshot closed"
+dunstify -u critical -t 8000 "📷 Screenshot" "Select area (drag to capture)" >/dev/null 2>&1 || notify-send "📷 Screenshot" "Opened"
+
+TMPFILE=$(mktemp "/tmp/screenshot-XXXXXX.png")
+trap "rm -f '$TMPFILE'" EXIT
+
+# Use maim for interactive selection - simpler than flameshot raw
+if maim -s "$TMPFILE" 2>/dev/null; then
+  if [ -f "$TMPFILE" ] && [ -s "$TMPFILE" ]; then
+    xclip -selection clipboard -t image/png < "$TMPFILE"
+    dunstify -u critical -t 3000 "📷 Screenshot" "✓ Copied to clipboard" >/dev/null 2>&1 || notify-send "📷 Screenshot" "Copied"
+  fi
+else
+  dunstify -u critical -t 3000 "📷 Screenshot" "Cancelled" >/dev/null 2>&1 || notify-send "📷 Screenshot" "Cancelled"
+fi

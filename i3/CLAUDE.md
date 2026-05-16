@@ -151,7 +151,6 @@ Uses `xsetroot -name` with Nord-inspired colors (SchemeSep, SchemeIcon, SchemeVa
 | `fzfub` | fzf + ueberzugpp image browser |
 | `notes` | dmenu notes manager |
 | `random_wallpaper` | Random wallpaper downloader |
-| `wallpapermenu` | Wallpaper picker (nsxiv + pywal) |
 
 ## Monitor Setup
 

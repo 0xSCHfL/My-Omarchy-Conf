@@ -1,13 +1,26 @@
 #!/bin/bash
-sleep 0.5
-TMPFILE=$(mktemp /tmp/dwm-ocr-XXXXXX.png)
+TMPFILE=$(mktemp /tmp/ocr-XXXXXX.png)
+trap "rm -f '$TMPFILE'" EXIT
 
-import -window root "$TMPFILE" 2>/dev/null || { rm -f "$TMPFILE"; exit 1; }
+# Use maim for interactive selection
+if ! maim -s "$TMPFILE" 2>/dev/null; then
+  notify-send "OCR" "Cancelled"
+  exit 1
+fi
 
-TEXT=$(tesseract "$TMPFILE" stdout --oem 1 --psm 6 -l eng --dpi 300 2>/dev/null)
-rm -f "$TMPFILE"
+if [ ! -s "$TMPFILE" ]; then
+  notify-send "OCR" "No selection made"
+  exit 1
+fi
 
-[[ -z $TEXT ]] && exit 1
+# Run tesseract OCR
+TEXT=$(tesseract "$TMPFILE" stdout --oem 1 --psm 6 -l eng 2>/dev/null)
 
+if [ -z "$TEXT" ]; then
+  notify-send "OCR" "No text found"
+  exit 1
+fi
+
+# Copy to clipboard
 printf "%s" "$TEXT" | xclip -selection clipboard
-notify-send "Copied text from selection to clipboard"
+notify-send "✓ OCR" "Text copied to clipboard"
