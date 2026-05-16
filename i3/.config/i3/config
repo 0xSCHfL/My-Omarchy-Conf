@@ -51,7 +51,7 @@ exec --no-startup-id copyq
 exec --no-startup-id $HOME/.config/i3/scripts/wallpaper/wallpaper-set.sh
 exec_always --no-startup-id $HOME/.local/bin/i3-cliphist
 exec_always --no-startup-id $HOME/.local/bin/i3-imgclipwatch
-exec_always --no-startup-id $HOME/.local/bin/batmon
+exec --no-startup-id $HOME/.local/bin/batmon
 exec_always --no-startup-id ~/.config/i3blocks/scripts/battery-monitor
 
 # Volume keys with a real i3 floating popup
@@ -104,6 +104,7 @@ tiling_drag modifier titlebar
 # start a terminal
 bindsym Mod4+Return exec kitty
 bindsym Mod4+Shift+b exec brave --ozone-platform=x11
+bindsym Mod4+Shift+Alt+b exec brave --incognito --ozone-platform=x11
 bindsym Mod4+Shift+c exec chromium --ozone-platform=x11
 bindsym Mod4+Shift+v exec --no-startup-id i3-imgcliphist
 bindsym Mod4+Shift+t exec --no-startup-id kitty -e btop
