@@ -14,16 +14,14 @@ RESET='\033[0m'
 SINGLETONS=(
     picom
     dunst
-    nm-applet
-    copyq
     i3blocks
+    voxtype
 )
 
 # Partial matches for script-based daemons (pgrep -f)
 SCRIPT_SINGLETONS=(
     "i3-cliphist"
     "i3-imgclipwatch"
-    "i3-autolayout"
     "\.local/bin/batmon"
 )
 
@@ -31,13 +29,11 @@ SCRIPT_SINGLETONS=(
 ENSURE_RUNNING=(
     "i3-cliphist|setsid -f bash $HOME/.local/bin/i3-cliphist"
     "i3-imgclipwatch|setsid -f $HOME/.local/bin/i3-imgclipwatch"
-    "i3-autolayout|setsid -f i3-autolayout autolayout"
     "\.local/bin/batmon|setsid -f $HOME/.local/bin/batmon"
     "dunst|setsid -f dunst"
     "picom|setsid -f picom --daemon"
-    "copyq|setsid -f copyq"
-    "nm-applet|setsid -f nm-applet"
     "i3blocks|setsid -f i3blocks"
+    "voxtype|setsid -f voxtype daemon"
 )
 
 killed_any=false
