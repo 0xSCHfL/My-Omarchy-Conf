@@ -77,6 +77,8 @@ if [[ "$PM" == "pacman" ]]; then
         sysstat wireless_tools imagemagick
         # Image processing (i3-lock)
         bat
+        # Markdown preview (peek.nvim)
+        deno
     )
     DWM_PKGS=(
         base-devel imv mpv autocutsel ueberzugpp
