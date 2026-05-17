@@ -1,20 +1,22 @@
 #!/bin/bash
 
-# Audio status display with click handler
-
 TERMINAL_BIN="${TERMINAL:-kitty}"
 
-# Get volume and mute status
-VOL=$(pactl get-sink-volume @DEFAULT_SINK@ 2>/dev/null | awk '/Volume/{printf "%d%%", $5}')
+VOL=$(pactl get-sink-volume @DEFAULT_SINK@ 2>/dev/null | awk '/Volume/{printf "%d", $5}')
 MUTE=$(pactl get-sink-mute @DEFAULT_SINK@ 2>/dev/null)
 
 if [ "$MUTE" = "Mute: yes" ]; then
-    echo "| Vol: $VOL [M]"
+    echo "| 󰖁 ${VOL}%"
+elif [[ "$VOL" -le 30 ]]; then
+    echo "| 󰕿 ${VOL}%"
+elif [[ "$VOL" -le 70 ]]; then
+    echo "| 󰖀 ${VOL}%"
 else
-    echo "| Vol: $VOL"
+    echo "| 󰕾 ${VOL}%"
 fi
+echo ""
+echo "#ea999c"
 
-# Click handler
 case $BLOCK_BUTTON in
     1) setsid -f "$TERMINAL_BIN" --class i3-audio -e bash -lc 'wiremix' ;;
 esac

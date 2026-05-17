@@ -1,32 +1,41 @@
 #!/bin/bash
 
 BAT=/sys/class/power_supply/BAT0
-NOTIFY_THRESHOLD=20
-NOTIFY_FILE="/tmp/battery_notified"
 
-if [ -d "$BAT" ]; then
-    CAPACITY=$(cat $BAT/capacity)
-    STATUS=$(cat $BAT/status)
+icons=("󰁺" "󰁻" "󰁼" "󰁽" "󰁾" "󰁿" "󰂀" "󰂁" "󰂂" "󰁹")
+icon_charging="󰂄"
 
-    # Show notification only once per battery drop below threshold
-    if [ "$CAPACITY" -le "$NOTIFY_THRESHOLD" ] && [ "$STATUS" = "Discharging" ]; then
-        # Check if we already notified at this level or higher
-        LAST_NOTIFIED=$(cat "$NOTIFY_FILE" 2>/dev/null || echo 0)
-        if [ "$CAPACITY" -lt "$LAST_NOTIFIED" ] || [ ! -f "$NOTIFY_FILE" ]; then
-            pgrep dunst >/dev/null || dunst &
-            notify-send -u critical -t 5000 "Low Battery" "Battery at ${CAPACITY}%"
-            echo "$CAPACITY" > "$NOTIFY_FILE"
-        fi
-    elif [ "$STATUS" = "Charging" ]; then
-        # Reset when charging
-        rm -f "$NOTIFY_FILE"
-    fi
-
-    case $BLOCK_BUTTON in
-        1) setsid -f alacritty --class i3cpufreq -e sudo auto-cpufreq --monitor ;;
-    esac
-
-    echo "| 🔋 ${CAPACITY}%"
-else
+if [ ! -d "$BAT" ]; then
     echo "| N/A"
+    exit 0
 fi
+
+CAPACITY=$(cat $BAT/capacity)
+STATUS=$(cat $BAT/status)
+
+idx=$(( (CAPACITY - 1) / 10 ))
+[[ $idx -lt 0 ]] && idx=0
+[[ $idx -gt 9 ]] && idx=9
+ICON="${icons[$idx]}"
+
+if [[ "$STATUS" == "Charging" || "$STATUS" == "Full" ]]; then
+    echo "| $icon_charging ${CAPACITY}%"
+    echo ""
+    echo "#a6d189"
+elif [[ "$CAPACITY" -le 15 ]]; then
+    echo "| $ICON ${CAPACITY}%"
+    echo ""
+    echo "#ea999c"
+elif [[ "$CAPACITY" -le 30 ]]; then
+    echo "| $ICON ${CAPACITY}%"
+    echo ""
+    echo "#e5c890"
+else
+    echo "| $ICON ${CAPACITY}%"
+    echo ""
+    echo "#99d1db"
+fi
+
+case $BLOCK_BUTTON in
+    1) setsid -f alacritty --class i3cpufreq -e sudo auto-cpufreq --monitor ;;
+esac

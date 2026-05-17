@@ -78,6 +78,8 @@ esac
 # GPU line commented out - Intel iGPU doesn't expose temperature data
 # echo "| $GPU_ICON $GPU_DISPLAY  |  $CPU_ICON $CPU_TEMP°C  |  󰘚 ${MEM_USE}g"
 echo "| $CPU_ICON $CPU_TEMP°C  |  󰘚 ${MEM_USE}g"
+echo ""
+echo "$COLOR"
 
 
 # Clicking on bar

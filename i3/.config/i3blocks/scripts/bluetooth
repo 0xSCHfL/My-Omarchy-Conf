@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Bluetooth status display with click handler
-
 POWERED=$(busctl get-property org.bluez /org/bluez/hci0 org.bluez.Adapter1 Powered 2>/dev/null | awk '{print $2}')
 
 if [[ "$POWERED" != "true" ]]; then
-    echo "| BT: off"
+    echo "| 󰂲 off"
+    echo ""
+    echo "#737994"
     exit 0
 fi
 
@@ -20,10 +20,12 @@ while IFS= read -r dev_path; do
 done < <(busctl tree org.bluez 2>/dev/null | grep -oP '/org/bluez/hci0/dev_\S+')
 
 if [[ ${#NAMES[@]} -eq 0 ]]; then
-    echo "| BT: on"
+    echo "| 󰂯 on"
 else
-    ( IFS=", "; echo "| BT: ${NAMES[*]}" )
+    ( IFS=", "; echo "| 󰂱 ${NAMES[*]}" )
 fi
+echo ""
+echo "#6ab0f3"
 
 case $BLOCK_BUTTON in
     1) setsid -f alacritty --class i3-bluetooth -e bluetui ;;

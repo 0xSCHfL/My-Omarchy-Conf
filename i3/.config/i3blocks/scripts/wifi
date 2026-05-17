@@ -1,19 +1,19 @@
 #!/bin/bash
 
-# WiFi status display with click handler
-
 TERMINAL_BIN="${TERMINAL:-kitty}"
 
-# Get WiFi status
 ESSID=$(iwgetid -r 2>/dev/null)
+
 if [ -n "$ESSID" ]; then
-    SIGNAL=$(iwconfig 2>/dev/null| grep -i "Signal level"| awk '{print $4}'| tr -d '=dBm'| head -1)
-    echo "| W: $ESSID${SIGNAL:+ ($SIGNAL%)}"
+    echo "| 󰤨 $ESSID"
+    echo ""
+    echo "#ffffff"
 else
-    echo "| W: down"
+    echo "| 󰤭 down"
+    echo ""
+    echo "#737994"
 fi
 
-# Click handler
 case $BLOCK_BUTTON in
     1) setsid -f "$TERMINAL_BIN" --class i3-wifi -e bash -lc 'rfkill unblock wifi 2>/dev/null; impala' ;;
 esac
