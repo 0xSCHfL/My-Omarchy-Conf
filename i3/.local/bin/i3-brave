@@ -1,0 +1,3 @@
+#!/bin/bash
+pgrep -x brave >/dev/null || rm -f ~/.config/BraveSoftware/Brave-Browser/Singleton*
+exec brave "$@"

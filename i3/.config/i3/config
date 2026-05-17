@@ -26,6 +26,11 @@ set_from_resource $wal_accent color4 #d4d232
 set_from_resource $wal_alert color1 #d75f5f
 
 default_border none
+
+# Hide the blue tiling drag indicator
+client.focused          $wal_bg $wal_bg $wal_fg $wal_bg $wal_bg
+client.unfocused        $wal_bg $wal_bg $wal_dim $wal_bg $wal_bg
+client.focused_inactive $wal_bg $wal_bg $wal_dim $wal_bg $wal_bg
 default_floating_border none
 for_window [class=".*"] border none
 
@@ -60,6 +65,7 @@ exec --no-startup-id $HOME/.config/i3/scripts/wallpaper/wallpaper-set.sh
 exec_always --no-startup-id bash -c 'pkill -f "\.local/bin/i3-cliphist$" 2>/dev/null; sleep 0.1; exec $HOME/.local/bin/i3-cliphist'
 exec_always --no-startup-id bash -c 'pkill -f "\.local/bin/i3-imgclipwatch$" 2>/dev/null; sleep 0.1; exec $HOME/.local/bin/i3-imgclipwatch'
 exec_always --no-startup-id bash -c 'pkill -f "\.local/bin/batmon$" 2>/dev/null; sleep 0.1; exec $HOME/.local/bin/batmon'
+exec_always --no-startup-id bash -c 'pkill -f "i3-autolayout" 2>/dev/null; sleep 0.1; exec i3-autolayout autolayout'
 exec_always --no-startup-id ~/.config/i3blocks/scripts/battery-monitor
 
 # Volume keys with a real i3 floating popup
@@ -80,7 +86,7 @@ bindsym Mod4+Ctrl+a exec --no-startup-id $HOME/.config/i3/scripts/media/i3-launc
 bindsym Mod4+comma exec dunstctl close
 bindsym Mod4+Shift+comma exec dunstctl close-all
 bindsym Mod4+Ctrl+comma exec dunstctl set-paused toggle
-bindsym Mod4+Alt+comma exec dunstctl invoke
+bindsym Mod4+Mod1+comma exec dunstctl invoke
 
 # use these keys for focus, movement, and resize directions when reaching for
 # the arrows is not convenient
@@ -111,9 +117,9 @@ tiling_drag modifier titlebar
 
 # start a terminal
 bindsym Mod4+Return exec kitty
-bindsym Mod4+Shift+b exec bash -c 'rm -f ~/.config/BraveSoftware/Brave-Browser/Singleton* && brave --ozone-platform=x11'
+bindsym Mod4+Shift+b exec --no-startup-id i3-brave
 bindsym Mod4+Shift+s exec bash -c 'rm -f ~/.var/app/com.spotify.Client/cache/spotify/Singleton* && flatpak run com.spotify.Client'
-bindsym Mod4+Shift+Alt+b exec bash -c 'rm -f ~/.config/BraveSoftware/Brave-Browser/Singleton* && brave --incognito --ozone-platform=x11'
+bindsym Mod4+Shift+Mod1+b exec --no-startup-id i3-brave --incognito
 bindsym Mod4+Shift+c exec bash -c 'rm -f ~/.config/chromium/Singleton* && chromium --ozone-platform=x11'
 # Super+Shift+v merged into Super+v (combined text+image picker)
 bindsym Mod4+Shift+t exec --no-startup-id kitty -e btop
@@ -244,7 +250,7 @@ bindsym Mod4+Ctrl+k exec --no-startup-id i3-keys
 bindsym Mod4+q exec --no-startup-id qutebrowser
 bindsym Mod4+Shift+o exec --no-startup-id obsidian
 bindsym Mod4+Shift+i exec --no-startup-id i3-imgpicker
-bindsym Mod4+Alt+t exec --no-startup-id Telegram -theme dark
+bindsym Mod4+Mod1+t exec --no-startup-id Telegram -theme dark
 bindsym Mod4+Shift+w exec --no-startup-id i3-webapp "https://web.whatsapp.com/"
 bindsym Mod4+Shift+g exec --no-startup-id i3-webapp "https://chatgpt.com/"
 bindsym Mod4+Shift+x exec --no-startup-id i3-webapp "https://x.com/"
