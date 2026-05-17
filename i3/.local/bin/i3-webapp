@@ -1,2 +1,2 @@
 #!/bin/bash
-WAYLAND_DISPLAY= GDK_BACKEND=x11 brave --ozone-platform=x11 --user-data-dir="$HOME/.config/brave-dwm" --app="$1"
+WAYLAND_DISPLAY= GDK_BACKEND=x11 brave --ozone-platform=x11 --app="$1"

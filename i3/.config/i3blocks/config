@@ -9,6 +9,7 @@ separator=false
 command=~/.config/i3blocks/scripts/screenrecord
 interval=once
 signal=9
+markup=pango
 separator=false
 
 [window_title]

@@ -81,9 +81,10 @@ XF86AudioLowerVol    → Volume down (popup)
 XF86AudioMute        → Mute/unmute (popup)
 XF86AudioMicMute     → Mute microphone
 Brightness Up/Down   → Brightness +/- (Fn keys)
-Print                → Screenshot (flameshot)
-Alt + Print          → Screen recording
-Super + Ctrl + Print → OCR screenshot
+Print                → Screenshot → clipboard
+Super + Print        → Screen recording (start/stop)
+Super + Ctrl + Print → OCR screenshot → clipboard
+Super + Shift + s    → Spotify
 EOF
 }
 
