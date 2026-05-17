@@ -39,6 +39,11 @@ function chpwd() { ls; }
 # Key bindings
 bindkey -e
 bindkey '^f' "zi\n"
+bindkey "^[[1;5C" forward-word   # Ctrl+Right
+bindkey "^[[1;5D" backward-word  # Ctrl+Left
+bindkey "^?" backward-delete-char
+bindkey "^H" backward-delete-char
+bindkey "^[[3~" delete-char
 
 # Allow ctrl-S for history navigation
 [[ -o interactive ]] && stty -ixon
