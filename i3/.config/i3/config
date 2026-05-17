@@ -166,12 +166,12 @@ bindsym Mod4+Ctrl+h split h
 bindsym Mod4+Ctrl+l split v
 
 
-# enter fullscreen mode for the focused container
-bindsym Mod4+f fullscreen toggle
+# true fullscreen: hides bar (like Hyprland fullscreen 0)
+bindsym Mod4+f exec --no-startup-id ~/.config/i3/scripts/utils/fullscreen.sh
 
 # file manager
 bindsym Mod4+Shift+f exec --no-startup-id nautilus --new-window
-# maximize (fill workspace, bar stays visible)
+# maximize: fills screen, bar stays, app UI preserved (not fullscreen)
 bindsym Mod4+Mod1+f exec --no-startup-id ~/.config/i3/scripts/utils/maximize.sh
 
 # change container layout (stacked, tabbed, toggle split)

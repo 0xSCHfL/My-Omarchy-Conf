@@ -27,7 +27,5 @@ focused = next((w for w in ws if w['focused']), ws[0])
 r = focused['rect']
 print(r['x'], r['y'], r['width'], r['height'])
 ")
-    FULL_W=$((WW + 2 * WX))
-    FULL_H=$((WH + 2 * WY))
-    i3-msg "floating enable, resize set ${FULL_W} px ${FULL_H} px, move position -${WX} -${WY}"
+    i3-msg "floating enable, resize set ${WW} px ${WH} px, move absolute position ${WX} ${WY}"
 fi
