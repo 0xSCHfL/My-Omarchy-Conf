@@ -62,10 +62,10 @@ for i in "${!window_ids[@]}"; do
         next_win="${window_ids[$next_idx]}"
 
         if [[ "$is_maximized" == "user_on"* ]]; then
-            # Un-maximize current, focus next, maximize next
-            i3-msg "floating disable"
+            # Focus next → maximize next → un-maximize previous (now hidden behind)
             i3-msg "[id=$next_win] focus"
             ~/.config/i3/scripts/utils/maximize.sh
+            i3-msg "[id=$current] floating disable"
         else
             xdotool windowfocus --sync "$next_win"
             xdotool windowraise "$next_win"
