@@ -1,9 +1,42 @@
 #!/usr/bin/env python3
 
+# Show a splash immediately while the slow textual import runs.
+import sys as _sys
+import shutil as _shutil
+
+_LOGO_LINES = [
+    "█████████████▄  ███████████   ████       ████▄████     ████   █████████    ███  ███████████",
+    "████ ▄▄▄▄▄▄▄▄█████▄ ▄▄▄▄▄████▄█████      ██████████    ████ ████ ▄▄▄▄████▄ ███  ████  ▄▄▄███▄▄",
+    "█████████████▄█████      ██████████      ██████████████████ ██████████████ ███  ███████████ ▄█",
+    "         ██████████      ██████████      ██████████    ████ ████     █████ ███  ████     ███ █",
+    "██████████████ ▀███████████ ▀▀ ▀███████████ ▀▀█████    ████ ████     █████ ███  ███████████ ▀▀",
+]
+_LOGO_W = max(len(s) for s in _LOGO_LINES)
+_SUBTITLE = "󰊫  Loading Google Drive…"
+
+_cols, _rows = _shutil.get_terminal_size((100, 30))
+_top = max(1, (_rows - (len(_LOGO_LINES) + 2)) // 2)
+_left = max(0, (_cols - _LOGO_W) // 2)
+_sub_left = max(0, (_cols - len(_SUBTITLE)) // 2)
+
+_pad = " " * _left
+_lines = [f"\033[{_top + i + 1};1H{_pad}{l}" for i, l in enumerate(_LOGO_LINES)]
+_sub_line = f"\033[{_top + len(_LOGO_LINES) + 2};1H{' ' * _sub_left}\033[38;5;245m{_SUBTITLE}\033[0m"
+
+_sys.stdout.write("\033[?25l\033[2J\033[1;38;5;180m" + "".join(_lines) + "\033[0m" + _sub_line)
+_sys.stdout.flush()
+
 import json
 import os
+import re
 import subprocess
 import shutil
+import tempfile
+import time as _time
+import threading
+import configparser
+import logging
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from datetime import datetime
 
@@ -13,20 +46,367 @@ from textual.containers import Horizontal, Vertical
 from textual.reactive import reactive
 from textual.screen import ModalScreen
 from textual.widgets import (
-    DataTable, Footer, Header, Input, Label, Static
+    Button, DataTable, Footer, Header, Input, Label, Static
 )
 
 REMOTE = "gdrive"
 MOUNT_POINT = Path.home() / "GoogleDrive"
 RCLONE_CONF = Path.home() / ".config/rclone/rclone.conf"
+LOG_PATH = Path.home() / ".cache/i3-gdrive.log"
+EMAIL_CACHE = Path.home() / ".cache/i3-gdrive/emails.json"
+DEFAULT_REMOTE_FILE = Path.home() / ".cache/i3-gdrive/default.txt"
+
+
+# ── pywal colors ─────────────────────────────────────────────────────────────
+
+def load_wal_colors() -> dict:
+    wal = Path.home() / ".cache/wal/colors.json"
+    try:
+        return json.loads(wal.read_text()) if wal.exists() else {}
+    except Exception:
+        return {}
+
+
+def make_css(wal: dict) -> str:
+    if wal:
+        bg     = wal["special"]["background"]
+        fg     = wal["special"]["foreground"]
+        panel  = wal["colors"]["color0"]
+        dim    = wal["colors"]["color8"]
+        accent = wal["colors"]["color4"]
+        warn   = wal["colors"]["color3"]
+    else:
+        bg     = "#1e1e2e"
+        fg     = "#f8f8f2"
+        panel  = "#282a36"
+        dim    = "#6272a4"
+        accent = "#bd93f9"
+        warn   = "#f1fa8c"
+
+    return f"""
+    Screen {{
+        background: {bg};
+    }}
+    ModalScreen {{
+        align: center middle;
+    }}
+    Header {{
+        background: {panel};
+        color: {fg};
+    }}
+    Header > .header--title {{
+        background: {panel};
+        color: {accent};
+        text-style: bold;
+    }}
+    Footer {{
+        background: {panel};
+        color: {dim};
+    }}
+    Footer > .footer--key {{
+        background: {accent};
+        color: {bg};
+        text-style: bold;
+    }}
+    Footer > .footer--description {{
+        color: {fg};
+    }}
+    Footer > .footer--spacer {{
+        background: {panel};
+    }}
+    FilePane {{
+        width: 1fr;
+        border: solid {dim};
+        margin: 0 1;
+    }}
+    FilePane.active-pane {{
+        border: solid {accent};
+    }}
+    #local-path, #remote-path {{
+        background: {panel};
+        color: {fg};
+        padding: 0 1;
+        height: 1;
+    }}
+    DataTable {{
+        background: {bg};
+    }}
+    DataTable > .datatable--header {{
+        background: {panel};
+        color: {accent};
+        text-style: bold;
+    }}
+    DataTable > .datatable--cursor {{
+        background: {dim};
+        color: {fg};
+    }}
+    DataTable > .datatable--header-cursor {{
+        background: {accent};
+        color: {bg};
+    }}
+    * {{
+        scrollbar-background: {bg};
+        scrollbar-background-hover: {bg};
+        scrollbar-background-active: {bg};
+        scrollbar-color: {dim};
+        scrollbar-color-hover: {accent};
+        scrollbar-color-active: {accent};
+        scrollbar-corner-color: {bg};
+    }}
+    #status-bar {{
+        height: 1;
+        background: {panel};
+        color: {dim};
+        padding: 0 2;
+    }}
+    #confirm-dialog, #input-dialog, #setup-dialog, #picker-dialog, #help-dialog {{
+        background: {panel};
+        border: solid {accent};
+        padding: 2 4;
+        width: 60;
+        height: auto;
+    }}
+    #picker-dialog {{
+        width: 78;
+    }}
+    #help-dialog {{
+        width: 60;
+    }}
+    #help-title {{
+        color: {accent};
+        text-style: bold;
+        margin-bottom: 1;
+    }}
+    #help-body {{
+        color: {fg};
+        height: auto;
+    }}
+    #help-hint {{
+        color: {dim};
+        margin-top: 1;
+    }}
+    #picker-title {{
+        color: {accent};
+        text-style: bold;
+        margin-bottom: 1;
+    }}
+    #picker-hint {{
+        color: {dim};
+        margin-top: 1;
+    }}
+    #picker-table {{
+        background: {panel};
+        height: auto;
+        max-height: 12;
+    }}
+    #picker-table > .datatable--cursor {{
+        background: {accent};
+        color: {bg};
+        text-style: bold;
+    }}
+    #confirm-msg, #setup-msg {{
+        color: {fg};
+        margin-bottom: 1;
+    }}
+    #confirm-hint, #input-hint {{
+        color: {dim};
+    }}
+    #setup-title {{
+        color: {accent};
+        text-style: bold;
+        margin-bottom: 1;
+    }}
+    #setup-status {{
+        color: {warn};
+        margin-top: 1;
+    }}
+    #input-label {{
+        color: {fg};
+        margin-bottom: 1;
+    }}
+    Input {{
+        background: {bg};
+        border: solid {dim};
+        color: {fg};
+        height: 3;
+        padding: 0 1;
+    }}
+    Input:focus {{
+        border: solid {accent};
+    }}
+    #input-field {{
+        background: {bg};
+        color: {fg};
+        height: 3;
+        width: 100%;
+    }}
+    """
+
+
+_WAL_FILE = Path.home() / ".cache/wal/colors.json"
+_CSS_PATH  = Path(tempfile.gettempdir()) / "i3-gdrive.css"
+_CSS_PATH.write_text(make_css(load_wal_colors()))
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
-def has_remote() -> bool:
+def has_remote(remote: str) -> bool:
     if not RCLONE_CONF.exists():
         return False
-    return f"[{REMOTE}]" in RCLONE_CONF.read_text()
+    return f"[{remote}]" in RCLONE_CONF.read_text()
+
+
+def drive_remotes() -> list[str]:
+    if not RCLONE_CONF.exists():
+        return []
+    parser = configparser.ConfigParser()
+    try:
+        parser.read(RCLONE_CONF)
+    except Exception:
+        return []
+    remotes = []
+    for section in parser.sections():
+        if parser.get(section, "type", fallback="") == "drive":
+            remotes.append(section)
+    return sorted(remotes)
+
+
+def load_email_cache() -> dict:
+    if not EMAIL_CACHE.exists():
+        return {}
+    try:
+        return json.loads(EMAIL_CACHE.read_text())
+    except Exception:
+        return {}
+
+
+def save_email_cache(cache: dict) -> None:
+    try:
+        EMAIL_CACHE.parent.mkdir(parents=True, exist_ok=True)
+        EMAIL_CACHE.write_text(json.dumps(cache))
+    except Exception:
+        logging.exception("save_email_cache failed")
+
+
+def load_default_remote() -> str | None:
+    if not DEFAULT_REMOTE_FILE.exists():
+        return None
+    try:
+        return DEFAULT_REMOTE_FILE.read_text().strip() or None
+    except Exception:
+        return None
+
+
+def save_default_remote(name: str) -> None:
+    try:
+        DEFAULT_REMOTE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        DEFAULT_REMOTE_FILE.write_text(name)
+    except Exception:
+        logging.exception("save_default_remote failed")
+
+
+def delete_remote(name: str) -> bool:
+    result = subprocess.run(
+        ["rclone", "config", "delete", name],
+        capture_output=True, text=True
+    )
+    if result.returncode != 0:
+        logging.warning("rclone config delete %s failed: %s", name, result.stderr)
+        return False
+    cache = load_email_cache()
+    if name in cache:
+        del cache[name]
+        save_email_cache(cache)
+    if load_default_remote() == name:
+        try:
+            DEFAULT_REMOTE_FILE.unlink()
+        except FileNotFoundError:
+            pass
+    return True
+
+
+def _userinfo_request(access_token: str) -> tuple[str | None, bool]:
+    """Returns (email, expired). expired=True means token is invalid.
+    Uses Drive's /about endpoint since rclone tokens only have drive scope."""
+    import urllib.request
+    import urllib.error
+    req = urllib.request.Request(
+        "https://www.googleapis.com/drive/v3/about?fields=user",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read())
+            return data.get("user", {}).get("emailAddress"), False
+    except urllib.error.HTTPError as e:
+        if e.code == 401:
+            return None, True
+        logging.warning("userinfo HTTP error %s", e)
+        return None, False
+    except Exception as e:
+        logging.warning("userinfo failed: %s", e)
+        return None, False
+
+
+def fetch_remote_email(remote: str) -> str | None:
+    if not RCLONE_CONF.exists():
+        return None
+    parser = configparser.ConfigParser()
+    try:
+        parser.read(RCLONE_CONF)
+    except Exception:
+        return None
+    if remote not in parser:
+        return None
+    token_str = parser.get(remote, "token", fallback="")
+    if not token_str:
+        return None
+    try:
+        token = json.loads(token_str)
+    except Exception:
+        return None
+    access_token = token.get("access_token")
+    if not access_token:
+        return None
+
+    email, expired = _userinfo_request(access_token)
+    if email:
+        return email
+    if not expired:
+        return None
+
+    # Trigger rclone to refresh the access token in-place
+    try:
+        subprocess.run(
+            ["rclone", "about", f"{remote}:"],
+            capture_output=True, timeout=15
+        )
+    except Exception:
+        return None
+    try:
+        parser.read(RCLONE_CONF)
+        token = json.loads(parser.get(remote, "token", fallback="") or "{}")
+        access_token = token.get("access_token")
+    except Exception:
+        return None
+    if not access_token:
+        return None
+    email, _ = _userinfo_request(access_token)
+    return email
+
+
+def get_remote_emails(remotes: list[str]) -> dict:
+    cache = load_email_cache()
+    changed = False
+    for r in remotes:
+        if r not in cache or not cache[r]:
+            email = fetch_remote_email(r)
+            if email:
+                cache[r] = email
+                changed = True
+    if changed:
+        save_email_cache(cache)
+    return cache
 
 
 def is_mounted() -> bool:
@@ -57,10 +437,23 @@ def fmt_date(iso: str) -> str:
 
 
 def rclone(*args, check=False) -> subprocess.CompletedProcess:
+    logging.debug("rclone %s", " ".join(args))
     return subprocess.run(
         ["rclone", *args],
         capture_output=True, text=True, check=check
     )
+
+
+def setup_logging() -> None:
+    LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    handler = RotatingFileHandler(LOG_PATH, maxBytes=1_000_000, backupCount=3)
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s %(levelname)s %(message)s",
+        handlers=[handler],
+        force=True,
+    )
+    logging.info("i3-gdrive started")
 
 
 def list_local(path: Path) -> list[dict]:
@@ -68,10 +461,18 @@ def list_local(path: Path) -> list[dict]:
     try:
         for e in sorted(path.iterdir(), key=lambda x: (not x.is_dir(), x.name.lower())):
             stat = e.stat()
+            is_dir = e.is_dir()
+            if is_dir:
+                try:
+                    size = sum(1 for _ in e.iterdir())
+                except (PermissionError, OSError):
+                    size = 0
+            else:
+                size = stat.st_size
             entries.append({
                 "name": e.name,
-                "is_dir": e.is_dir(),
-                "size": stat.st_size,
+                "is_dir": is_dir,
+                "size": size,
                 "mod": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d"),
             })
     except PermissionError:
@@ -79,8 +480,8 @@ def list_local(path: Path) -> list[dict]:
     return entries
 
 
-def list_remote(path: str) -> list[dict]:
-    result = rclone("lsjson", f"{REMOTE}:{path}")
+def list_remote(remote: str, path: str) -> list[dict]:
+    result = rclone("lsjson", f"{remote}:{path}")
     if result.returncode != 0:
         return []
     items = json.loads(result.stdout or "[]")
@@ -99,6 +500,12 @@ def list_remote(path: str) -> list[dict]:
 # ── modals ────────────────────────────────────────────────────────────────────
 
 class ConfirmScreen(ModalScreen):
+    BINDINGS = [
+        Binding("y",      "confirm",   "Delete", show=False, priority=True),
+        Binding("n",      "cancel",    "Cancel", show=False, priority=True),
+        Binding("escape", "cancel",    "Cancel", show=False, priority=True),
+    ]
+
     def __init__(self, message: str, **kwargs):
         super().__init__(**kwargs)
         self.message = message
@@ -106,13 +513,13 @@ class ConfirmScreen(ModalScreen):
     def compose(self) -> ComposeResult:
         with Vertical(id="confirm-dialog"):
             yield Label(self.message, id="confirm-msg")
-            yield Label("[y] Yes    [n] No", id="confirm-hint")
+            yield Label(r"\[y] Delete    \[n / Esc] Cancel", id="confirm-hint")
 
-    def on_key(self, event) -> None:
-        if event.key == "y":
-            self.dismiss(True)
-        elif event.key in ("n", "escape"):
-            self.dismiss(False)
+    def action_confirm(self) -> None:
+        self.dismiss(True)
+
+    def action_cancel(self) -> None:
+        self.dismiss(False)
 
 
 class InputScreen(ModalScreen):
@@ -125,43 +532,270 @@ class InputScreen(ModalScreen):
         with Vertical(id="input-dialog"):
             yield Label(self.prompt, id="input-label")
             yield Input(value=self.default, id="input-field")
-            yield Label("[Enter] Confirm    [Esc] Cancel", id="input-hint")
+            yield Label(r"\[Enter] Confirm    \[Esc] Cancel", id="input-hint")
 
     def on_mount(self) -> None:
-        self.query_one("#input-field", Input).focus()
+        inp = self.query_one("#input-field", Input)
+        inp.focus()
+        logging.debug("input-screen mounted, input value=%r focused=%s",
+                      inp.value, type(self.focused).__name__)
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
+        logging.debug("input-screen submitted value=%r", event.value)
         self.dismiss(event.value.strip())
+
+    def on_input_changed(self, event: Input.Changed) -> None:
+        logging.debug("input-screen changed value=%r", event.value)
+
+    def on_key(self, event) -> None:
+        inp = self.query_one("#input-field", Input)
+        logging.debug("input-screen key=%s char=%r focused=%s input_value=%r",
+                      event.key, event.character, type(self.focused).__name__, inp.value)
+        if event.key == "escape":
+            self.dismiss(None)
+            event.stop()
+            return
+        if event.key == "enter":
+            self.dismiss(inp.value.strip())
+            event.stop()
+            return
+        if event.key == "backspace":
+            inp.action_delete_left()
+            event.stop()
+            return
+        if event.character and event.character.isprintable():
+            inp.insert_text_at_cursor(event.character)
+            event.stop()
+
+
+class HelpScreen(ModalScreen):
+    BINDINGS = [
+        Binding("escape", "close", "Close", show=False, priority=True),
+        Binding("q",      "close", "Close", show=False, priority=True),
+        Binding("question_mark", "close", "Close", show=False, priority=True),
+    ]
+
+    SECTIONS = [
+        ("Navigation", [
+            ("h / ←",       "Parent directory"),
+            ("l / Enter",   "Open directory"),
+            ("j / ↓",       "Move down"),
+            ("k / ↑",       "Move up"),
+            ("Backspace",   "Go up"),
+            ("Tab",         "Switch pane"),
+        ]),
+        ("File operations", [
+            ("o",           "Open with default app"),
+            ("y",           "Yank (copy) to clipboard"),
+            ("x",           "Cut to clipboard"),
+            ("p",           "Paste in current pane"),
+            ("u",           "Upload to Drive"),
+            ("d",           "Download from Drive"),
+            ("r",           "Rename"),
+            ("n",           "New directory"),
+            ("Del",         "Delete"),
+        ]),
+        ("Drive", [
+            ("m",           "Toggle mount"),
+            ("a",           "Account picker"),
+        ]),
+        ("Account picker", [
+            ("Enter",       "Switch to selected"),
+            ("Space",       "Set as default"),
+            ("d / Del",     "Delete account"),
+            ("+ row",       "Add new account"),
+        ]),
+        ("View", [
+            (".",           "Toggle hidden files"),
+            ("/",           "Search"),
+            ("?",           "This help"),
+            ("q",           "Quit"),
+        ]),
+    ]
+
+    def compose(self) -> ComposeResult:
+        with Vertical(id="help-dialog"):
+            yield Label("󰋖  Keybindings", id="help-title")
+            lines = []
+            for title, items in self.SECTIONS:
+                lines.append(f"[bold]{title}[/bold]")
+                for key, desc in items:
+                    lines.append(f"  [bold]{key:<12}[/bold]  {desc}")
+                lines.append("")
+            yield Static("\n".join(lines).rstrip(), id="help-body")
+            yield Label(r"\[?  /  q  /  Esc] Close", id="help-hint")
+
+    def action_close(self) -> None:
+        self.dismiss(None)
+
+
+class AccountPickerScreen(ModalScreen):
+    ADD_NEW = "__add_new__"
+
+    def __init__(self, remotes: list[str], current: str, emails: dict, **kwargs):
+        super().__init__(**kwargs)
+        self.remotes = list(remotes)
+        self.current = current
+        self.emails = emails
+        self.default = load_default_remote()
+        # Tracks the latest user action so action_switch_account can react.
+        self.result: tuple[str, str] | None = None
+
+    def _row_label(self, r: str) -> str:
+        marker = "●" if r == self.current else " "
+        star   = "★" if r == self.default else " "
+        email  = self.emails.get(r, "")
+        base = f" {marker} {star}  {r}"
+        return f"{base}  ─  {email}" if email else base
+
+    def _rebuild_table(self) -> None:
+        table = self.query_one("#picker-table", DataTable)
+        cursor_row = table.cursor_row
+        table.clear()
+        for r in self.remotes:
+            table.add_row(self._row_label(r), key=r)
+        table.add_row("   +   Add new account…", key=self.ADD_NEW)
+        if 0 <= cursor_row < table.row_count:
+            table.move_cursor(row=cursor_row, animate=False)
+
+    def compose(self) -> ComposeResult:
+        with Vertical(id="picker-dialog"):
+            yield Label("󰊫  Switch Drive account", id="picker-title")
+            table = DataTable(id="picker-table", cursor_type="row", show_header=False, zebra_stripes=False)
+            table.add_column("name", width=64)
+            for r in self.remotes:
+                table.add_row(self._row_label(r), key=r)
+            table.add_row("   +   Add new account…", key=self.ADD_NEW)
+            yield table
+            yield Label(
+                "[j/k] Move  [Enter] Select  [Space] Default  [d/Del] Delete  [Esc] Cancel",
+                id="picker-hint",
+            )
+
+    def on_mount(self) -> None:
+        table = self.query_one("#picker-table", DataTable)
+        try:
+            idx = self.remotes.index(self.current)
+        except ValueError:
+            idx = 0
+        if self.remotes:
+            table.move_cursor(row=idx, animate=False)
+        table.focus()
+
+    def _cursor_key(self) -> str | None:
+        table = self.query_one("#picker-table", DataTable)
+        if table.row_count == 0:
+            return None
+        return table.coordinate_to_cell_key(table.cursor_coordinate).row_key.value
+
+    def _select_current(self) -> None:
+        key = self._cursor_key()
+        if key is None:
+            self.dismiss(None)
+            return
+        self.dismiss(("select", key))
+
+    def _set_default(self) -> None:
+        key = self._cursor_key()
+        if key is None or key == self.ADD_NEW:
+            return
+        save_default_remote(key)
+        self.default = key
+        self._rebuild_table()
+
+    def _delete_current(self) -> None:
+        key = self._cursor_key()
+        if key is None or key == self.ADD_NEW:
+            return
+        # Hand the deletion + confirmation back to the app — pushing another
+        # modal on top of this picker keeps the flow contained there.
+        self.dismiss(("delete", key))
+
+    def update_emails(self, emails: dict) -> None:
+        self.emails = emails
+        self._rebuild_table()
 
     def on_key(self, event) -> None:
         if event.key == "escape":
             self.dismiss(None)
+            event.stop()
+        elif event.key == "j":
+            self.query_one("#picker-table", DataTable).action_cursor_down()
+            event.stop()
+        elif event.key == "k":
+            self.query_one("#picker-table", DataTable).action_cursor_up()
+            event.stop()
+        elif event.key == "enter":
+            self._select_current()
+            event.stop()
+        elif event.key == "space":
+            self._set_default()
+            event.stop()
+        elif event.key in ("d", "delete"):
+            self._delete_current()
+            event.stop()
 
 
 class SetupScreen(ModalScreen):
+    def __init__(self, remote_name: str, **kwargs):
+        super().__init__(**kwargs)
+        self.remote_name = remote_name
+
     def compose(self) -> ComposeResult:
         with Vertical(id="setup-dialog"):
-            yield Label("󰊫  Google Drive Setup", id="setup-title")
+            yield Label(f"󰊫  Google Drive Setup ({self.remote_name})", id="setup-title")
             yield Label(
-                "No Google Drive remote found.\n\n"
-                "Press [s] to open the rclone setup wizard in a new terminal.\n"
-                "After completing OAuth, press [r] to refresh.\n\n"
-                "Press [q] to quit.",
+                r"Press \[s] to connect via browser OAuth." + "\n"
+                r"Press \[q] to quit.",
                 id="setup-msg"
             )
+            yield Label("", id="setup-status")
+
+    def _set_status(self, msg: str) -> None:
+        self.query_one("#setup-status", Label).update(msg)
 
     def on_key(self, event) -> None:
         if event.key == "s":
-            subprocess.Popen([
-                "alacritty", "--class", "i3-gdrive-setup",
-                "-e", "rclone", "config", "create", REMOTE, "drive",
-                "scope", "drive"
-            ])
-        elif event.key == "r":
-            if has_remote():
-                self.dismiss(True)
+            logging.info("setup oauth start remote=%s", self.remote_name)
+            self._set_status("Opening browser… authorize in browser then wait here.")
+            self.run_worker(self._do_auth, thread=True)
         elif event.key == "q":
             self.app.exit()
+
+    def _do_auth(self) -> bool:
+        result = subprocess.run(
+            ["rclone", "authorize", "drive"],
+            capture_output=True, text=True
+        )
+        if result.returncode != 0:
+            return False
+        # Token JSON is in stdout between { and the last }
+        stdout = result.stdout
+        start = stdout.find("{")
+        end = stdout.rfind("}") + 1
+        if start == -1 or end == 0:
+            return False
+        token = stdout[start:end]
+        create = subprocess.run(
+            ["rclone", "config", "create", self.remote_name, "drive",
+             "scope", "drive", "token", token],
+            capture_output=True, text=True
+        )
+        return create.returncode == 0
+
+    def on_worker_state_changed(self, event) -> None:
+        state = event.worker.state.name
+        if state == "SUCCESS":
+            if event.worker.result:
+                logging.info("setup oauth success remote=%s", self.remote_name)
+                self.dismiss(True)
+            else:
+                logging.warning("setup oauth failed remote=%s", self.remote_name)
+                self._set_status("Auth failed — press S to retry.")
+            return
+        if state in {"ERROR", "CANCELLED"}:
+            logging.error("setup oauth worker state=%s remote=%s", state, self.remote_name)
+            self._set_status("Auth failed — press S to retry.")
 
 
 # ── file pane ────────────────────────────────────────────────────────────────
@@ -175,6 +809,11 @@ class FilePane(Vertical):
         self.side = side          # "local" or "remote"
         self.path = str(Path.home()) if side == "local" else ""
         self.entries: list[dict] = []
+        self._searching = False
+        self._query = ""
+        self._matches: list[int] = []
+        self._match_pos: int = 0
+        self._pre_search_row: int = 0
 
     def compose(self) -> ComposeResult:
         yield Label("", id=f"{self.side}-path")
@@ -185,27 +824,112 @@ class FilePane(Vertical):
         table.add_columns("  Name", "Size", "Date")
         self.refresh_listing()
 
+    def _fetch_entries(self) -> list[dict]:
+        if self.side == "local":
+            return list_local(Path(self.path))
+        return list_remote(self.app.remote_name, self.path)
+
+    def _populate_table(self, entries: list[dict]) -> None:
+        if not getattr(self.app, "show_hidden", False):
+            entries = [e for e in entries if not e["name"].startswith(".")]
+        self.entries = entries
+        table = self.query_one(f"#{self.side}-table", DataTable)
+        table.clear()
+        for e in entries:
+            icon = "󰉋 " if e["is_dir"] else "󰈙 "
+            if e["is_dir"]:
+                if self.side == "local":
+                    n = e["size"]
+                    size = f"{n} item{'s' if n != 1 else ''}"
+                else:
+                    size = "—"
+            else:
+                size = fmt_size(e["size"])
+            table.add_row(icon + e["name"], size, e["mod"])
+
     def watch_active(self, value: bool) -> None:
         self.set_class(value, "active-pane")
 
-    def refresh_listing(self) -> None:
+    def _status_bar(self) -> Static:
+        return self.app.query_one("#status-bar", Static)
+
+    def open_search(self) -> None:
         table = self.query_one(f"#{self.side}-table", DataTable)
+        self._pre_search_row = table.cursor_row
+        self._searching = True
+        self._query = ""
+        self._matches = []
+        self._match_pos = 0
+        self._status_bar().update(" find: ▌")
+        table.focus()
+
+    def close_search(self, restore: bool = False) -> None:
+        self._searching = False
+        self._status_bar().update(self.app._status_text())
+        if restore:
+            self._jump_to(self._pre_search_row)
+
+    def _update_search(self) -> None:
+        q = self._query.lower()
+        self._matches = [
+            i for i, e in enumerate(self.entries) if q in e["name"].lower()
+        ]
+        self._match_pos = 0
+        self._status_bar().update(f" find: {self._query}▌{self._status_hint()}")
+        if self._matches:
+            self._jump_to(self._matches[0])
+
+    def _jump_to(self, row: int) -> None:
+        table = self.query_one(f"#{self.side}-table", DataTable)
+        if not self.entries:
+            return
+        row = max(0, min(row, len(self.entries) - 1))
+        table.move_cursor(row=row, animate=False, scroll=True)
+        # Keep match clearly visible on long lists.
+        table.scroll_to(y=row, animate=False)
+        table.focus()
+
+    def _status_hint(self) -> str:
+        n = len(self._matches)
+        if not self._query:
+            return ""
+        return f"  [{self._match_pos + 1}/{n}]" if n else "  [no match]"
+
+    def _next_match(self) -> None:
+        if self._matches:
+            self._match_pos = (self._match_pos + 1) % len(self._matches)
+            self._jump_to(self._matches[self._match_pos])
+            self._status_bar().update(f" find: {self._query}▌{self._status_hint()}")
+
+    def refresh_listing(self) -> None:
         label = self.query_one(f"#{self.side}-path", Label)
+        table = self.query_one(f"#{self.side}-table", DataTable)
         table.clear()
+        self.entries = []
 
         if self.side == "local":
             display = self.path.replace(str(Path.home()), "~")
             label.update(f"  Local  [bold]{display}[/bold]")
-            self.entries = list_local(Path(self.path))
+            self._populate_table(self._fetch_entries())
         else:
             display = "/" + self.path if self.path else "/"
-            label.update(f"  Drive  [bold]{display}[/bold]")
-            self.entries = list_remote(self.path)
+            label.update(f"  Drive ({self.app.remote_name})  [bold]{display}[/bold]  [dim]loading…[/dim]")
+            self.run_worker(
+                self._fetch_entries,
+                thread=True,
+                exclusive=True,
+                name=f"list-{self.side}",
+            )
 
-        for e in self.entries:
-            icon = "󰉋 " if e["is_dir"] else "󰈙 "
-            size = "—" if e["is_dir"] else fmt_size(e["size"])
-            table.add_row(icon + e["name"], size, e["mod"])
+    def on_worker_state_changed(self, event) -> None:
+        if event.worker.name != f"list-{self.side}":
+            return
+        event.stop()
+        if event.worker.state.name == "SUCCESS":
+            label = self.query_one(f"#{self.side}-path", Label)
+            display = "/" + self.path if self.path else "/"
+            label.update(f"  Drive ({self.app.remote_name})  [bold]{display}[/bold]")
+            self._populate_table(event.worker.result or [])
 
     def current_entry(self) -> dict | None:
         table = self.query_one(f"#{self.side}-table", DataTable)
@@ -239,82 +963,40 @@ class FilePane(Vertical):
 # ── main app ─────────────────────────────────────────────────────────────────
 
 class GDriveApp(App):
-    CSS = """
-    Screen {
-        background: #1e1e2e;
-    }
-    FilePane {
-        width: 1fr;
-        border: solid #44475a;
-        margin: 0 1;
-    }
-    FilePane.active-pane {
-        border: solid #bd93f9;
-    }
-    #local-path, #remote-path {
-        background: #282a36;
-        color: #f8f8f2;
-        padding: 0 1;
-        height: 1;
-    }
-    DataTable {
-        background: #1e1e2e;
-    }
-    DataTable > .datatable--cursor {
-        background: #44475a;
-        color: #f8f8f2;
-    }
-    #status-bar {
-        height: 1;
-        background: #282a36;
-        color: #6272a4;
-        padding: 0 2;
-    }
-    #confirm-dialog, #input-dialog, #setup-dialog {
-        background: #282a36;
-        border: solid #bd93f9;
-        padding: 2 4;
-        width: 60;
-        height: auto;
-        margin: auto;
-    }
-    #confirm-msg, #setup-msg {
-        color: #f8f8f2;
-        margin-bottom: 1;
-    }
-    #confirm-hint, #input-hint {
-        color: #6272a4;
-    }
-    #setup-title {
-        color: #bd93f9;
-        text-style: bold;
-        margin-bottom: 1;
-    }
-    #input-label {
-        color: #f8f8f2;
-        margin-bottom: 1;
-    }
-    Input {
-        background: #1e1e2e;
-        border: solid #6272a4;
-        color: #f8f8f2;
-    }
-    """
+    CSS_PATH = str(_CSS_PATH)
+    ENABLE_COMMAND_PALETTE = False
 
     BINDINGS = [
-        Binding("tab",       "switch_pane",  "Switch pane",  show=True),
+        Binding("tab",       "switch_pane",  "Switch pane",  show=True, priority=True),
         Binding("enter",     "enter_dir",    "Open",         show=False),
         Binding("backspace", "go_up",        "Up",           show=False),
+        Binding("j",         "cursor_down",  "Down",         show=False),
+        Binding("k",         "cursor_up",    "Up",           show=False),
+        Binding("h",         "go_up",        "Parent",       show=False),
+        Binding("l",         "enter_dir",    "Open",         show=False),
+        Binding("o",         "open_file",    "Open file",    show=False),
+        Binding("y",         "yank",         "Yank",         show=False),
+        Binding("x",         "cut",          "Cut",          show=False),
+        Binding("p",         "paste",        "Paste",        show=False),
+        Binding("full_stop", "toggle_hidden","Hidden",       show=False),
         Binding("u",         "upload",       "Upload",       show=True),
         Binding("d",         "download",     "Download",     show=True),
         Binding("r",         "rename",       "Rename",       show=True),
         Binding("n",         "mkdir",        "New dir",      show=True),
         Binding("delete",    "delete_entry", "Delete",       show=True),
         Binding("m",         "toggle_mount", "Mount",        show=True),
+        Binding("a",         "switch_account", "Account",    show=True),
+        Binding("slash",     "search",       "Search",       show=True),
+        Binding("question_mark", "help",     "Help",         show=True),
         Binding("q",         "quit",         "Quit",         show=True),
     ]
 
     active_side: reactive[str] = reactive("local")
+    remote_name: reactive[str] = reactive(REMOTE)
+    show_hidden: reactive[bool] = reactive(False)
+    # Clipboard: (mode, side, path, name, is_dir) — mode is "copy" or "cut".
+    clipboard: tuple | None = None
+    _stop_event: threading.Event = threading.Event()
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -324,15 +1006,321 @@ class GDriveApp(App):
         yield Static(self._status_text(), id="status-bar")
         yield Footer()
 
+    def on_unmount(self) -> None:
+        self._stop_event.set()
+
     def on_mount(self) -> None:
         self.title = "󰊫  Google Drive"
+        remotes = drive_remotes()
+        default = load_default_remote()
+        if default and default in remotes:
+            self.remote_name = default
+        elif self.remote_name not in remotes and remotes:
+            self.remote_name = remotes[0]
+        logging.info("app mount remote=%s default=%s available_remotes=%s",
+                     self.remote_name, default, ",".join(remotes) if remotes else "-")
         self._sync_active()
-        if not has_remote():
-            self.push_screen(SetupScreen(), self._on_setup_done)
+        if not has_remote(self.remote_name):
+            self.push_screen(SetupScreen(self.remote_name), self._on_setup_done)
+        self.run_worker(self._wal_watcher, thread=True, exclusive=False)
+
+    def _modal_active(self) -> bool:
+        return isinstance(self.screen, ModalScreen)
+
+    def check_action(self, action, parameters):
+        # Prevent app bindings from hijacking key presses while any modal is active.
+        if self._modal_active():
+            logging.debug("check_action blocked action=%s (modal active)", action)
+            return False
+        logging.debug("check_action allow action=%s", action)
+        return True
+
+    def _wal_watcher(self) -> None:
+        last_mtime = _WAL_FILE.stat().st_mtime if _WAL_FILE.exists() else 0
+        while not self._stop_event.wait(2):
+            try:
+                if not _WAL_FILE.exists():
+                    continue
+                mtime = _WAL_FILE.stat().st_mtime
+                if mtime != last_mtime:
+                    last_mtime = mtime
+                    _CSS_PATH.write_text(make_css(load_wal_colors()))
+                    self.app.call_from_thread(self._apply_new_css)
+            except Exception:
+                pass
+
+    def _apply_new_css(self) -> None:
+        try:
+            self.refresh_css()
+        except Exception:
+            self.refresh(layout=True)
+
+    def on_key(self, event) -> None:
+        logging.debug("app key=%s char=%s modal=%s searching=%s", event.key, event.character, self._modal_active(), self.active_pane._searching)
+        # Don't hijack keys while a modal (like account input) is on top.
+        if self._modal_active():
+            return
+        pane = self.active_pane
+        if not pane._searching:
+            return
+        pane.query_one(f"#{pane.side}-table", DataTable).focus()
+        if event.key == "escape":
+            pane.close_search(restore=True)
+        elif event.key == "enter":
+            pane.close_search(restore=False)
+        elif event.key == "backspace":
+            pane._query = pane._query[:-1]
+            pane._update_search()
+        elif event.character and event.character.isprintable():
+            pane._query += event.character
+            pane._update_search()
+        event.prevent_default()
+        event.stop()
+
+    def action_search(self) -> None:
+        self.active_pane.open_search()
+
+    def action_toggle_hidden(self) -> None:
+        self.show_hidden = not self.show_hidden
+        logging.info("show_hidden=%s", self.show_hidden)
+        self.local_pane.refresh_listing()
+        self.remote_pane.refresh_listing()
+
+    def action_help(self) -> None:
+        self.push_screen(HelpScreen())
+
+    def action_open_file(self) -> None:
+        pane = self.active_pane
+        entry = pane.current_entry()
+        if not entry or entry["is_dir"]:
+            return
+        if pane.side == "local":
+            target = str(Path(pane.path) / entry["name"])
+        else:
+            if not is_mounted():
+                self.query_one("#status-bar", Static).update(
+                    " ✗ Mount Drive (press m) to open remote files"
+                )
+                return
+            rel = (pane.path + "/" + entry["name"]).lstrip("/")
+            target = str(MOUNT_POINT / rel)
+        try:
+            subprocess.Popen(
+                ["xdg-open", target],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+            logging.info("open file target=%s", target)
+        except Exception as e:
+            logging.exception("open file failed target=%s", target)
+            self.query_one("#status-bar", Static).update(f" ✗ Open failed: {e}")
+
+    def _yank(self, mode: str) -> None:
+        pane = self.active_pane
+        entry = pane.current_entry()
+        if not entry:
+            return
+        self.clipboard = (mode, pane.side, pane.path, entry["name"], entry["is_dir"])
+        verb = "Yanked" if mode == "copy" else "Cut"
+        logging.info("%s side=%s path=%s name=%s", verb.lower(), pane.side, pane.path, entry["name"])
+        self.query_one("#status-bar", Static).update(
+            f"  {verb} {entry['name']}  (press p to paste)"
+        )
+
+    def action_yank(self) -> None:
+        self._yank("copy")
+
+    def action_cut(self) -> None:
+        self._yank("cut")
+
+    def action_paste(self) -> None:
+        if not self.clipboard:
+            self.query_one("#status-bar", Static).update(" ✗ Nothing to paste")
+            return
+        mode, src_side, src_path, name, is_dir = self.clipboard
+        dst_pane = self.active_pane
+        dst_side = dst_pane.side
+
+        if src_side == "local":
+            src = str(Path(src_path) / name)
+        else:
+            src_rel = (src_path + "/" + name).lstrip("/")
+            src = f"{self.remote_name}:{src_rel}"
+
+        if dst_side == "local":
+            dst_dir = dst_pane.path
+            dst_full = str(Path(dst_dir) / name)
+            if Path(dst_full).exists():
+                self.query_one("#status-bar", Static).update(
+                    f" ✗ '{name}' already exists in destination"
+                )
+                return
+            if src_side == "local":
+                dst = dst_full
+            else:
+                dst = dst_dir
+        else:
+            dst_rel = dst_pane.path
+            dst = f"{self.remote_name}:{dst_rel}"
+
+        action = "move" if mode == "cut" else "copy"
+        logging.info("paste mode=%s src_side=%s dst_side=%s src=%s dst=%s",
+                     mode, src_side, dst_side, src, dst)
+
+        if is_dir and src_side != dst_side:
+            self._run_transfer(action, "mkdir-copy", src,
+                               f"{dst}/{name}" if dst_side == "remote" else str(Path(dst) / name))
+            if mode == "cut":
+                self.clipboard = None
+            return
+
+        if src_side == "local" and dst_side == "local":
+            self.run_worker(
+                lambda: self._local_paste(src, dst, is_dir, mode == "cut"),
+                thread=True, name="transfer", exclusive=False,
+            )
+        else:
+            rclone_cmd = "moveto" if (mode == "cut" and not is_dir) else ("move" if mode == "cut" else "copy")
+            if rclone_cmd == "moveto":
+                target = f"{dst}/{name}" if dst_side == "remote" else str(Path(dst) / name)
+                self._run_transfer(action, rclone_cmd, src, target)
+            else:
+                self._run_transfer(action, rclone_cmd, src, dst)
+
+        if mode == "cut":
+            self.clipboard = None
+
+    def _local_paste(self, src: str, dst: str, is_dir: bool, move: bool) -> subprocess.CompletedProcess:
+        try:
+            if move:
+                shutil.move(src, dst)
+            else:
+                if is_dir:
+                    shutil.copytree(src, dst)
+                else:
+                    shutil.copy2(src, dst)
+            return subprocess.CompletedProcess([], 0, "", "")
+        except Exception as e:
+            logging.exception("local paste failed")
+            return subprocess.CompletedProcess([], 1, "", str(e))
+
+    def action_cursor_down(self) -> None:
+        table = self.active_pane.query_one(DataTable)
+        table.action_cursor_down()
+
+    def action_cursor_up(self) -> None:
+        table = self.active_pane.query_one(DataTable)
+        table.action_cursor_up()
 
     def _on_setup_done(self, result: bool) -> None:
         if result:
             self.remote_pane.refresh_listing()
+            self._refresh_status()
+
+    def _select_remote(self, name: str) -> None:
+        self.remote_name = name
+        logging.info("switch account active remote=%s", name)
+        self.remote_pane.path = ""
+        self.remote_pane.refresh_listing()
+        self._refresh_status()
+
+    def _prompt_new_account(self) -> None:
+        def apply_name(name: str | None) -> None:
+            if not name:
+                return
+            name = name.strip()
+            if not name:
+                return
+            if has_remote(name):
+                self._select_remote(name)
+                return
+
+            def after_setup(ok: bool) -> None:
+                if ok:
+                    self._select_remote(name)
+                else:
+                    logging.warning("switch account setup failed remote=%s", name)
+                    self.query_one("#status-bar", Static).update(" ✗ Account setup failed")
+
+            self.push_screen(SetupScreen(name), after_setup)
+
+        # Defer push so the Enter key that selected "Add new account…" doesn't
+        # leak into the Input widget and auto-submit it as empty.
+        self.call_later(
+            self.push_screen,
+            InputScreen("New Drive account remote name (e.g. gdrive-work)", default=""),
+            apply_name,
+        )
+
+    def action_switch_account(self) -> None:
+        logging.info("action_switch_account fired")
+        remotes = drive_remotes()
+
+        def picked(choice) -> None:
+            if choice is None:
+                return
+            # New flow: ("select", remote) or ("delete", remote)
+            if isinstance(choice, tuple):
+                action, name = choice
+                if action == "select":
+                    if name == AccountPickerScreen.ADD_NEW:
+                        self._prompt_new_account()
+                    elif name != self.remote_name:
+                        self._select_remote(name)
+                elif action == "delete":
+                    self._confirm_delete_account(name)
+                return
+            # Backwards compat
+            if choice == AccountPickerScreen.ADD_NEW:
+                self._prompt_new_account()
+                return
+            if choice == self.remote_name:
+                return
+            self._select_remote(choice)
+
+        if not remotes:
+            self._prompt_new_account()
+            return
+
+        # Show picker immediately with cached emails, then fetch any missing
+        # ones in a worker so the UI stays responsive on first launch.
+        cache = load_email_cache()
+        self.push_screen(AccountPickerScreen(remotes, self.remote_name, cache), picked)
+
+        missing = [r for r in remotes if not cache.get(r)]
+        if missing:
+            self.run_worker(
+                lambda: get_remote_emails(remotes),
+                thread=True,
+                name="email-fetch",
+                exclusive=True,
+            )
+
+    def _confirm_delete_account(self, name: str) -> None:
+        def confirmed(yes: bool) -> None:
+            if not yes:
+                self.call_later(self.action_switch_account)
+                return
+            ok = delete_remote(name)
+            logging.info("delete account remote=%s ok=%s", name, ok)
+            if not ok:
+                self.query_one("#status-bar", Static).update(
+                    f" ✗ Failed to delete '{name}'"
+                )
+                self.call_later(self.action_switch_account)
+                return
+            # If we deleted the active remote, switch to whichever is left.
+            remaining = drive_remotes()
+            if name == self.remote_name:
+                if remaining:
+                    self._select_remote(remaining[0])
+                else:
+                    self.remote_pane.path = ""
+                    self._refresh_status()
+            self.call_later(self.action_switch_account)
+
+        self.push_screen(ConfirmScreen(f"Delete account '{name}'?"), confirmed)
 
     @property
     def local_pane(self) -> FilePane:
@@ -352,13 +1340,14 @@ class GDriveApp(App):
 
     def _status_text(self) -> str:
         mount = "● Mounted" if is_mounted() else "○ Unmounted"
-        return f" {mount}   Press ? for help"
+        return f" {mount}   acct:{self.remote_name}   Tab switch panes · a account · / search · q quit"
 
     def _refresh_status(self) -> None:
         self.query_one("#status-bar", Static).update(self._status_text())
 
     def action_switch_pane(self) -> None:
         self.active_side = "remote" if self.active_side == "local" else "local"
+        logging.info("switch pane active=%s", self.active_side)
         self._sync_active()
 
     def action_enter_dir(self) -> None:
@@ -371,33 +1360,82 @@ class GDriveApp(App):
         entry = self.local_pane.current_entry()
         if not entry:
             return
-        src = str(Path(self.local_pane.path) / entry["name"])
-        dst = f"{REMOTE}:{self.remote_pane.path}"
-        self._run_transfer("upload", src, dst)
+        logging.info("upload requested entry=%s is_dir=%s", entry["name"], entry["is_dir"])
+        src_path = Path(self.local_pane.path) / entry["name"]
+        src = str(src_path)
+        if entry["is_dir"]:
+            dst_rel = (self.remote_pane.path + "/" + entry["name"]).lstrip("/")
+            self._run_transfer(
+                "upload",
+                "mkdir-copy",
+                src,
+                f"{self.remote_name}:{dst_rel}",
+            )
+        else:
+            dst = f"{self.remote_name}:{self.remote_pane.path}"
+            self._run_transfer("upload", "copy", src, dst)
 
     def action_download(self) -> None:
         entry = self.remote_pane.current_entry()
         if not entry:
             return
+        logging.info("download requested entry=%s is_dir=%s", entry["name"], entry["is_dir"])
         remote_path = (self.remote_pane.path + "/" + entry["name"]).lstrip("/")
-        src = f"{REMOTE}:{remote_path}"
-        dst = self.local_pane.path
-        self._run_transfer("download", src, dst)
+        src = f"{self.remote_name}:{remote_path}"
+        if entry["is_dir"]:
+            dst = str(Path(self.local_pane.path) / entry["name"])
+            self._run_transfer(
+                "download",
+                "mkdir-copy",
+                src,
+                dst,
+            )
+        else:
+            dst = self.local_pane.path
+            self._run_transfer("download", "copy", src, dst)
 
-    def _run_transfer(self, label: str, src: str, dst: str) -> None:
+    def _run_transfer(self, label: str, *cmd: str) -> None:
         status = self.query_one("#status-bar", Static)
         status.update(f" ⟳ {label.capitalize()}ing…")
+        logging.info("transfer start label=%s cmd=%s", label, " ".join(cmd))
+        if cmd and cmd[0] == "mkdir-copy":
+            src, dst = cmd[1], cmd[2]
+            worker_cmd = lambda: self._copy_dir_with_root(src, dst)
+        else:
+            worker_cmd = lambda: rclone(*cmd)
         self.run_worker(
-            lambda: rclone("copy", src, dst),
+            worker_cmd,
             thread=True,
             exclusive=False,
+            name="transfer",
         )
 
+    def _copy_dir_with_root(self, src: str, dst: str) -> subprocess.CompletedProcess:
+        logging.info("mkdir-copy src=%s dst=%s", src, dst)
+        mk = rclone("mkdir", dst)
+        if mk.returncode != 0:
+            logging.error("mkdir-copy mkdir failed rc=%s stderr=%s", mk.returncode, (mk.stderr or "").strip())
+            return mk
+        return rclone("copy", "--create-empty-src-dirs", src, dst)
+
     def on_worker_state_changed(self, event) -> None:
-        if event.worker.state.name == "SUCCESS":
+        if event.worker.name == "email-fetch" and event.worker.state.name == "SUCCESS":
+            if isinstance(self.screen, AccountPickerScreen):
+                self.screen.update_emails(event.worker.result or {})
+            return
+        if event.worker.name != "transfer" or event.worker.state.name != "SUCCESS":
+            return
+        result = event.worker.result
+        if result and result.returncode == 0:
+            logging.info("transfer success")
             self.local_pane.refresh_listing()
             self.remote_pane.refresh_listing()
             self._refresh_status()
+            return
+        err = (result.stderr or "").strip() if result else ""
+        logging.error("transfer failed rc=%s stderr=%s", getattr(result, "returncode", None), err)
+        msg = f" ✗ Transfer failed: {err.splitlines()[-1]}" if err else " ✗ Transfer failed"
+        self.query_one("#status-bar", Static).update(msg)
 
     def action_rename(self) -> None:
         entry = self.active_pane.current_entry()
@@ -408,13 +1446,20 @@ class GDriveApp(App):
             if not new_name or new_name == entry["name"]:
                 return
             pane = self.active_pane
-            if pane.side == "local":
-                src = Path(pane.path) / entry["name"]
-                src.rename(Path(pane.path) / new_name)
-            else:
-                old = (pane.path + "/" + entry["name"]).lstrip("/")
-                new = (pane.path + "/" + new_name).lstrip("/")
-                rclone("moveto", f"{REMOTE}:{old}", f"{REMOTE}:{new}")
+            try:
+                if pane.side == "local":
+                    src = Path(pane.path) / entry["name"]
+                    src.rename(Path(pane.path) / new_name)
+                else:
+                    old = (pane.path + "/" + entry["name"]).lstrip("/")
+                    new = (pane.path + "/" + new_name).lstrip("/")
+                    result = rclone("moveto", f"{self.remote_name}:{old}", f"{self.remote_name}:{new}")
+                    if result.returncode != 0:
+                        raise RuntimeError((result.stderr or "rclone moveto failed").strip())
+            except Exception as e:
+                logging.exception("rename failed side=%s entry=%s", pane.side, entry["name"])
+                self.query_one("#status-bar", Static).update(f" ✗ Rename failed: {e}")
+                return
             pane.refresh_listing()
 
         self.push_screen(
@@ -427,11 +1472,18 @@ class GDriveApp(App):
             if not name:
                 return
             pane = self.active_pane
-            if pane.side == "local":
-                (Path(pane.path) / name).mkdir(exist_ok=True)
-            else:
-                path = (pane.path + "/" + name).lstrip("/")
-                rclone("mkdir", f"{REMOTE}:{path}")
+            try:
+                if pane.side == "local":
+                    (Path(pane.path) / name).mkdir(exist_ok=True)
+                else:
+                    path = (pane.path + "/" + name).lstrip("/")
+                    result = rclone("mkdir", f"{self.remote_name}:{path}")
+                    if result.returncode != 0:
+                        raise RuntimeError((result.stderr or "rclone mkdir failed").strip())
+            except Exception as e:
+                logging.exception("mkdir failed side=%s name=%s", pane.side, name)
+                self.query_one("#status-bar", Static).update(f" ✗ Mkdir failed: {e}")
+                return
             pane.refresh_listing()
 
         self.push_screen(InputScreen("New folder name:"), do_mkdir)
@@ -446,29 +1498,38 @@ class GDriveApp(App):
             if not confirmed:
                 return
             pane = self.active_pane
-            if pane.side == "local":
-                target = Path(pane.path) / entry["name"]
-                if entry["is_dir"]:
-                    shutil.rmtree(target)
+            try:
+                if pane.side == "local":
+                    target = Path(pane.path) / entry["name"]
+                    if entry["is_dir"]:
+                        shutil.rmtree(target)
+                    else:
+                        target.unlink()
                 else:
-                    target.unlink()
-            else:
-                path = (pane.path + "/" + entry["name"]).lstrip("/")
-                if entry["is_dir"]:
-                    rclone("purge", f"{REMOTE}:{path}")
-                else:
-                    rclone("deletefile", f"{REMOTE}:{path}")
+                    path = (pane.path + "/" + entry["name"]).lstrip("/")
+                    if entry["is_dir"]:
+                        result = rclone("purge", f"{self.remote_name}:{path}")
+                    else:
+                        result = rclone("deletefile", f"{self.remote_name}:{path}")
+                    if result.returncode != 0:
+                        raise RuntimeError((result.stderr or "rclone delete failed").strip())
+            except Exception as e:
+                logging.exception("delete failed side=%s entry=%s", pane.side, entry["name"])
+                self.query_one("#status-bar", Static).update(f" ✗ Delete failed: {e}")
+                return
             pane.refresh_listing()
 
         self.push_screen(ConfirmScreen(msg), do_delete)
 
     def action_toggle_mount(self) -> None:
         if is_mounted():
+            logging.info("unmount requested mount_point=%s", MOUNT_POINT)
             subprocess.run(["fusermount", "-u", str(MOUNT_POINT)], capture_output=True)
         else:
+            logging.info("mount requested remote=%s mount_point=%s", self.remote_name, MOUNT_POINT)
             MOUNT_POINT.mkdir(exist_ok=True)
             subprocess.Popen([
-                "rclone", "mount", f"{REMOTE}:",
+                "rclone", "mount", f"{self.remote_name}:",
                 str(MOUNT_POINT),
                 "--vfs-cache-mode", "full",
                 "--vfs-cache-max-size", "2G",
@@ -478,4 +1539,5 @@ class GDriveApp(App):
 
 
 if __name__ == "__main__":
+    setup_logging()
     GDriveApp().run()
