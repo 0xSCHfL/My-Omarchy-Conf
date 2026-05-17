@@ -84,8 +84,9 @@ bindsym Mod4+Ctrl+w exec --no-startup-id $HOME/.config/i3/scripts/media/i3-launc
 bindsym Mod4+Ctrl+a exec --no-startup-id $HOME/.config/i3/scripts/media/i3-launch-audio.sh
 bindsym Mod4+Shift+g exec --no-startup-id alacritty --class i3-gdrive -e i3-gdrive
 
-# Dictation (voxtype) — toggle recording; transcribed text lands in clipboard
-bindsym Mod4+Ctrl+x exec --no-startup-id voxtype record toggle
+# Dictation (voxtype) — push-to-talk mode: hold F9 to record, release to stop & auto-type
+bindd  = , F9, Start dictation, exec, voxtype record start
+binddr = , F9, Stop dictation (auto-paste), exec, $HOME/.config/i3/scripts/utils/voxtype-autotype.sh
 
 # Notification controls (dunst)
 bindsym Mod4+comma exec dunstctl close
