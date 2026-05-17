@@ -2,6 +2,14 @@
 # Kill duplicate singleton processes and restart any that are not running
 # Run after Super+Shift+R to clean up duplicates and revive crashed daemons
 
+RED='\033[0;31m'
+YELLOW='\033[0;33m'
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+DIM='\033[2m'
+RESET='\033[0m'
+
 # Exact binary name matches (pgrep -x)
 SINGLETONS=(
     picom
@@ -37,7 +45,7 @@ started_any=false
 
 dedup() {
     local name="$1"
-    local flag="$2"  # -x or -f
+    local flag="$2"
 
     mapfile -t raw_pids < <(pgrep "$flag" "$name" 2>/dev/null)
     [[ ${#raw_pids[@]} -le 1 ]] && return
@@ -58,32 +66,34 @@ dedup() {
         fi
     done
 
-    echo "  $name: ${#sorted[@]} instances → killed $killed stale (kept PID $keep)"
+    echo -e "  ${YELLOW}${name}${RESET}: ${#sorted[@]} instances → ${RED}killed $killed stale${RESET} ${DIM}(kept PID $keep)${RESET}"
 }
 
 ensure_running() {
     local pattern="$1"
     local cmd="$2"
+    local label="${pattern//\\/}"
 
     if ! pgrep -f "$pattern" >/dev/null 2>&1; then
         eval "$cmd" >/dev/null 2>&1
-        echo "  $pattern: not running → started"
+        echo -e "  ${CYAN}${label}${RESET}: not running ${RED}→${RESET} ${GREEN}started${RESET}"
         started_any=true
     fi
 }
 
-echo "Scanning for duplicate processes..."
+echo ""
+echo -e "${BOLD}󰍉  Scanning for duplicate processes...${RESET}"
 echo ""
 
 for proc in "${SINGLETONS[@]}";        do dedup "$proc" -x; done
 for proc in "${SCRIPT_SINGLETONS[@]}"; do dedup "$proc" -f; done
 
 if [[ "$killed_any" == false ]]; then
-    echo "  All clean — no duplicates found."
+    echo -e "  ${GREEN}✓${RESET} ${DIM}All clean — no duplicates found.${RESET}"
 fi
 
 echo ""
-echo "Checking required daemons..."
+echo -e "${BOLD}󰐥  Checking required daemons...${RESET}"
 echo ""
 
 for entry in "${ENSURE_RUNNING[@]}"; do
@@ -93,8 +103,9 @@ for entry in "${ENSURE_RUNNING[@]}"; do
 done
 
 if [[ "$started_any" == false ]]; then
-    echo "  All daemons running."
+    echo -e "  ${GREEN}✓${RESET} ${DIM}All daemons running.${RESET}"
 fi
 
 echo ""
-echo "Done."
+echo -e "${GREEN}${BOLD}Done.${RESET}"
+echo ""
