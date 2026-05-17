@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+rofimoji \
+    --action copy \
+    --skin-tone neutral \
+    --selector-args "-theme $HOME/.config/rofi/dwm-keys.rasi -p Emoji:"

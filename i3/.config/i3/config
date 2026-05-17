@@ -247,7 +247,7 @@ bindsym Print exec --no-startup-id i3-screenshot
 bindsym Mod4+Print exec --no-startup-id i3-screenrecord
 bindsym Mod4+Ctrl+Print exec --no-startup-id i3-ocr
 bindsym Mod4+Ctrl+k exec --no-startup-id i3-keys
-bindsym Mod4+Ctrl+e exec --no-startup-id rofimoji --action copy --skin-tone neutral
+bindsym Mod4+Ctrl+e exec --no-startup-id i3-emojipick
 bindsym Mod4+q exec --no-startup-id qutebrowser
 bindsym Mod4+Shift+o exec --no-startup-id obsidian
 bindsym Mod4+Shift+i exec --no-startup-id i3-imgpicker
