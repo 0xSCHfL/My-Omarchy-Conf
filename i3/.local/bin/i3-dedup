@@ -16,7 +16,6 @@ SCRIPT_SINGLETONS=(
     "i3-cliphist"
     "i3-imgclipwatch"
     "i3-autolayout"
-    "battery-monitor"
 )
 
 # Daemons to ensure are running: "pgrep_pattern|start_command"
@@ -25,7 +24,6 @@ ENSURE_RUNNING=(
     "i3-imgclipwatch|setsid -f $HOME/.local/bin/i3-imgclipwatch"
     "i3-autolayout|setsid -f i3-autolayout autolayout"
     "batmon|setsid -f $HOME/.local/bin/batmon"
-    "battery-monitor|setsid -f $HOME/.config/i3blocks/scripts/battery-monitor"
     "dunst|setsid -f dunst"
     "picom|setsid -f picom --daemon"
     "copyq|setsid -f copyq"

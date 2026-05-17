@@ -66,7 +66,6 @@ exec_always --no-startup-id bash -c 'pkill -f "\.local/bin/i3-cliphist$" 2>/dev/
 exec_always --no-startup-id bash -c 'pkill -f "\.local/bin/i3-imgclipwatch$" 2>/dev/null; sleep 0.1; exec $HOME/.local/bin/i3-imgclipwatch'
 exec_always --no-startup-id bash -c 'pkill -f "\.local/bin/batmon$" 2>/dev/null; sleep 0.1; exec $HOME/.local/bin/batmon'
 exec_always --no-startup-id bash -c 'pkill -f "i3-autolayout" 2>/dev/null; sleep 0.1; exec i3-autolayout autolayout'
-exec_always --no-startup-id ~/.config/i3blocks/scripts/battery-monitor
 
 # Volume keys with a real i3 floating popup
 bindsym XF86AudioRaiseVolume exec --no-startup-id $HOME/.config/i3/scripts/media/volume-osd.sh up
