@@ -114,7 +114,7 @@ Colorized blocks with nerd font icons — each block has its own color matching 
 | `Super+F` | True fullscreen (hides bar) |
 | `Super+Alt+F` | Maximize (fills workspace, keeps gaps + bar) |
 | `Alt+Tab` | Cycle windows (propagates maximize state) |
-| `Super+Ctrl+X` | Dictation toggle (voxtype → clipboard → Ctrl+V) |
+| `Super+Ctrl+X` | Dictation toggle (voxtype auto-types at cursor) |
 | `Super+Ctrl+E` | Emoji picker |
 | `Super+Ctrl+V` | Clipboard manager (copyq) |
 | `Super+V` | Clipboard history (cliphist) |
@@ -139,8 +139,8 @@ Colors auto-update via pywal when wallpaper changes. Background syncs with `wall
 ### Dictation (voxtype)
 
 - Daemon runs as a systemd user service (`systemctl --user status voxtype`)
-- `Super+Ctrl+X` toggles recording — transcribed text lands in clipboard
-- Paste with `Ctrl+V` (X11 clipboard mode, no ydotool needed)
+- `Super+Ctrl+X` toggles recording — on stop, transcript auto-types at focused cursor
+- Uses a robust toggle script with state/clipboard checks to avoid stale pastes
 - Model: `base.en` (Whisper) stored in `~/.local/share/voxtype/models/`
 
 ### Pywal Color Flow
@@ -148,7 +148,7 @@ Colors auto-update via pywal when wallpaper changes. Background syncs with `wall
 `wallpaper-set.sh` orchestrates everything on wallpaper change:
 alacritty → dunst → SDDM theme → flameshot → Xresources
 
-**Recent improvements:** Stabilized bar (i3blocks) color updates on wallpaper change to prevent sync issues.
+**Recent improvements:** Wallpaper picker now applies full pywal updates, and i3 reloads automatically so bar/workspace colors stay in sync.
 
 ### Maintenance
 
