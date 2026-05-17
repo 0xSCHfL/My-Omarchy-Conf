@@ -15,12 +15,12 @@ if [[ "$BEFORE" == "recording" ]]; then
     if [[ "$AFTER" == "idle" ]]; then
       sleep 0.3
       # Auto-type the transcribed text
-      xdotool type --delay 10 "$(xclip -selection clipboard -o 2>/dev/null)"
+      xdotool type --clearmodifiers --delay 20 "$(xclip -selection clipboard -o 2>/dev/null)"
       exit 0
     fi
     sleep 0.5
   done
-  
+
   # Timeout fallback: type whatever's in clipboard
-  xdotool type --delay 10 "$(xclip -selection clipboard -o 2>/dev/null)"
+  xdotool type --clearmodifiers --delay 20 "$(xclip -selection clipboard -o 2>/dev/null)"
 fi
