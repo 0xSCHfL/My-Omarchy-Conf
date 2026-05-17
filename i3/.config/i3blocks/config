@@ -18,6 +18,11 @@ interval=1
 separator_block_width=0
 separator=false
 
+[voxtype]
+command=~/.config/i3blocks/scripts/voxtype
+interval=1
+separator=false
+
 [spotify]
 command=~/.config/i3blocks/scripts/spotify.sh
 interval=2

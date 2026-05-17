@@ -1,0 +1,25 @@
+#!/bin/bash
+
+STATE_FILE="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/voxtype/state"
+
+if [[ ! -f "$STATE_FILE" ]]; then
+    exit 0
+fi
+
+state=$(cat "$STATE_FILE" 2>/dev/null)
+
+case "$state" in
+    recording)
+        echo "| 🎤 REC"
+        echo ""
+        echo "#d75f5f"
+        ;;
+    transcribing)
+        echo "| ⏳ ..."
+        echo ""
+        echo "#d4d232"
+        ;;
+    *)
+        exit 0
+        ;;
+esac
