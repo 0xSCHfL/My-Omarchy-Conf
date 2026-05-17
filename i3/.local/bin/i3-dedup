@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Kill duplicate singleton processes, keeping the newest instance
+# Kill duplicate singleton processes and restart any that are not running
 
 # Exact name matches (pgrep -x)
 SINGLETONS=(
@@ -19,24 +19,34 @@ SCRIPT_SINGLETONS=(
     "battery-monitor"
 )
 
+# Daemons to ensure are running: "pgrep_pattern|start_command"
+ENSURE_RUNNING=(
+    "i3-cliphist|setsid -f bash $HOME/.local/bin/i3-cliphist"
+    "i3-imgclipwatch|setsid -f $HOME/.local/bin/i3-imgclipwatch"
+    "i3-autolayout|setsid -f i3-autolayout autolayout"
+    "batmon|setsid -f $HOME/.local/bin/batmon"
+    "battery-monitor|setsid -f $HOME/.config/i3blocks/scripts/battery-monitor"
+    "dunst|setsid -f dunst"
+    "picom|setsid -f picom --daemon"
+    "copyq|setsid -f copyq"
+)
+
 killed_any=false
+started_any=false
 
 dedup() {
     local name="$1"
     local flag="$2"  # -x or -f
 
-    # Get PIDs sorted by start time (oldest first), newest last
-    local raw_pids
     mapfile -t raw_pids < <(pgrep "$flag" "$name" 2>/dev/null)
     [[ ${#raw_pids[@]} -le 1 ]] && return
 
-    # Sort by start time using ps, keep newest (last after sort)
     mapfile -t sorted < <(
         ps -p "$(IFS=,; echo "${raw_pids[*]}")" -o pid= --sort=start_time 2>/dev/null
     )
     [[ ${#sorted[@]} -le 1 ]] && return
 
-    local keep="${sorted[-1]}"  # newest
+    local keep="${sorted[-1]}"
     local killed=0
 
     for pid in "${sorted[@]}"; do
@@ -50,6 +60,17 @@ dedup() {
     echo "  $name: ${#sorted[@]} instances → killed $killed stale (kept PID $keep)"
 }
 
+ensure_running() {
+    local pattern="$1"
+    local cmd="$2"
+
+    if ! pgrep -f "$pattern" >/dev/null 2>&1; then
+        eval "$cmd" >/dev/null 2>&1
+        echo "  $pattern: not running → started"
+        started_any=true
+    fi
+}
+
 echo "Scanning for duplicate processes..."
 echo ""
 
@@ -58,6 +79,20 @@ for proc in "${SCRIPT_SINGLETONS[@]}"; do dedup "$proc" -f; done
 
 if [[ "$killed_any" == false ]]; then
     echo "  All clean — no duplicates found."
+fi
+
+echo ""
+echo "Checking required daemons..."
+echo ""
+
+for entry in "${ENSURE_RUNNING[@]}"; do
+    pattern="${entry%%|*}"
+    cmd="${entry##*|}"
+    ensure_running "$pattern" "$cmd"
+done
+
+if [[ "$started_any" == false ]]; then
+    echo "  All daemons running."
 fi
 
 echo ""

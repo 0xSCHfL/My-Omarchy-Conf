@@ -111,6 +111,7 @@ for_window [class="i3timerpopup"] floating enable, resize set 520 220, move posi
 for_window [class="i3cpufreq"] floating enable, resize set 900 600, move position center
 for_window [class="i3-wifi"] floating enable, resize set 800 600, move position center
 for_window [class="i3-audio"] floating enable, resize set 800 600, move position center
+for_window [class="i3-bluetooth"] floating enable, resize set 800 600, move position center
 
 # move tiling windows via drag & drop by left-clicking into the title bar,
 # or left-clicking anywhere into the window while holding the floating modifier.
