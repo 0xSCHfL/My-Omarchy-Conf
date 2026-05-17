@@ -124,7 +124,19 @@ install_all() {
             hyprland waybar ghostty \
             i3lock-color \
             impala wiremix \
-            python-pywal xob 2>/dev/null || true
+            python-pywal xob \
+            voxtype-bin ydotool 2>/dev/null || true
+    fi
+
+    # voxtype: add user to input group + download small.en model
+    if command -v voxtype &>/dev/null; then
+        echo "  → Setting up voxtype dictation..."
+        sudo usermod -aG input "$USER" 2>/dev/null && echo "  ✓ Added $USER to input group (re-login required)"
+        if ! voxtype setup model --list 2>/dev/null | grep -q "small.en"; then
+            echo "  → Downloading small.en Whisper model (better accuracy)..."
+            voxtype setup model --set small.en 2>/dev/null || echo "  ! Could not set model — run: voxtype setup model"
+        fi
+        voxtype setup systemd 2>/dev/null && echo "  ✓ voxtype systemd service set up"
     fi
 }
 
