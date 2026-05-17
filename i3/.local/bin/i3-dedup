@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Kill duplicate singleton processes and restart any that are not running
+# Run after Super+Shift+R to clean up duplicates and revive crashed daemons
 
-# Exact name matches (pgrep -x)
+# Exact binary name matches (pgrep -x)
 SINGLETONS=(
     picom
     dunst
     nm-applet
     copyq
     i3blocks
-    batmon
 )
 
 # Partial matches for script-based daemons (pgrep -f)
@@ -16,17 +16,20 @@ SCRIPT_SINGLETONS=(
     "i3-cliphist"
     "i3-imgclipwatch"
     "i3-autolayout"
+    "\.local/bin/batmon"
 )
 
-# Daemons to ensure are running: "pgrep_pattern|start_command"
+# Daemons to ensure are running: "pgrep_f_pattern|start_command"
 ENSURE_RUNNING=(
     "i3-cliphist|setsid -f bash $HOME/.local/bin/i3-cliphist"
     "i3-imgclipwatch|setsid -f $HOME/.local/bin/i3-imgclipwatch"
     "i3-autolayout|setsid -f i3-autolayout autolayout"
-    "batmon|setsid -f $HOME/.local/bin/batmon"
+    "\.local/bin/batmon|setsid -f $HOME/.local/bin/batmon"
     "dunst|setsid -f dunst"
     "picom|setsid -f picom --daemon"
     "copyq|setsid -f copyq"
+    "nm-applet|setsid -f nm-applet"
+    "i3blocks|setsid -f i3blocks"
 )
 
 killed_any=false
