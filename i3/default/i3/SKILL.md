@@ -3,22 +3,18 @@ name: i3
 description: |-
   Manage i3/X11 desktop config on Arch Linux: keybindings, layouts, gaps, borders, floating rules,
   workspaces, focus, bar (i3blocks + polybar), startup daemons, wallpaper/pywal, SDDM login theme,
-  screenshots, OCR, clipboard, lock screen, wifi/audio TUIs, webapp launcher, and live debugging.
+  screenshots, OCR, clipboard, lock screen, wifi/audio TUIs, and webapp launcher.
   Use when editing ~/.config/i3/, ~/.config/i3blocks/, ~/.config/dunst/, ~/.config/picom/,
-  ~/.config/rofi/, ~/.config/kitty/, ~/.config/alacritty/, ~/.local/bin/ scripts, ~/.xinitrc.i3,
-  or sddm-theme/i3-login/.
+  ~/.config/rofi/, ~/.config/kitty/, ~/.config/alacritty/, ~/.local/bin/ scripts, or sddm-theme/.
 
   Use proactively for: broken keybindings, wallpaper/pywal not applying, SDDM theme issues,
-  clipboard/screenshot failures, notification problems, lock screen issues, bar not updating,
-  Brave singleton lock crash, wifi/audio TUI not opening, touchpad tap-to-click.
+  clipboard/screenshot failures, lock screen issues, bar not updating.
 
   Examples:
   - "Add a keybinding" → edit .config/i3/config, reload i3, update i3-keys
   - "Wallpaper not changing" → trace wallpaper-set.sh, check pywal cache, check feh
-  - "SDDM colors wrong" → check theme.conf (written by wallpaper-set.sh), check Main.qml config.*
+  - "SDDM colors wrong" → check theme.conf (written by wallpaper-set.sh), check Main.qml
   - "Screenshot broken" → check maim + xclip, trace i3-screenshot
-  - "Brave won't open" → check/clear ~/.config/BraveSoftware/Brave-Browser/Singleton*
-  - "Touchpad not clicking" → check xinput exec_always in i3 config
   - "Lock screen broken" → i3lock-color (AUR) required, not plain i3lock
 ---
 # i3 Skill

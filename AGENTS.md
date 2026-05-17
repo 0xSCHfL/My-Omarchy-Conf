@@ -33,6 +33,12 @@ No centralized test framework exists. Validate changes with:
 
 For `wal/` or theme work, confirm generated files load correctly in affected apps.
 
+## i3 Runtime Notes
+- Wallpaper changes should go through `~/.config/i3/scripts/wallpaper/wallpaper-set.sh` (with wal enabled) so bar/theme colors and Xresources stay in sync.
+- `Super+Shift+I` image picker wallpaper apply path uses `wallpaper-set.sh`; keep selected path quoting intact for filenames with spaces.
+- `i3-gdrive` now supports account switching via `a` and logs to `~/.cache/i3-gdrive.log` (rotating). Use `tail -n 120 ~/.cache/i3-gdrive.log` for diagnostics.
+- For transient kitty-close debugging, monitor i3 window close events and inspect `/tmp/i3-kitty-close.log`.
+
 ## Commit & Pull Request Guidelines
 Recent history uses Conventional Commit prefixes (`feat:`, `fix:`, `refactor:`, `style:`, `docs:`), sometimes with scope (e.g., `fix(i3blocks): ...`). Keep commits focused and imperative.
 

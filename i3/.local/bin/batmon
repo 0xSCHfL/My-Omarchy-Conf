@@ -1,7 +1,8 @@
 #!/bin/bash
 
 THRESHOLD=20
-FLAG="/tmp/batmon_notified"
+FLAG_LOW="/tmp/batmon_low"
+FLAG_FULL="/tmp/batmon_full"
 
 while true; do
     for bat in /sys/class/power_supply/BAT*; do
@@ -10,12 +11,22 @@ while true; do
         status=$(cat "$bat/status" 2>/dev/null)
 
         if [[ "$status" == "Discharging" && "$level" -le "$THRESHOLD" ]]; then
-            if [ ! -f "$FLAG" ]; then
+            if [ ! -f "$FLAG_LOW" ]; then
                 notify-send -u critical -t 30000 "🔋 Low Battery" "Battery at ${level}% — Plug in the charger!"
-                touch "$FLAG"
+                touch "$FLAG_LOW"
             fi
+            rm -f "$FLAG_FULL"
         elif [[ "$status" == "Charging" || "$level" -gt "$THRESHOLD" ]]; then
-            rm -f "$FLAG"
+            rm -f "$FLAG_LOW"
+        fi
+
+        if [[ "$status" == "Full" || ( "$status" == "Charging" && "$level" -ge 100 ) ]]; then
+            if [ ! -f "$FLAG_FULL" ]; then
+                notify-send -u normal -t 10000 "🔋 Battery Full" "Battery at 100% — You can unplug the charger."
+                touch "$FLAG_FULL"
+            fi
+        else
+            rm -f "$FLAG_FULL"
         fi
     done
     sleep 30

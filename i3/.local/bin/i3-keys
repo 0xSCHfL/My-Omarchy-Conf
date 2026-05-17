@@ -59,7 +59,7 @@ Super + Alt + t      → Telegram
 Super + Shift + v    → Image clipboard history (Space select, Ctrl+d deletes selected)
 Super + Escape       → System menu
 Super + Shift + w    → WhatsApp
-Super + Shift + g    → ChatGPT
+Super + Shift + a    → ChatGPT
 Super + Shift + x    → Twitter / X
 Super + Shift + d    → Discord
 Super + Shift + e    → Email picker (Gmail app window)
@@ -70,7 +70,7 @@ Super + n            → Notes
 Super + Ctrl + k     → Keybindings help
 Super + Ctrl + e     → Emoji picker
 Super + Ctrl + x     → Dictation toggle (transcribed text → clipboard → Ctrl+V)
-Super + Ctrl + g     → Google Drive TUI
+Super + Shift + g    → Google Drive TUI
 Super + Shift + r    → Restart i3
 Super + Ctrl + r     → Reload i3 config
 Super + x            → Lock screen (i3lock)

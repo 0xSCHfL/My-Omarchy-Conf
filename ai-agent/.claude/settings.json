@@ -3,20 +3,14 @@
     "allow": [
       "Bash",
       "Read",
-      "Edit",
-      "Write",
-      "WebFetch",
       "Grep",
       "Glob",
       "LS",
-      "MultiEdit",
       "NotebookRead",
-      "NotebookEdit",
-      "TodoRead",
-      "TodoWrite",
       "WebSearch"
     ]
   },
+  "model": "haiku",
   "hooks": {
     "Stop": [
       {
@@ -65,6 +59,6 @@
       }
     }
   },
-  "skipDangerousModePermissionPrompt": true,
-  "model": "haiku"
+  "effortLevel": "medium",
+  "skipDangerousModePermissionPrompt": true
 }

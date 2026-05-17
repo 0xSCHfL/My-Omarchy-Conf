@@ -1,16 +1,15 @@
 #!/bin/bash
-sleep 0.3
-dunstify -u critical -t 8000 "📷 Screenshot" "Select area (drag to capture)" >/dev/null 2>&1 || notify-send "📷 Screenshot" "Opened"
+# Close all notifications before capture so they don't appear in the screenshot
+dunstctl close-all
 
 TMPFILE=$(mktemp "/tmp/screenshot-XXXXXX.png")
 trap "rm -f '$TMPFILE'" EXIT
 
-# Use maim for interactive selection - simpler than flameshot raw
 if maim -s "$TMPFILE" 2>/dev/null; then
   if [ -f "$TMPFILE" ] && [ -s "$TMPFILE" ]; then
     xclip -selection clipboard -t image/png -loops 0 < "$TMPFILE" &
-    dunstify -u critical -t 3000 "📷 Screenshot" "✓ Copied to clipboard" >/dev/null 2>&1 || notify-send "📷 Screenshot" "Copied"
+    dunstify -u low -t 2000 "Screenshot" "Copied to clipboard"
   fi
 else
-  dunstify -u critical -t 3000 "📷 Screenshot" "Cancelled" >/dev/null 2>&1 || notify-send "📷 Screenshot" "Cancelled"
+  dunstify -u low -t 2000 "Screenshot" "Cancelled"
 fi
