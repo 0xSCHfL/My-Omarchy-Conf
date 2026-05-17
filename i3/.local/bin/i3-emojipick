@@ -2,4 +2,4 @@
 rofimoji \
     --action copy \
     --skin-tone neutral \
-    --selector-args "-theme $HOME/.config/rofi/spotlight-dark.rasi -p Emoji:"
+    --selector-args "-theme $HOME/.config/rofi/emoji.rasi -p Emoji:"

@@ -1,0 +1,72 @@
+/* emoji picker — dwm-keys style without j/k hints */
+@import "~/.cache/wal/colors-rofi-dwm.rasi"
+
+* {
+    background-color: transparent;
+    text-color:       @wal-fg;
+    margin:  0;
+    padding: 0;
+    spacing: 0;
+}
+
+window {
+    background-color: @wal-bg;
+    location:         center;
+    width:            680;
+    border-radius:    8;
+    border:           1px;
+    border-color:     @wal-border;
+}
+
+inputbar {
+    font:     "monospace 13";
+    padding:  12px 16px;
+    children: [ prompt, entry ];
+    border-radius: 8px 8px 0 0;
+}
+
+prompt {
+    text-color: @wal-prompt;
+    font:       "monospace Bold 13";
+    margin:     0 8px 0 0;
+}
+
+entry {
+    font:             "monospace 13";
+    placeholder:      "Search emoji...";
+    placeholder-color: @wal-fg-dim;
+}
+
+separator {
+    height:           1px;
+    background-color: @wal-border;
+}
+
+listview {
+    lines:        12;
+    columns:      1;
+    fixed-height: false;
+    padding:      6px 0;
+    border:       0;
+}
+
+element {
+    padding: 7px 16px;
+    font:    "monospace 12";
+    border:  0 0 0 3px;
+    border-color: transparent;
+}
+
+element selected normal {
+    text-color:   @wal-accent;
+    border-color: @wal-prompt;
+}
+
+element normal normal {
+    text-color: @wal-fg;
+}
+
+scrollbar {
+    width:        3px;
+    handle-color: @wal-border;
+}
