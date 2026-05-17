@@ -101,6 +101,7 @@ Colorized blocks with nerd font icons — each block has its own color matching 
 | `i3-btop` | Floating btop in kitty |
 | `i3-dedup` | Kill duplicate daemons and revive crashed ones |
 | `i3-gdrive` | Google Drive TUI (browse, download, upload, account switching) |
+| `notes` | Rofi notes launcher — browse/search Obsidian vaults, open in nvim |
 | `batmon` | Battery alert daemon (notify at ≤20%, no spam) |
 | `fzfub` | fzf + ueberzugpp image browser |
 | `xsession` | Switch between i3 / DWM / Hyprland |
@@ -121,6 +122,7 @@ Colorized blocks with nerd font icons — each block has its own color matching 
 | `Super+Shift+V` | Image clipboard history |
 | `Super+Ctrl+W` | Wifi TUI (impala) |
 | `Super+Ctrl+A` | Audio TUI (wiremix) |
+| `Super+N` | Notes launcher (rofi vault picker → nvim) |
 | `Super+Print` | Screenshot → clipboard |
 | `Super+Ctrl+Print` | OCR screenshot → clipboard |
 | `Super+Ctrl+K` | Show all keybindings |
