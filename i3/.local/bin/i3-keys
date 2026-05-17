@@ -11,7 +11,8 @@ window_keys() { cat <<'EOF'
 Super + Return       → Terminal (kitty)
 Super + w            → Close window
 Super + q            → qutebrowser
-Super + f            → Fullscreen toggle
+Super + f            → True fullscreen (bar hides)
+Super + Alt + f      → Maximize (fills workspace, gaps + bar stay)
 Super + h            → Focus left
 Super + j            → Focus down
 Super + k            → Focus up
@@ -21,7 +22,6 @@ Super + Ctrl + l     → Split vertical
 Super + o            → Layout stacking
 Super + e            → Toggle split layout
 Super + t            → Toggle floating
-Super + Alt + f      → Full-width maximize toggle
 Super + Shift + f    → Nautilus file manager
 Super + Shift + space → Toggle floating
 Super + a            → Focus parent
