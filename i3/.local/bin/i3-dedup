@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# Kill duplicate singleton processes, keeping the newest instance
+
+# Exact name matches (pgrep -x)
+SINGLETONS=(
+    picom
+    dunst
+    nm-applet
+    copyq
+    i3blocks
+    batmon
+)
+
+# Partial matches for script-based daemons (pgrep -f)
+SCRIPT_SINGLETONS=(
+    "i3-cliphist"
+    "i3-imgclipwatch"
+    "i3-autolayout"
+    "battery-monitor"
+)
+
+killed_any=false
+
+dedup() {
+    local name="$1"
+    local flag="$2"  # -x or -f
+
+    # Get PIDs sorted by start time (oldest first), newest last
+    local raw_pids
+    mapfile -t raw_pids < <(pgrep "$flag" "$name" 2>/dev/null)
+    [[ ${#raw_pids[@]} -le 1 ]] && return
+
+    # Sort by start time using ps, keep newest (last after sort)
+    mapfile -t sorted < <(
+        ps -p "$(IFS=,; echo "${raw_pids[*]}")" -o pid= --sort=start_time 2>/dev/null
+    )
+    [[ ${#sorted[@]} -le 1 ]] && return
+
+    local keep="${sorted[-1]}"  # newest
+    local killed=0
+
+    for pid in "${sorted[@]}"; do
+        [[ "$pid" == "$keep" ]] && continue
+        if kill "$pid" 2>/dev/null; then
+            ((killed++))
+            killed_any=true
+        fi
+    done
+
+    echo "  $name: ${#sorted[@]} instances → killed $killed stale (kept PID $keep)"
+}
+
+echo "Scanning for duplicate processes..."
+echo ""
+
+for proc in "${SINGLETONS[@]}";        do dedup "$proc" -x; done
+for proc in "${SCRIPT_SINGLETONS[@]}"; do dedup "$proc" -f; done
+
+if [[ "$killed_any" == false ]]; then
+    echo "  All clean — no duplicates found."
+fi
+
+echo ""
+echo "Done."
