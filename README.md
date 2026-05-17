@@ -100,6 +100,7 @@ Colorized blocks with nerd font icons — each block has its own color matching 
 | `i3-cliphist` | Text clipboard history daemon (cliphist) |
 | `i3-btop` | Floating btop in kitty |
 | `i3-dedup` | Kill duplicate daemons and revive crashed ones |
+| `i3-gdrive` | Google Drive TUI (browse, download, upload, account switching) |
 | `batmon` | Battery alert daemon (notify at ≤20%, no spam) |
 | `fzfub` | fzf + ueberzugpp image browser |
 | `xsession` | Switch between i3 / DWM / Hyprland |
@@ -146,6 +147,8 @@ Colors auto-update via pywal when wallpaper changes. Background syncs with `wall
 
 `wallpaper-set.sh` orchestrates everything on wallpaper change:
 alacritty → dunst → SDDM theme → flameshot → Xresources
+
+**Recent improvements:** Stabilized bar (i3blocks) color updates on wallpaper change to prevent sync issues.
 
 ### Maintenance
 
