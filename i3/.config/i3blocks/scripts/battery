@@ -22,6 +22,10 @@ if [ -d "$BAT" ]; then
         rm -f "$NOTIFY_FILE"
     fi
 
+    case $BLOCK_BUTTON in
+        1) setsid -f alacritty --class i3cpufreq -e sudo auto-cpufreq --monitor ;;
+    esac
+
     echo "| 🔋 ${CAPACITY}%"
 else
     echo "| N/A"

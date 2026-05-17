@@ -108,6 +108,7 @@ for_window [title="volume-osd"] floating enable, resize set 360 100, move positi
 for_window [class="i3statspopup"] floating enable, resize set 900 650, move position center
 for_window [class="i3diskpopup"] floating enable, resize set 760 360, move position center
 for_window [class="i3timerpopup"] floating enable, resize set 520 220, move position center
+for_window [class="i3cpufreq"] floating enable, resize set 900 600, move position center
 for_window [class="i3-wifi"] floating enable, resize set 800 600, move position center
 for_window [class="i3-audio"] floating enable, resize set 800 600, move position center
 
