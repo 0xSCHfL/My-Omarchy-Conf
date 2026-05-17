@@ -24,6 +24,7 @@ set_from_resource $wal_fg foreground #c0b18b
 set_from_resource $wal_dim color8 #656565
 set_from_resource $wal_accent color4 #d4d232
 set_from_resource $wal_alert color1 #d75f5f
+set_from_resource $wal_panel background #262626
 
 default_border none
 
@@ -80,7 +81,7 @@ bindsym XF86MonBrightnessDown exec --no-startup-id brightnessctl set 5%-
 # WiFi and Audio controls
 bindsym Mod4+Ctrl+w exec --no-startup-id $HOME/.config/i3/scripts/media/i3-launch-wifi.sh
 bindsym Mod4+Ctrl+a exec --no-startup-id $HOME/.config/i3/scripts/media/i3-launch-audio.sh
-bindsym Mod4+Ctrl+g exec --no-startup-id alacritty --class i3-gdrive -e i3-gdrive
+bindsym Mod4+Shift+g exec --no-startup-id alacritty --class i3-gdrive -e i3-gdrive
 
 # Dictation (voxtype) — toggle recording; transcribed text lands in clipboard → Ctrl+V to paste
 bindsym Mod4+Ctrl+x exec --no-startup-id voxtype record toggle
@@ -117,6 +118,14 @@ for_window [class="i3-audio"] floating enable, resize set 800 600, move position
 for_window [class="i3-bluetooth"] floating enable, resize set 800 600, move position center
 for_window [class="i3-gdrive"] floating enable, resize set 1100 680, move position center
 for_window [class="i3-gdrive-setup"] floating enable, resize set 800 500, move position center
+
+# Media viewers — open as floating
+for_window [class="^imv$"] floating enable, resize set 1200 750, move position center
+for_window [class="^imv-folder$"] floating enable, resize set 1200 750, move position center
+for_window [class="^feh$"] floating enable, resize set 1200 750, move position center
+for_window [class="^mpv$"] floating enable, resize set 1200 700, move position center
+for_window [class="^Evince$"] floating enable, resize set 1100 800, move position center
+for_window [class="^Zathura$"] floating enable, resize set 1100 800, move position center
 
 # move tiling windows via drag & drop by left-clicking into the title bar,
 # or left-clicking anywhere into the window while holding the floating modifier.
@@ -260,7 +269,7 @@ bindsym Mod4+Shift+o exec --no-startup-id obsidian
 bindsym Mod4+Shift+i exec --no-startup-id i3-imgpicker
 bindsym Mod4+Mod1+t exec --no-startup-id Telegram -theme dark
 bindsym Mod4+Shift+w exec --no-startup-id i3-webapp "https://web.whatsapp.com/"
-bindsym Mod4+Shift+g exec --no-startup-id i3-webapp "https://chatgpt.com/"
+bindsym Mod4+Shift+a exec --no-startup-id i3-webapp "https://chatgpt.com/"
 bindsym Mod4+Shift+x exec --no-startup-id i3-webapp "https://x.com/"
 bindsym Mod4+Shift+d exec --no-startup-id discord
 bindsym Mod4+Shift+e exec --no-startup-id $HOME/.config/i3/scripts/launchers/i3-email-picker.sh

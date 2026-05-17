@@ -102,4 +102,8 @@ if [[ -f "$HOME/.cache/wal/colors.Xresources" ]] && command -v xrdb >/dev/null 2
   xrdb -merge "$HOME/.cache/wal/colors.Xresources"
 fi
 
+# Reload i3 so set_from_resource colors (bar/workspaces) refresh with new wal palette.
+if command -v i3-msg >/dev/null 2>&1; then
+  i3-msg reload >/dev/null 2>&1 || true
+fi
 

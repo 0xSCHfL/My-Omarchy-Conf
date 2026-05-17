@@ -21,5 +21,5 @@ SELECTED=$(find "$DIR" -type f \( -iname '*.jpg' -o -iname '*.png' \) | sort | \
 ueberzugpp cmd -s "$SOCKET" -a exit
 
 if [ -n "$SELECTED" ]; then
-  "$(CDPATH= cd -- "$(dirname "$0")" && pwd)"/wallpaper-set.sh --no-wal "$SELECTED"
+  "$(CDPATH= cd -- "$(dirname "$0")" && pwd)"/wallpaper-set.sh "$SELECTED"
 fi
