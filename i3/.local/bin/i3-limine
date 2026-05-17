@@ -1,0 +1,16 @@
+#!/bin/bash
+# Refresh Limine bootloader config from i3 dotfiles — same as omarchy-refresh-limine
+
+DOTFILES="$HOME/Work/dotfiles"
+
+echo "Resetting Limine config..."
+sudo cp "$DOTFILES/limine/limine.conf" /boot/limine.conf
+
+echo "Copying backdrop..."
+sudo cp "$DOTFILES/limine/backdrop.png" /boot/backdrop.png
+
+echo "Running limine-update..."
+sudo limine-update
+sudo limine-snapper-sync 2>/dev/null || true
+
+echo "Done."

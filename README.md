@@ -102,6 +102,7 @@ Colorized blocks with nerd font icons — each block has its own color matching 
 | `i3-dedup` | Kill duplicate daemons and revive crashed ones |
 | `i3-gdrive` | Google Drive TUI (browse, download, upload, account switching) |
 | `notes` | Rofi notes launcher — browse/search Obsidian vaults, open in nvim |
+| `i3-limine` | Refresh Limine config + backdrop from dotfiles (like omarchy-refresh-limine) |
 | `batmon` | Battery alert daemon (notify at ≤20%, no spam) |
 | `fzfub` | fzf + ueberzugpp image browser |
 | `xsession` | Switch between i3 / DWM / Hyprland |
