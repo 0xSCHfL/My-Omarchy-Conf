@@ -3,7 +3,7 @@
 
 LAST=""
 while true; do
-    clip=$(xclip -o -selection clipboard 2>/dev/null)
+    clip=$(timeout 2 xclip -o -selection clipboard 2>/dev/null)
     if [ -n "$clip" ] && [ "$clip" != "$LAST" ]; then
         printf '%s' "$clip" | cliphist store
         LAST="$clip"
