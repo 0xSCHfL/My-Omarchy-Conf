@@ -58,7 +58,6 @@ exec --no-startup-id xss-lock --transfer-sleep-lock -- i3-lock
 # and nm-applet is a desktop environment-independent system tray GUI for it.
 #exec_always --no-startup-id $HOME/.config/polybar/launch.sh
 exec --no-startup-id picom --daemon
-exec --no-startup-id nm-applet
 exec --no-startup-id dunst
 exec --no-startup-id /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
 exec --no-startup-id copyq
@@ -119,6 +118,7 @@ for_window [class="i3-audio"] floating enable, resize set 800 600, move position
 for_window [class="i3-bluetooth"] floating enable, resize set 800 600, move position center
 for_window [class="i3-gdrive"] floating enable, resize set 1100 680, move position center
 for_window [class="i3-gdrive-setup"] floating enable, resize set 800 500, move position center
+for_window [class="notes-nvim"] floating enable, resize set 1200 800, move position center
 
 # Media viewers — open as floating
 for_window [class="^imv$"] floating enable, resize set 1200 750, move position center

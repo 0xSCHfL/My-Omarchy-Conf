@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# Notes launcher — rofi-based browser for Obsidian vaults
+
+VAULT_ROOT="$HOME/Dropbox/Notes/Obsidian Vault"
+ROFI_THEME="$HOME/.config/rofi/i3-launcher.rasi"
+
+rofi_menu() {
+  rofi -dmenu -i -no-sort \
+    -theme "$ROFI_THEME" \
+    -kb-row-up "k,Up" \
+    -kb-row-down "j,Down" \
+    -kb-cancel "Escape,q" \
+    -p "$1"
+}
+
+open_note() {
+  local path="$1"
+  setsid -f kitty --class notes-nvim -e nvim "$path" >/dev/null 2>&1
+}
+
+new_note() {
+  local vault="$1"
+  local name
+  name=$(echo "" | rofi_menu "New note name (empty = timestamp):")
+  [[ $? -ne 0 ]] && return
+  [[ -z "$name" ]] && name="$(date +%Y-%m-%d_%H-%M-%S)"
+  [[ "$name" != *.md ]] && name="$name.md"
+  open_note "$vault/$name"
+}
+
+browse_vault() {
+  local vault="$1"
+  local label="$2"
+
+  while true; do
+    local choice
+    choice=$(
+      {
+        echo "+ New note"
+        find "$vault" -name "*.md" \
+          -not -path "*/.obsidian/*" \
+          -not -path "*/.trash/*" \
+          -printf "%T@ %P\n" | sort -nr | cut -d' ' -f2-
+      } | rofi_menu "$label"
+    )
+    [[ $? -ne 0 ]] && return
+
+    case "$choice" in
+      "+ New note") new_note "$vault" ;;
+      *.md) open_note "$vault/$choice"; return ;;
+    esac
+  done
+}
+
+# Step 1: choose vault
+vault_choice=$(printf "Live_Style\nStudying" | rofi_menu "Notes")
+[[ $? -ne 0 ]] && exit 0
+
+browse_vault "$VAULT_ROOT/$vault_choice" "$vault_choice"
