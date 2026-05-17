@@ -82,6 +82,9 @@ bindsym XF86MonBrightnessDown exec --no-startup-id brightnessctl set 5%-
 bindsym Mod4+Ctrl+w exec --no-startup-id $HOME/.config/i3/scripts/media/i3-launch-wifi.sh
 bindsym Mod4+Ctrl+a exec --no-startup-id $HOME/.config/i3/scripts/media/i3-launch-audio.sh
 
+# Dictation (voxtype) — toggle recording; transcribed text lands in clipboard → Ctrl+V to paste
+bindsym Mod4+Ctrl+x exec --no-startup-id voxtype record toggle
+
 # Notification controls (dunst)
 bindsym Mod4+comma exec dunstctl close
 bindsym Mod4+Shift+comma exec dunstctl close-all
