@@ -41,14 +41,13 @@ signal=11
 separator=false
 
 [ethernet]
-command=ip=$(ip addr show eno1 2>/dev/null| awk '/inet /{print $2}'| cut -d/ -f1); [ -n "$ip" ] && printf "| 󰈀 %s\n\n#ea999c\n" "$ip"
+command=ip=$(ip addr show eno1 2>/dev/null| awk '/inet /{print $2}'| cut -d/ -f1); [ -n "$ip" ] && echo "| E: Leaked IP: $ip"|| echo "| E: N/A"
 interval=10
 separator=false
 
 [load]
-command=echo "| 󰾆 $(awk '{print $1}' /proc/loadavg)"
+command=echo "| Load: $(awk '{print $1}' /proc/loadavg)"
 interval=2
-color=#e5c890
 separator=false
 
 [systemstats]
@@ -60,7 +59,6 @@ separator=false
 command=~/.config/i3blocks/scripts/disks
 interval=30
 signal=3
-color=#a6d189
 separator=false
 
 [audio]
@@ -73,7 +71,6 @@ separator=false
 command=~/.config/i3blocks/scripts/timer
 interval=once
 signal=3
-color=#babbf1
 separator=false
 
 [battery]
@@ -85,4 +82,3 @@ separator=false
 [time]
 command=~/.config/i3blocks/scripts/timedate
 interval=1
-color=#8caaee
