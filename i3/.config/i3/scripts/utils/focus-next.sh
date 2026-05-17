@@ -3,7 +3,9 @@
 direction=${1:-next}
 
 # Get only real app windows in current workspace via i3 IPC (tiled + floating)
-mapfile -t window_ids < <(i3-msg -t get_tree | python3 -c "
+get_tree=$(i3-msg -t get_tree)
+
+mapfile -t window_ids < <(echo "$get_tree" | python3 -c "
 import json, sys
 
 def all_nodes(node):
@@ -36,6 +38,20 @@ if [[ ${#window_ids[@]} -le 1 ]]; then exit 0; fi
 
 current=$(xdotool getactivewindow 2>/dev/null)
 
+# Check if current focused window is floating (maximized via Super+Alt+F)
+is_maximized=$(echo "$get_tree" | python3 -c "
+import json, sys
+def find_focused(node):
+    if node.get('focused'):
+        return node
+    for child in node.get('nodes', []) + node.get('floating_nodes', []):
+        r = find_focused(child)
+        if r: return r
+    return None
+f = find_focused(json.load(sys.stdin))
+print(f.get('floating', '') if f else '')
+")
+
 for i in "${!window_ids[@]}"; do
     if [[ "${window_ids[$i]}" == "$current" ]]; then
         if [[ "$direction" == "prev" ]]; then
@@ -43,8 +59,17 @@ for i in "${!window_ids[@]}"; do
         else
             next_idx=$(( (i + 1) % ${#window_ids[@]} ))
         fi
-        xdotool windowfocus --sync "${window_ids[$next_idx]}"
-        xdotool windowraise "${window_ids[$next_idx]}"
+        next_win="${window_ids[$next_idx]}"
+
+        if [[ "$is_maximized" == "user_on"* ]]; then
+            # Un-maximize current, focus next, maximize next
+            i3-msg "floating disable"
+            i3-msg "[id=$next_win] focus"
+            ~/.config/i3/scripts/utils/maximize.sh
+        else
+            xdotool windowfocus --sync "$next_win"
+            xdotool windowraise "$next_win"
+        fi
         exit 0
     fi
 done
