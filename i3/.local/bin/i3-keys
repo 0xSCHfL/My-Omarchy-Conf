@@ -68,6 +68,7 @@ Super + v            → Clipboard manager (Walker, Ctrl+d deletes)
 Super + Ctrl + v     → Copyq show
 Super + n            → Notes
 Super + Ctrl + k     → Keybindings help
+Super + Ctrl + e     → Emoji picker
 Super + Shift + r    → Restart i3
 Super + Ctrl + r     → Reload i3 config
 Super + x            → Lock screen (i3lock)
