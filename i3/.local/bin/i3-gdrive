@@ -1,0 +1,481 @@
+#!/usr/bin/env python3
+
+import json
+import os
+import subprocess
+import shutil
+from pathlib import Path
+from datetime import datetime
+
+from textual.app import App, ComposeResult
+from textual.binding import Binding
+from textual.containers import Horizontal, Vertical
+from textual.reactive import reactive
+from textual.screen import ModalScreen
+from textual.widgets import (
+    DataTable, Footer, Header, Input, Label, Static
+)
+
+REMOTE = "gdrive"
+MOUNT_POINT = Path.home() / "GoogleDrive"
+RCLONE_CONF = Path.home() / ".config/rclone/rclone.conf"
+
+
+# ── helpers ──────────────────────────────────────────────────────────────────
+
+def has_remote() -> bool:
+    if not RCLONE_CONF.exists():
+        return False
+    return f"[{REMOTE}]" in RCLONE_CONF.read_text()
+
+
+def is_mounted() -> bool:
+    try:
+        result = subprocess.run(
+            ["mountpoint", "-q", str(MOUNT_POINT)],
+            capture_output=True
+        )
+        return result.returncode == 0
+    except FileNotFoundError:
+        return False
+
+
+def fmt_size(n: int) -> str:
+    for unit in ("B", "K", "M", "G", "T"):
+        if n < 1024:
+            return f"{n:.0f}{unit}"
+        n /= 1024
+    return f"{n:.0f}P"
+
+
+def fmt_date(iso: str) -> str:
+    try:
+        dt = datetime.fromisoformat(iso.replace("Z", "+00:00"))
+        return dt.strftime("%Y-%m-%d")
+    except Exception:
+        return "—"
+
+
+def rclone(*args, check=False) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        ["rclone", *args],
+        capture_output=True, text=True, check=check
+    )
+
+
+def list_local(path: Path) -> list[dict]:
+    entries = []
+    try:
+        for e in sorted(path.iterdir(), key=lambda x: (not x.is_dir(), x.name.lower())):
+            stat = e.stat()
+            entries.append({
+                "name": e.name,
+                "is_dir": e.is_dir(),
+                "size": stat.st_size,
+                "mod": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d"),
+            })
+    except PermissionError:
+        pass
+    return entries
+
+
+def list_remote(path: str) -> list[dict]:
+    result = rclone("lsjson", f"{REMOTE}:{path}")
+    if result.returncode != 0:
+        return []
+    items = json.loads(result.stdout or "[]")
+    items.sort(key=lambda x: (not x.get("IsDir"), x["Name"].lower()))
+    return [
+        {
+            "name": item["Name"],
+            "is_dir": item.get("IsDir", False),
+            "size": item.get("Size", 0),
+            "mod": fmt_date(item.get("ModTime", "")),
+        }
+        for item in items
+    ]
+
+
+# ── modals ────────────────────────────────────────────────────────────────────
+
+class ConfirmScreen(ModalScreen):
+    def __init__(self, message: str, **kwargs):
+        super().__init__(**kwargs)
+        self.message = message
+
+    def compose(self) -> ComposeResult:
+        with Vertical(id="confirm-dialog"):
+            yield Label(self.message, id="confirm-msg")
+            yield Label("[y] Yes    [n] No", id="confirm-hint")
+
+    def on_key(self, event) -> None:
+        if event.key == "y":
+            self.dismiss(True)
+        elif event.key in ("n", "escape"):
+            self.dismiss(False)
+
+
+class InputScreen(ModalScreen):
+    def __init__(self, prompt: str, default: str = "", **kwargs):
+        super().__init__(**kwargs)
+        self.prompt = prompt
+        self.default = default
+
+    def compose(self) -> ComposeResult:
+        with Vertical(id="input-dialog"):
+            yield Label(self.prompt, id="input-label")
+            yield Input(value=self.default, id="input-field")
+            yield Label("[Enter] Confirm    [Esc] Cancel", id="input-hint")
+
+    def on_mount(self) -> None:
+        self.query_one("#input-field", Input).focus()
+
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        self.dismiss(event.value.strip())
+
+    def on_key(self, event) -> None:
+        if event.key == "escape":
+            self.dismiss(None)
+
+
+class SetupScreen(ModalScreen):
+    def compose(self) -> ComposeResult:
+        with Vertical(id="setup-dialog"):
+            yield Label("󰊫  Google Drive Setup", id="setup-title")
+            yield Label(
+                "No Google Drive remote found.\n\n"
+                "Press [s] to open the rclone setup wizard in a new terminal.\n"
+                "After completing OAuth, press [r] to refresh.\n\n"
+                "Press [q] to quit.",
+                id="setup-msg"
+            )
+
+    def on_key(self, event) -> None:
+        if event.key == "s":
+            subprocess.Popen([
+                "alacritty", "--class", "i3-gdrive-setup",
+                "-e", "rclone", "config", "create", REMOTE, "drive",
+                "scope", "drive"
+            ])
+        elif event.key == "r":
+            if has_remote():
+                self.dismiss(True)
+        elif event.key == "q":
+            self.app.exit()
+
+
+# ── file pane ────────────────────────────────────────────────────────────────
+
+class FilePane(Vertical):
+    BORDER_TITLE = ""
+    active: reactive[bool] = reactive(False)
+
+    def __init__(self, side: str, **kwargs):
+        super().__init__(**kwargs)
+        self.side = side          # "local" or "remote"
+        self.path = str(Path.home()) if side == "local" else ""
+        self.entries: list[dict] = []
+
+    def compose(self) -> ComposeResult:
+        yield Label("", id=f"{self.side}-path")
+        yield DataTable(id=f"{self.side}-table", cursor_type="row")
+
+    def on_mount(self) -> None:
+        table = self.query_one(f"#{self.side}-table", DataTable)
+        table.add_columns("  Name", "Size", "Date")
+        self.refresh_listing()
+
+    def watch_active(self, value: bool) -> None:
+        self.set_class(value, "active-pane")
+
+    def refresh_listing(self) -> None:
+        table = self.query_one(f"#{self.side}-table", DataTable)
+        label = self.query_one(f"#{self.side}-path", Label)
+        table.clear()
+
+        if self.side == "local":
+            display = self.path.replace(str(Path.home()), "~")
+            label.update(f"  Local  [bold]{display}[/bold]")
+            self.entries = list_local(Path(self.path))
+        else:
+            display = "/" + self.path if self.path else "/"
+            label.update(f"  Drive  [bold]{display}[/bold]")
+            self.entries = list_remote(self.path)
+
+        for e in self.entries:
+            icon = "󰉋 " if e["is_dir"] else "󰈙 "
+            size = "—" if e["is_dir"] else fmt_size(e["size"])
+            table.add_row(icon + e["name"], size, e["mod"])
+
+    def current_entry(self) -> dict | None:
+        table = self.query_one(f"#{self.side}-table", DataTable)
+        if table.cursor_row < len(self.entries):
+            return self.entries[table.cursor_row]
+        return None
+
+    def enter_dir(self) -> None:
+        entry = self.current_entry()
+        if not entry or not entry["is_dir"]:
+            return
+        if self.side == "local":
+            self.path = str(Path(self.path) / entry["name"])
+        else:
+            self.path = (self.path + "/" + entry["name"]).lstrip("/")
+        self.refresh_listing()
+
+    def go_up(self) -> None:
+        if self.side == "local":
+            parent = str(Path(self.path).parent)
+            if parent != self.path:
+                self.path = parent
+        else:
+            if "/" in self.path:
+                self.path = self.path.rsplit("/", 1)[0]
+            else:
+                self.path = ""
+        self.refresh_listing()
+
+
+# ── main app ─────────────────────────────────────────────────────────────────
+
+class GDriveApp(App):
+    CSS = """
+    Screen {
+        background: #1e1e2e;
+    }
+    FilePane {
+        width: 1fr;
+        border: solid #44475a;
+        margin: 0 1;
+    }
+    FilePane.active-pane {
+        border: solid #bd93f9;
+    }
+    #local-path, #remote-path {
+        background: #282a36;
+        color: #f8f8f2;
+        padding: 0 1;
+        height: 1;
+    }
+    DataTable {
+        background: #1e1e2e;
+    }
+    DataTable > .datatable--cursor {
+        background: #44475a;
+        color: #f8f8f2;
+    }
+    #status-bar {
+        height: 1;
+        background: #282a36;
+        color: #6272a4;
+        padding: 0 2;
+    }
+    #confirm-dialog, #input-dialog, #setup-dialog {
+        background: #282a36;
+        border: solid #bd93f9;
+        padding: 2 4;
+        width: 60;
+        height: auto;
+        margin: auto;
+    }
+    #confirm-msg, #setup-msg {
+        color: #f8f8f2;
+        margin-bottom: 1;
+    }
+    #confirm-hint, #input-hint {
+        color: #6272a4;
+    }
+    #setup-title {
+        color: #bd93f9;
+        text-style: bold;
+        margin-bottom: 1;
+    }
+    #input-label {
+        color: #f8f8f2;
+        margin-bottom: 1;
+    }
+    Input {
+        background: #1e1e2e;
+        border: solid #6272a4;
+        color: #f8f8f2;
+    }
+    """
+
+    BINDINGS = [
+        Binding("tab",       "switch_pane",  "Switch pane",  show=True),
+        Binding("enter",     "enter_dir",    "Open",         show=False),
+        Binding("backspace", "go_up",        "Up",           show=False),
+        Binding("u",         "upload",       "Upload",       show=True),
+        Binding("d",         "download",     "Download",     show=True),
+        Binding("r",         "rename",       "Rename",       show=True),
+        Binding("n",         "mkdir",        "New dir",      show=True),
+        Binding("delete",    "delete_entry", "Delete",       show=True),
+        Binding("m",         "toggle_mount", "Mount",        show=True),
+        Binding("q",         "quit",         "Quit",         show=True),
+    ]
+
+    active_side: reactive[str] = reactive("local")
+
+    def compose(self) -> ComposeResult:
+        yield Header(show_clock=True)
+        with Horizontal():
+            yield FilePane("local",  id="local-pane")
+            yield FilePane("remote", id="remote-pane")
+        yield Static(self._status_text(), id="status-bar")
+        yield Footer()
+
+    def on_mount(self) -> None:
+        self.title = "󰊫  Google Drive"
+        self._sync_active()
+        if not has_remote():
+            self.push_screen(SetupScreen(), self._on_setup_done)
+
+    def _on_setup_done(self, result: bool) -> None:
+        if result:
+            self.remote_pane.refresh_listing()
+
+    @property
+    def local_pane(self) -> FilePane:
+        return self.query_one("#local-pane", FilePane)
+
+    @property
+    def remote_pane(self) -> FilePane:
+        return self.query_one("#remote-pane", FilePane)
+
+    @property
+    def active_pane(self) -> FilePane:
+        return self.local_pane if self.active_side == "local" else self.remote_pane
+
+    def _sync_active(self) -> None:
+        self.local_pane.active  = self.active_side == "local"
+        self.remote_pane.active = self.active_side == "remote"
+
+    def _status_text(self) -> str:
+        mount = "● Mounted" if is_mounted() else "○ Unmounted"
+        return f" {mount}   Press ? for help"
+
+    def _refresh_status(self) -> None:
+        self.query_one("#status-bar", Static).update(self._status_text())
+
+    def action_switch_pane(self) -> None:
+        self.active_side = "remote" if self.active_side == "local" else "local"
+        self._sync_active()
+
+    def action_enter_dir(self) -> None:
+        self.active_pane.enter_dir()
+
+    def action_go_up(self) -> None:
+        self.active_pane.go_up()
+
+    def action_upload(self) -> None:
+        entry = self.local_pane.current_entry()
+        if not entry:
+            return
+        src = str(Path(self.local_pane.path) / entry["name"])
+        dst = f"{REMOTE}:{self.remote_pane.path}"
+        self._run_transfer("upload", src, dst)
+
+    def action_download(self) -> None:
+        entry = self.remote_pane.current_entry()
+        if not entry:
+            return
+        remote_path = (self.remote_pane.path + "/" + entry["name"]).lstrip("/")
+        src = f"{REMOTE}:{remote_path}"
+        dst = self.local_pane.path
+        self._run_transfer("download", src, dst)
+
+    def _run_transfer(self, label: str, src: str, dst: str) -> None:
+        status = self.query_one("#status-bar", Static)
+        status.update(f" ⟳ {label.capitalize()}ing…")
+        self.run_worker(
+            lambda: rclone("copy", src, dst),
+            thread=True,
+            exclusive=False,
+        )
+
+    def on_worker_state_changed(self, event) -> None:
+        if event.worker.state.name == "SUCCESS":
+            self.local_pane.refresh_listing()
+            self.remote_pane.refresh_listing()
+            self._refresh_status()
+
+    def action_rename(self) -> None:
+        entry = self.active_pane.current_entry()
+        if not entry:
+            return
+
+        def do_rename(new_name: str | None) -> None:
+            if not new_name or new_name == entry["name"]:
+                return
+            pane = self.active_pane
+            if pane.side == "local":
+                src = Path(pane.path) / entry["name"]
+                src.rename(Path(pane.path) / new_name)
+            else:
+                old = (pane.path + "/" + entry["name"]).lstrip("/")
+                new = (pane.path + "/" + new_name).lstrip("/")
+                rclone("moveto", f"{REMOTE}:{old}", f"{REMOTE}:{new}")
+            pane.refresh_listing()
+
+        self.push_screen(
+            InputScreen("Rename to:", default=entry["name"]),
+            do_rename,
+        )
+
+    def action_mkdir(self) -> None:
+        def do_mkdir(name: str | None) -> None:
+            if not name:
+                return
+            pane = self.active_pane
+            if pane.side == "local":
+                (Path(pane.path) / name).mkdir(exist_ok=True)
+            else:
+                path = (pane.path + "/" + name).lstrip("/")
+                rclone("mkdir", f"{REMOTE}:{path}")
+            pane.refresh_listing()
+
+        self.push_screen(InputScreen("New folder name:"), do_mkdir)
+
+    def action_delete_entry(self) -> None:
+        entry = self.active_pane.current_entry()
+        if not entry:
+            return
+        msg = f"Delete [bold]{entry['name']}[/bold]?"
+
+        def do_delete(confirmed: bool) -> None:
+            if not confirmed:
+                return
+            pane = self.active_pane
+            if pane.side == "local":
+                target = Path(pane.path) / entry["name"]
+                if entry["is_dir"]:
+                    shutil.rmtree(target)
+                else:
+                    target.unlink()
+            else:
+                path = (pane.path + "/" + entry["name"]).lstrip("/")
+                if entry["is_dir"]:
+                    rclone("purge", f"{REMOTE}:{path}")
+                else:
+                    rclone("deletefile", f"{REMOTE}:{path}")
+            pane.refresh_listing()
+
+        self.push_screen(ConfirmScreen(msg), do_delete)
+
+    def action_toggle_mount(self) -> None:
+        if is_mounted():
+            subprocess.run(["fusermount", "-u", str(MOUNT_POINT)], capture_output=True)
+        else:
+            MOUNT_POINT.mkdir(exist_ok=True)
+            subprocess.Popen([
+                "rclone", "mount", f"{REMOTE}:",
+                str(MOUNT_POINT),
+                "--vfs-cache-mode", "full",
+                "--vfs-cache-max-size", "2G",
+                "--daemon",
+            ])
+        self.set_timer(1.5, self._refresh_status)
+
+
+if __name__ == "__main__":
+    GDriveApp().run()

@@ -70,6 +70,7 @@ Super + n            → Notes
 Super + Ctrl + k     → Keybindings help
 Super + Ctrl + e     → Emoji picker
 Super + Ctrl + x     → Dictation toggle (transcribed text → clipboard → Ctrl+V)
+Super + Ctrl + g     → Google Drive TUI
 Super + Shift + r    → Restart i3
 Super + Ctrl + r     → Reload i3 config
 Super + x            → Lock screen (i3lock)

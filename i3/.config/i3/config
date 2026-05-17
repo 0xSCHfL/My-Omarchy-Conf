@@ -80,6 +80,7 @@ bindsym XF86MonBrightnessDown exec --no-startup-id brightnessctl set 5%-
 # WiFi and Audio controls
 bindsym Mod4+Ctrl+w exec --no-startup-id $HOME/.config/i3/scripts/media/i3-launch-wifi.sh
 bindsym Mod4+Ctrl+a exec --no-startup-id $HOME/.config/i3/scripts/media/i3-launch-audio.sh
+bindsym Mod4+Ctrl+g exec --no-startup-id alacritty --class i3-gdrive -e i3-gdrive
 
 # Dictation (voxtype) — toggle recording; transcribed text lands in clipboard → Ctrl+V to paste
 bindsym Mod4+Ctrl+x exec --no-startup-id voxtype record toggle
@@ -114,6 +115,8 @@ for_window [class="i3cpufreq"] floating enable, resize set 900 600, move positio
 for_window [class="i3-wifi"] floating enable, resize set 800 600, move position center
 for_window [class="i3-audio"] floating enable, resize set 800 600, move position center
 for_window [class="i3-bluetooth"] floating enable, resize set 800 600, move position center
+for_window [class="i3-gdrive"] floating enable, resize set 1100 680, move position center
+for_window [class="i3-gdrive-setup"] floating enable, resize set 800 500, move position center
 
 # move tiling windows via drag & drop by left-clicking into the title bar,
 # or left-clicking anywhere into the window while holding the floating modifier.

@@ -1,0 +1,17 @@
+#!/bin/bash
+
+MOUNT="$HOME/GoogleDrive"
+
+if mountpoint -q "$MOUNT" 2>/dev/null; then
+    echo "| 󰊫 Drive"
+    echo ""
+    echo "#4285f4"
+else
+    echo "| 󰊫 Drive"
+    echo ""
+    echo "#737994"
+fi
+
+case $BLOCK_BUTTON in
+    1) setsid -f alacritty --class i3-gdrive -e i3-gdrive ;;
+esac
