@@ -1,0 +1,21 @@
+#TARGET_OS_NAME="Omarchy"
+TARGET_OS_NAME="Sohaib"
+
+ESP_PATH="/boot"
+
+KERNEL_CMDLINE[default]+="cryptdevice=PARTUUID=969fa1a7-fbe1-48b6-a0e1-52a39b0d757e:root root=/dev/mapper/root zswap.enabled=0 rootflags=subvol=@ rw rootfstype=btrfs"
+KERNEL_CMDLINE[default]+="plymouth.enable=0"
+
+ENABLE_UKI=yes
+CUSTOM_UKI_NAME="omarchy"
+
+ENABLE_LIMINE_FALLBACK=yes
+
+# Find and add other bootloaders
+FIND_BOOTLOADERS=yes
+
+BOOT_ORDER="*, *fallback, Snapshots"
+
+MAX_SNAPSHOT_ENTRIES=5
+
+SNAPSHOT_FORMAT_CHOICE=5

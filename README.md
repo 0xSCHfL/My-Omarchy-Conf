@@ -128,6 +128,21 @@ Colorized blocks with nerd font icons — each block has its own color matching 
 | `Super+Ctrl+K` | Show all keybindings |
 | `Super+Ctrl+,` | Toggle notifications (dunst) |
 
+### Limine Bootloader
+
+Tokyo Night themed bootloader with custom branding. Config tracked at `limine/limine.conf`.
+
+Not stowed (lives on the FAT32 `/boot` partition) — applied manually on fresh installs:
+
+```bash
+./install.sh limine
+```
+
+**Key settings:**
+- `plymouth.enable=0` in cmdline — keeps boot output visible (prevents black screen)
+- Tokyo Night palette + `interface_branding: i3 Bootloader`
+- Fallback EFI chainload entry in case the UKI fails
+
 ### SDDM Theme
 
 Custom `i3-login` theme — symlinked, not stowed:

@@ -211,6 +211,32 @@ EOF
     fi
 }
 
+# --- Limine ---
+limine_install() {
+    echo "Installing Limine config..."
+
+    if [[ ! -f /boot/limine.conf ]]; then
+        sudo cp "$DOTFILES/limine/limine.conf" /boot/limine.conf
+        echo "  ✓ /boot/limine.conf"
+    else
+        echo "  ~ /boot/limine.conf already exists, skipping (run with 'limine --force' to overwrite)"
+    fi
+
+    if [[ ! -f /etc/default/limine ]]; then
+        sudo cp "$DOTFILES/limine/default-limine" /etc/default/limine
+        echo "  ✓ /etc/default/limine"
+    else
+        echo "  ~ /etc/default/limine already exists, skipping"
+    fi
+}
+
+limine_force() {
+    echo "Force-installing Limine config..."
+    sudo cp "$DOTFILES/limine/limine.conf" /boot/limine.conf && echo "  ✓ /boot/limine.conf"
+    sudo cp "$DOTFILES/limine/default-limine" /etc/default/limine && echo "  ✓ /etc/default/limine"
+    echo "  ! Rebuild UKI to apply cmdline changes: sudo limine-mkinitcpio"
+}
+
 # --- CLI ---
 case "${1:-stow}" in
     packages|install)
@@ -224,11 +250,18 @@ case "${1:-stow}" in
         echo ""
         stow_all
         ;;
+    limine)
+        limine_install
+        ;;
+    limine\ --force|limine-force)
+        limine_force
+        ;;
     *)
-        echo "Usage: $0 [all|packages|stow]"
+        echo "Usage: $0 [all|packages|stow|limine]"
         echo "  all      — install packages + stow dotfiles"
         echo "  packages — install required packages"
         echo "  stow     — stow dotfiles only (default)"
+        echo "  limine   — copy Limine config to /boot (skips if exists)"
         exit 1
         ;;
 esac
