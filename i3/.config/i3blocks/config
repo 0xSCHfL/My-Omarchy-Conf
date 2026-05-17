@@ -5,6 +5,12 @@ interval=5
 separator_block_width=0
 separator=false
 
+[screenrecord]
+command=~/.config/i3blocks/scripts/screenrecord
+interval=once
+signal=9
+separator=false
+
 [window_title]
 command=~/.config/i3blocks/scripts/window-title
 interval=1

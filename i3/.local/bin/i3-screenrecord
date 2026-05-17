@@ -1,16 +1,201 @@
 #!/bin/bash
-RECORDING_FILE="/tmp/dwm-screenrecord-pid"
+# Screen recorder — toggle start/stop, rofi menu for audio/area/webcam options
+# Alt+Print: start (shows menus) or stop if already recording
 
-if [[ -f $RECORDING_FILE ]]; then
-    pid=$(cat "$RECORDING_FILE")
-    kill "$pid" 2>/dev/null
+RECORDING_FILE="/tmp/i3-screenrecord-filename"
+PID_FILE="/tmp/i3-screenrecord-pid"
+TICKER_PID_FILE="/tmp/i3-screenrecord-ticker-pid"
+STATE_FILE="/tmp/i3-screenrecord-state"
+OUTPUT_DIR="$HOME/Videos"
+
+mkdir -p "$OUTPUT_DIR"
+
+recording_active() {
+    [[ -f $PID_FILE ]] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null
+}
+
+finalize_recording() {
+    local latest
+    latest=$(cat "$RECORDING_FILE" 2>/dev/null)
+    [[ -f $latest ]] || return
+
+    local video_codec=(-c:v copy)
+    if ffprobe -v error -select_streams v:0 -read_intervals %+0.2 \
+        -show_entries packet=flags -of csv=p=0 "$latest" 2>/dev/null | grep -q D; then
+        video_codec=(-c:v libx264 -preset veryfast -crf 20)
+    fi
+
+    local args=(-y -ss 0.1 -i "$latest" "${video_codec[@]}")
+    if ffprobe -v error -select_streams a -show_entries stream=codec_type \
+        -of csv=p=0 "$latest" 2>/dev/null | grep -q audio; then
+        args+=(-af "volume=enable='lt(t,0.4)':volume=0,afade=t=in:st=0.4:d=0.05,loudnorm=I=-14:TP=-1.5:LRA=11")
+    fi
+
+    local processed="${latest%.mp4}-processed.mp4"
+    if ffmpeg "${args[@]}" "$processed" -loglevel quiet 2>/dev/null; then
+        mv "$processed" "$latest"
+    else
+        rm -f "$processed"
+    fi
+}
+
+stop_recording() {
+    local pid
+    pid=$(cat "$PID_FILE" 2>/dev/null)
+    kill -SIGINT "$pid" 2>/dev/null
+
+    local count=0
+    while kill -0 "$pid" 2>/dev/null && ((count < 50)); do
+        sleep 0.1
+        count=$((count + 1))
+    done
+
+    if kill -0 "$pid" 2>/dev/null; then
+        kill -9 "$pid" 2>/dev/null
+        rm -f "$PID_FILE"
+        [[ -f $TICKER_PID_FILE ]] && kill "$(cat "$TICKER_PID_FILE")" 2>/dev/null
+        rm -f "$TICKER_PID_FILE" "$STATE_FILE"
+        pkill -RTMIN+9 i3blocks 2>/dev/null
+        notify-send "Screen recording error" "Force-killed. Video may be corrupted." -u critical -t 5000
+        return
+    fi
+
+    rm -f "$PID_FILE"
+    # Stop ticker
+    [[ -f $TICKER_PID_FILE ]] && kill "$(cat "$TICKER_PID_FILE")" 2>/dev/null
+    rm -f "$TICKER_PID_FILE" "$STATE_FILE"
+    pkill -RTMIN+9 i3blocks 2>/dev/null
+    pkill -f "WebcamOverlay" 2>/dev/null
+
+    local filename
+    filename=$(cat "$RECORDING_FILE" 2>/dev/null)
     rm -f "$RECORDING_FILE"
-    notify-send "Screen recording stopped" "Saved to ~/Videos/"
-else
-    mkdir -p ~/Videos
-    filename="$HOME/Videos/screenrecording-$(date +'%Y-%m-%d_%H-%M-%S').mp4"
-    ffmpeg -f x11grab -s $(xdpyinfo | grep dimensions | awk '{print $2}') \
-        -i $DISPLAY -codec:v libx264 -r 30 "$filename" -loglevel quiet &
-    echo $! > "$RECORDING_FILE"
-    notify-send "Screen recording started" "Press Alt+Print to stop"
+
+    if [[ -f $filename ]]; then
+        notify-send "⏹ Recording saved" "$(basename "$filename")" -t 5000
+    else
+        notify-send "Screen recording" "Stopped (no file saved)" -t 3000
+    fi
+}
+
+start_webcam_overlay() {
+    local device="$1"
+    if [[ -z $device ]]; then
+        device=$(v4l2-ctl --list-devices 2>/dev/null | grep -m1 "^[[:space:]]*/dev/video" | tr -d '\t ')
+        [[ -z $device ]] && { notify-send "Webcam" "No webcam found" -u critical -t 3000; return 1; }
+    fi
+    local preferred=("640x360" "1280x720" "1920x1080")
+    local formats
+    formats=$(v4l2-ctl --list-formats-ext -d "$device" 2>/dev/null)
+    local size_arg=""
+    for res in "${preferred[@]}"; do
+        echo "$formats" | grep -q "$res" && size_arg="-video_size $res" && break
+    done
+    ffplay -f v4l2 $size_arg -framerate 30 "$device" \
+        -vf "crop=iw/2:ih,scale=360:-1" \
+        -window_title "WebcamOverlay" -noborder \
+        -fflags nobuffer -flags low_delay \
+        -probesize 32 -analyzeduration 0 -loglevel quiet &
+    sleep 0.5
+}
+
+start_recording() {
+    local audio_mode="$1"
+    local use_webcam="$2"
+    local webcam_device="$3"
+
+    local area_choice
+    area_choice=$(printf "Full screen\nSelect area" | rofi -dmenu \
+        -theme ~/.config/rofi/dwm-keys.rasi -p "Record:" -no-sort)
+    [[ -z $area_choice ]] && exit 0
+
+    local size offset="+0,0"
+    size=$(xrandr 2>/dev/null | awk '/\*/{print $1; exit}')
+
+    if [[ $area_choice == "Select area" ]]; then
+        local coords
+        coords=$(slop -q -f "%x %y %w %h" 2>/dev/null) || exit 0
+        read -r ax ay aw ah <<< "$coords"
+        [[ -z $aw || $aw -eq 0 || $ah -eq 0 ]] && exit 0
+        aw=$(( aw % 2 == 0 ? aw : aw - 1 ))
+        ah=$(( ah % 2 == 0 ? ah : ah - 1 ))
+        size="${aw}x${ah}"
+        offset="+${ax},${ay}"
+    fi
+
+    local filename="$OUTPUT_DIR/screenrecording-$(date +'%Y-%m-%d_%H-%M-%S').mp4"
+    local audio_args=()
+
+    case "$audio_mode" in
+        desktop)
+            local sink
+            sink=$(pactl get-default-sink)
+            audio_args=(-f pulse -i "${sink}.monitor" -c:a aac -b:a 192k)
+            ;;
+        mic)
+            local source
+            source=$(pactl get-default-source)
+            audio_args=(-f pulse -i "$source" -c:a aac -b:a 192k)
+            ;;
+        both)
+            local sink source
+            sink=$(pactl get-default-sink)
+            source=$(pactl get-default-source)
+            audio_args=(-f pulse -i "${sink}.monitor" -f pulse -i "$source" \
+                -filter_complex amix=inputs=2 -c:a aac -b:a 192k)
+            ;;
+    esac
+
+    [[ $use_webcam == "true" ]] && start_webcam_overlay "$webcam_device"
+
+    ffmpeg -f x11grab -s "$size" -i "$DISPLAY$offset" \
+        "${audio_args[@]}" \
+        -c:v libx264 -preset veryfast -crf 20 -r 60 \
+        "$filename" -loglevel quiet &
+
+    echo $! > "$PID_FILE"
+    echo "$filename" > "$RECORDING_FILE"
+
+    # Start elapsed time ticker (updates bar every second)
+    (
+        secs=0
+        while [[ -f $PID_FILE ]] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; do
+            printf "⏺ %02d:%02d" $((secs/60)) $((secs%60)) > "$STATE_FILE"
+            pkill -RTMIN+9 i3blocks 2>/dev/null
+            sleep 1
+            ((secs++))
+        done
+    ) &
+    echo $! > "$TICKER_PID_FILE"
+
+    notify-send "⏺ Recording started" "Alt+Print to stop" -u normal -t 3000
+}
+
+# Stop if already recording
+if recording_active; then
+    stop_recording
+    exit 0
 fi
+
+# Audio mode menu
+mode=$(printf "No audio\nDesktop audio\nMicrophone\nDesktop + Microphone\nDesktop + Microphone + Webcam" | \
+    rofi -dmenu -theme ~/.config/rofi/dwm-keys.rasi -p "Audio:" -no-sort)
+[[ -z $mode ]] && exit 0
+
+case "$mode" in
+    "No audio")                         start_recording none    false ;;
+    "Desktop audio")                    start_recording desktop false ;;
+    "Microphone")                       start_recording mic     false ;;
+    "Desktop + Microphone")             start_recording both    false ;;
+    "Desktop + Microphone + Webcam")
+        # Pick webcam if multiple available
+        mapfile -t devices < <(v4l2-ctl --list-devices 2>/dev/null | grep "^[[:space:]]*/dev/video" | tr -d '\t ')
+        webcam_device=""
+        if (( ${#devices[@]} > 1 )); then
+            webcam_device=$(printf '%s\n' "${devices[@]}" | rofi -dmenu \
+                -theme ~/.config/rofi/dwm-keys.rasi -p "Webcam:")
+            [[ -z $webcam_device ]] && exit 0
+        fi
+        start_recording both true "$webcam_device"
+        ;;
+esac

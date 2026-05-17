@@ -238,7 +238,7 @@ bindsym Mod4+Shift+q exec "echo -e 'No\nYes'| rofi -dmenu -no-sort -i -theme ~/.
 bindsym Mod4+Ctrl+space exec --no-startup-id $HOME/.config/i3/scripts/wallpaper/wallpaper-pick.sh
 bindsym Mod4+Ctrl+v exec --no-startup-id copyq show
 bindsym Print exec --no-startup-id i3-screenshot
-bindsym Mod1+Print exec --no-startup-id i3-screenrecord
+bindsym Mod4+Print exec --no-startup-id i3-screenrecord
 bindsym Mod4+Ctrl+Print exec --no-startup-id i3-ocr
 bindsym Mod4+Ctrl+k exec --no-startup-id i3-keys
 bindsym Mod4+q exec --no-startup-id qutebrowser
