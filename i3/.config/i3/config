@@ -61,6 +61,7 @@ exec --no-startup-id picom --daemon
 exec --no-startup-id dunst
 exec --no-startup-id /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
 exec --no-startup-id copyq
+exec --no-startup-id bitwarden-desktop --hidden
 exec --no-startup-id $HOME/.config/i3/scripts/wallpaper/wallpaper-set.sh
 exec_always --no-startup-id bash -c 'pkill -f "\.local/bin/i3-cliphist$" 2>/dev/null; sleep 0.1; exec $HOME/.local/bin/i3-cliphist'
 exec_always --no-startup-id bash -c 'pkill -f "\.local/bin/i3-imgclipwatch$" 2>/dev/null; sleep 0.1; exec $HOME/.local/bin/i3-imgclipwatch'
@@ -81,7 +82,7 @@ bindsym XF86MonBrightnessDown exec --no-startup-id brightnessctl set 5%-
 # WiFi and Audio controls
 bindsym Mod4+Ctrl+w exec --no-startup-id $HOME/.config/i3/scripts/media/i3-launch-wifi.sh
 bindsym Mod4+Ctrl+a exec --no-startup-id $HOME/.config/i3/scripts/media/i3-launch-audio.sh
-bindsym Mod4+Shift+g exec --no-startup-id alacritty --class i3-gdrive -e i3-gdrive
+bindsym Mod4+Shift+g exec --no-startup-id $HOME/.config/i3/scripts/media/i3-launch-gdrive.sh
 
 # Dictation (voxtype) — toggle: Super+Ctrl+X to record, press again to stop & auto-type
 bindsym Mod4+Ctrl+x exec --no-startup-id $HOME/.config/i3/scripts/utils/voxtype-toggle-paste.sh
@@ -118,6 +119,7 @@ for_window [class="i3-audio"] floating enable, resize set 800 600, move position
 for_window [class="i3-bluetooth"] floating enable, resize set 800 600, move position center
 for_window [class="i3-gdrive"] floating enable, resize set 1100 680, move position center
 for_window [class="i3-gdrive-setup"] floating enable, resize set 800 500, move position center
+for_window [class="i3-gdrive-browser"] floating enable, resize set 980 760, move position center
 for_window [class="notes-nvim"] floating enable, resize set 1200 800, move position center
 
 # Media viewers — open as floating
@@ -137,7 +139,7 @@ bindsym Mod4+Return exec kitty
 bindsym Mod4+Shift+b exec --no-startup-id i3-brave
 bindsym Mod4+Shift+s exec bash -c 'rm -f ~/.var/app/com.spotify.Client/cache/spotify/Singleton* && flatpak run com.spotify.Client'
 bindsym Mod4+Shift+Mod1+b exec --no-startup-id i3-brave --incognito
-bindsym Mod4+Shift+c exec bash -c 'rm -f ~/.config/chromium/Singleton* && chromium --ozone-platform=x11'
+bindsym Mod4+Shift+c exec --no-startup-id i3-chromium
 # Super+Shift+v merged into Super+v (combined text+image picker)
 bindsym Mod4+Shift+t exec --no-startup-id kitty -e btop
 bindsym Mod4+Shift+m exec --no-startup-id ~/.config/i3blocks/scripts/timer menu
@@ -273,7 +275,9 @@ bindsym Mod4+Mod1+t exec --no-startup-id Telegram -theme dark
 bindsym Mod4+Shift+w exec --no-startup-id i3-webapp "https://web.whatsapp.com/"
 bindsym Mod4+Shift+a exec --no-startup-id i3-webapp "https://chatgpt.com/"
 bindsym Mod4+Shift+x exec --no-startup-id i3-webapp "https://x.com/"
-bindsym Mod4+Shift+d exec --no-startup-id discord
+bindsym Mod4+Ctrl+d exec --no-startup-id discord
+bindsym Mod4+Shift+d exec --no-startup-id i3-webapp "https://claude.ai/"
+bindsym Mod4+Shift+p exec --no-startup-id bitwarden-desktop
 bindsym Mod4+Shift+e exec --no-startup-id $HOME/.config/i3/scripts/launchers/i3-email-picker.sh
 bindsym Mod4+n exec --no-startup-id notes
 bindsym Mod4+Ctrl+n exec --no-startup-id bash $HOME/.config/i3/scripts/notifications/notifications.sh

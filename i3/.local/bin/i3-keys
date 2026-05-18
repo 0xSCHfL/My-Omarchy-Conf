@@ -58,11 +58,12 @@ Super + Shift + i    → Image picker
 Super + Ctrl + t     → Veyon Master (classroom management)
 Super + Alt + t      → Telegram
 Super + Shift + v    → Image clipboard history (Space select, Ctrl+d deletes selected)
-Super + Escape       → System menu
+Super + Delete       → System menu (kill process / stop service)
 Super + Shift + w    → WhatsApp
-Super + Shift + a    → ChatGPT
+Super + Shift + a    → ChatGPT (Brave)
+Super + Shift + d    → Claude (Brave)
 Super + Shift + x    → Twitter / X
-Super + Shift + d    → Discord
+Super + Ctrl + d     → Discord
 Super + Shift + e    → Email picker (Gmail app window)
 Super + Shift + n    → Neovim
 Super + v            → Clipboard manager (Walker, Ctrl+d deletes)
@@ -71,6 +72,7 @@ Super + n            → Notes
 Super + Ctrl + k     → Keybindings help
 Super + Ctrl + e     → Emoji picker
 Super + Ctrl + x     → Dictation toggle (transcribed text auto-types at cursor)
+Super + Shift + p    → Bitwarden (password manager)
 Super + Shift + g    → Google Drive TUI
 Super + Shift + r    → Restart i3
 Super + Ctrl + r     → Reload i3 config + run i3-dedup (heal/check daemons)

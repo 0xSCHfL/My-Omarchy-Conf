@@ -1,0 +1,4 @@
+#!/bin/bash
+
+pgrep -x chromium >/dev/null || rm -f ~/.config/chromium/Singleton*
+exec chromium --ozone-platform=x11 "$@"

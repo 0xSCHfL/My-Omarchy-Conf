@@ -58,7 +58,7 @@ if [[ "$PM" == "pacman" ]]; then
         # Fonts
         noto-fonts noto-fonts-emoji ttf-jetbrains-mono-nerd
         # Shell/Dev
-        python-pywal fzf jq libnotify
+        python-pywal python-textual fzf jq libnotify
     )
     I3_PKGS=(
         # WM & bar
@@ -74,7 +74,7 @@ if [[ "$PM" == "pacman" ]]; then
         # Audio/volume OSD
         yad xob
         # System info (i3blocks scripts)
-        sysstat wireless_tools imagemagick
+        sysstat wireless_tools imagemagick rclone
         # Image processing (i3-lock)
         bat
         # Markdown preview (peek.nvim)
@@ -88,7 +88,7 @@ if [[ "$PM" == "pacman" ]]; then
     )
 elif [[ "$PM" == "apt" ]]; then
     COMMON_PKGS=(stow feh picom dunst copyq network-manager-gnome policykit-1-gnome pipewire-pulse fonts-noto fonts-noto-color-emoji brightnessctl playerctl fzf jq libnotify-bin)
-    I3_PKGS=(i3 i3blocks polybar rofi kitty alacritty btop neovim tmux maim xclip xdotool flameshot tesseract-ocr imagemagick x11-utils sysstat wireless-tools)
+    I3_PKGS=(i3 i3blocks polybar rofi kitty alacritty btop neovim tmux maim xclip xdotool flameshot tesseract-ocr imagemagick x11-utils sysstat wireless-tools rclone)
     DWM_PKGS=(build-essential imv mpv autocutsel)
     HYPR_PKGS=(neovim tmux fastfetch starship)
 elif [[ "$PM" == "dnf" ]]; then

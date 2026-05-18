@@ -38,9 +38,24 @@ if [[ ${#window_ids[@]} -le 1 ]]; then exit 0; fi
 
 current=$(xdotool getactivewindow 2>/dev/null)
 
-# Check if current focused window is floating (maximized via Super+Alt+F)
+# Check if current focused window is maximized (floating + fills workspace)
 is_maximized=$(echo "$get_tree" | python3 -c "
 import json, sys
+
+def all_nodes(node):
+    yield node
+    for child in node.get('nodes', []) + node.get('floating_nodes', []):
+        yield from all_nodes(child)
+
+def find_focused_workspace(node):
+    if node.get('type') == 'workspace':
+        if any(n.get('focused') for n in all_nodes(node)):
+            return node
+    for child in node.get('nodes', []) + node.get('floating_nodes', []):
+        r = find_focused_workspace(child)
+        if r: return r
+    return None
+
 def find_focused(node):
     if node.get('focused'):
         return node
@@ -48,8 +63,19 @@ def find_focused(node):
         r = find_focused(child)
         if r: return r
     return None
-f = find_focused(json.load(sys.stdin))
-print(f.get('floating', '') if f else '')
+
+tree = json.load(sys.stdin)
+f = find_focused(tree)
+if not f or not f.get('floating', '').startswith('user_on'):
+    print('')
+else:
+    ws = find_focused_workspace(tree)
+    if ws:
+        wr = ws['rect']
+        fr = f.get('rect', {})
+        print('user_on' if fr.get('width', 0) >= wr['width'] - 10 else '')
+    else:
+        print('')
 ")
 
 for i in "${!window_ids[@]}"; do
