@@ -218,6 +218,8 @@ limine_install() {
     if [[ ! -f /boot/limine.conf ]]; then
         sudo cp "$DOTFILES/limine/limine.conf" /boot/limine.conf
         echo "  ✓ /boot/limine.conf"
+        sudo limine-update
+        sudo limine-snapper-sync
     else
         echo "  ~ /boot/limine.conf already exists, skipping (run with 'limine --force' to overwrite)"
     fi
@@ -234,7 +236,8 @@ limine_force() {
     echo "Force-installing Limine config..."
     sudo cp "$DOTFILES/limine/limine.conf" /boot/limine.conf && echo "  ✓ /boot/limine.conf"
     sudo cp "$DOTFILES/limine/default-limine" /etc/default/limine && echo "  ✓ /etc/default/limine"
-    echo "  ! Rebuild UKI to apply cmdline changes: sudo limine-mkinitcpio"
+    sudo limine-update
+    sudo limine-snapper-sync
 }
 
 # --- CLI ---

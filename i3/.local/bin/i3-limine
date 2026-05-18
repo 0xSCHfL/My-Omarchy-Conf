@@ -1,16 +1,47 @@
 #!/bin/bash
-# Refresh Limine bootloader config from i3 dotfiles — same as omarchy-refresh-limine
+# Refresh Limine bootloader config from i3 dotfiles, matching omarchy-refresh-limine.
+
+set -euo pipefail
 
 DOTFILES="$HOME/Work/dotfiles"
+MACHINE_ID="$(cat /etc/machine-id)"
+
+if [[ -f /boot/EFI/Linux/omarchy_linux.efi && -f /boot/EFI/Linux/${MACHINE_ID}_linux.efi ]]; then
+  echo "Cleanup extra UKI"
+  sudo rm -f "/boot/EFI/Linux/${MACHINE_ID}_linux.efi"
+fi
 
 echo "Resetting Limine config..."
+if [[ -f /boot/limine.conf ]]; then
+  sudo mv /boot/limine.conf /boot/limine.conf.bak
+fi
 sudo cp "$DOTFILES/limine/limine.conf" /boot/limine.conf
+sudo cp "$DOTFILES/limine/default-limine" /etc/default/limine
 
-echo "Copying backdrop..."
-sudo cp "$DOTFILES/limine/backdrop.png" /boot/backdrop.png
+if [[ -f "$DOTFILES/limine/backdrop.png" ]]; then
+  sudo cp "$DOTFILES/limine/backdrop.png" /boot/backdrop.png
+fi
 
 echo "Running limine-update..."
 sudo limine-update
-sudo limine-snapper-sync 2>/dev/null || true
+sudo limine-snapper-sync
 
+# Verify plymouth.enable=0 made it into the generated cmdline. Without this the
+# encrypted-root password prompt is black on this machine.
+echo
+echo "Verifying generated cmdline:"
+if ! sudo grep -E "^\s*cmdline:" /boot/limine.conf | head -1; then
+  echo "  ERROR: no cmdline: line found in /boot/limine.conf" >&2
+  exit 1
+fi
+
+if ! sudo grep -E "^\s*cmdline:.*plymouth\.enable=0" /boot/limine.conf >/dev/null; then
+  echo
+  echo "  ERROR: plymouth.enable=0 is missing from /boot/limine.conf cmdline." >&2
+  echo "  Reboot risk: encrypted disk prompt may render black." >&2
+  echo "  Fix limine/default-limine and re-run." >&2
+  exit 1
+fi
+
+echo "  OK plymouth.enable=0 present"
 echo "Done."

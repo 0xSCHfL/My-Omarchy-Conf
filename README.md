@@ -102,7 +102,7 @@ Colorized blocks with nerd font icons — each block has its own color matching 
 | `i3-dedup` | Kill duplicate daemons and revive crashed ones |
 | `i3-gdrive` | Google Drive TUI (browse, download, upload, account switching) |
 | `notes` | Rofi notes launcher — browse/search Obsidian vaults, open in nvim |
-| `i3-limine` | Refresh Limine config + backdrop from dotfiles (like omarchy-refresh-limine) |
+| `i3-limine` | Refresh Limine config from dotfiles (like omarchy-refresh-limine) |
 | `batmon` | Battery alert daemon (notify at ≤20%, no spam) |
 | `fzfub` | fzf + ueberzugpp image browser |
 | `xsession` | Switch between i3 / DWM / Hyprland |
@@ -131,7 +131,7 @@ Colorized blocks with nerd font icons — each block has its own color matching 
 
 ### Limine Bootloader
 
-Tokyo Night themed bootloader with custom branding. Config tracked at `limine/limine.conf`.
+Tokyo Night themed bootloader using the same base config style as Omarchy. Config tracked at `limine/limine.conf`.
 
 Not stowed (lives on the FAT32 `/boot` partition) — applied manually on fresh installs:
 
@@ -140,9 +140,10 @@ Not stowed (lives on the FAT32 `/boot` partition) — applied manually on fresh 
 ```
 
 **Key settings:**
-- `plymouth.enable=0` in cmdline — keeps boot output visible (prevents black screen)
-- Tokyo Night palette + `interface_branding: i3 Bootloader`
-- Fallback EFI chainload entry in case the UKI fails
+- `plymouth.enable=0` is preserved in `limine/default-limine` — Plymouth's disk-unlock UI renders black on this machine, so the encrypted-root prompt is intentionally shown by the kernel directly
+- Tokyo Night palette + custom `backdrop.png` shown behind the Limine menu
+- `limine/limine.conf` holds **visuals only** (no tracked kernel entries, no hashes); `limine/default-limine` holds the kernel cmdline, UKI, fallback, and snapshot settings
+- `i3-limine` copies both files, runs `limine-update` + `limine-snapper-sync`, then verifies `plymouth.enable=0` is present in the generated `/boot/limine.conf`
 
 ### SDDM Theme
 
