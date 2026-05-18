@@ -2,6 +2,10 @@
 
 TERMINAL_BIN="${TERMINAL:-kitty}"
 
+# Hide when any ethernet interface has an IP (ethernet takes priority)
+eth_ip=$(ip addr | awk '/^[0-9]+: e/{iface=1} iface && /inet /{split($2,a,"/"); print a[1]; iface=0}' | head -1)
+[ -n "$eth_ip" ] && exit 0
+
 ESSID=$(iwgetid -r 2>/dev/null)
 
 if [ -n "$ESSID" ]; then

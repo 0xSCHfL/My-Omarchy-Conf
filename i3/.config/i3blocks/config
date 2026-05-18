@@ -41,7 +41,7 @@ signal=11
 separator=false
 
 [ethernet]
-command=ip=$(ip addr show eno1 2>/dev/null| awk '/inet /{print $2}'| cut -d/ -f1); [ -n "$ip" ] && printf "| 󰈀 %s\n\n#ea999c\n" "$ip"
+command=ip=$(ip addr | awk '/^[0-9]+: e/{iface=1} iface && /inet /{split($2,a,"/"); print a[1]; iface=0}' | head -1); [ -n "$ip" ] && printf "| 󰈀 %s\n\n#ea999c\n" "$ip"
 interval=10
 separator=false
 

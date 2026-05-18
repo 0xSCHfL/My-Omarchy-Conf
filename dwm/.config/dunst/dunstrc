@@ -12,7 +12,7 @@
     padding = 12
     horizontal_padding = 12
     frame_width = 2
-    frame_color = "#005577"
+    frame_color = "#81857E"
     gap_size = 5
     font = monospace 10
     markup = full
@@ -25,17 +25,17 @@
     timeout = 5
 
 [urgency_low]
-    background = "#0a0903"
-    foreground = "#AB8F52"
+    background = "#0f1011"
+    foreground = "#9b9993"
     timeout = 5
 
 [urgency_normal]
-    background = "#0a0903"
-    foreground = "#AB8F52"
+    background = "#0f1011"
+    foreground = "#dedbd2"
     timeout = 5
 
 [urgency_critical]
-    background = "#0a0903"
-    foreground = "#AB8F52"
-    frame_color = "#ff0000"
+    background = "#0f1011"
+    foreground = "#dedbd2"
+    frame_color = "#596464"
     timeout = 0

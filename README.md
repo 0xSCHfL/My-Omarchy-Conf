@@ -37,6 +37,7 @@ dotfiles/
 ```bash
 git clone git@github.com:0xSCHfL/dotfiles.git ~/Work/dotfiles
 cd ~/Work/dotfiles
+sudo pacman -Syu        # full system upgrade first — avoids dependency conflicts
 ./install.sh
 ```
 

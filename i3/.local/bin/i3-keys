@@ -55,6 +55,7 @@ Super + Shift + o    → Obsidian
 Super + Shift + t    → btop
 Super + Shift + m    → Timer
 Super + Shift + i    → Image picker
+Super + Ctrl + t     → Veyon Master (classroom management)
 Super + Alt + t      → Telegram
 Super + Shift + v    → Image clipboard history (Space select, Ctrl+d deletes selected)
 Super + Escape       → System menu

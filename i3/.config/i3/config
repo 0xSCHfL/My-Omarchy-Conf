@@ -141,6 +141,7 @@ bindsym Mod4+Shift+c exec bash -c 'rm -f ~/.config/chromium/Singleton* && chromi
 # Super+Shift+v merged into Super+v (combined text+image picker)
 bindsym Mod4+Shift+t exec --no-startup-id kitty -e btop
 bindsym Mod4+Shift+m exec --no-startup-id ~/.config/i3blocks/scripts/timer menu
+bindsym Mod4+Ctrl+t exec --no-startup-id veyon-master
 
 # kill focused window
 bindsym Mod4+w kill

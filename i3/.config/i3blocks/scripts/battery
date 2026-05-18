@@ -1,14 +1,11 @@
 #!/bin/bash
 
-BAT=/sys/class/power_supply/BAT0
+BAT=$(ls -d /sys/class/power_supply/BAT* 2>/dev/null | head -1)
 
 icons=("󰁺" "󰁻" "󰁼" "󰁽" "󰁾" "󰁿" "󰂀" "󰂁" "󰂂" "󰁹")
 icon_charging="󰂄"
 
-if [ ! -d "$BAT" ]; then
-    echo "| N/A"
-    exit 0
-fi
+[ ! -d "$BAT" ] && exit 0
 
 CAPACITY=$(cat $BAT/capacity)
 STATUS=$(cat $BAT/status)

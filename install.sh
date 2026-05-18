@@ -154,7 +154,7 @@ stow_all() {
             echo "  ✓ $pkg"
         else
             local conflicts
-            conflicts=$(stow -d "$dir" -t "$HOME" -n $ignore "${extra[@]}" "$pkg" 2>&1 | grep "existing target")
+            conflicts=$(stow -d "$dir" -t "$HOME" -n $ignore "${extra[@]}" "$pkg" 2>&1 | grep "existing target" || true)
             if [[ -n "$conflicts" ]]; then
                 echo "  ! $pkg conflicts:"
                 echo "$conflicts" | sed 's/.*existing target is not owned by stow: //' | sed 's/^/      - /'
@@ -166,11 +166,16 @@ stow_all() {
 
     echo "Stowing dotfiles to $HOME..."
     # i3 main package — exclude sub-packages and non-stow dirs
-    stow_pkg "$DOTFILES" i3 --ignore='^shell$' --ignore='^sddm-theme$' --ignore='^default$'
-    # shell sub-package lives inside i3/
+    stow_pkg "$DOTFILES" i3 --ignore='^shell$' --ignore='^sddm-theme$' --ignore='^default$' --ignore='current-wallpaper'
+    # shell sub-package lives inside i3/ — remove any existing .zshrc (real or wrong symlink)
+    rm -f "$HOME/.zshrc"
     stow_pkg "$DOTFILES/i3" shell
     stow_pkg "$DOTFILES" hyprland
-    stow_pkg "$DOTFILES" dwm
+    # ignore files already provided by i3 so i3's versions always win
+    stow_pkg "$DOTFILES" dwm \
+        --ignore='flameshot\.ini' --ignore='picom\.conf' \
+        --ignore='colors-rofi-dwm\.rasi' --ignore='fzfub' --ignore='notes'
+    stow_ai_agent
 
     if [[ ! -f "$HOME/.xinitrc" ]]; then
         ln -sf "Work/dotfiles/i3/.xinitrc.i3" "$HOME/.xinitrc"
@@ -211,6 +216,120 @@ EOF
     fi
 }
 
+# --- Unstow ---
+unstow_all() {
+    local ignore="--ignore=CLAUDE.md --ignore=AGENTS.md --ignore=README.md --ignore=wallpapers"
+    echo "Unstowing dotfiles from $HOME..."
+    for pkg in i3 hyprland dwm; do
+        if stow -d "$DOTFILES" -t "$HOME" -D $ignore "$pkg" 2>/dev/null; then
+            echo "  ✓ $pkg"
+        else
+            echo "  ~ $pkg (nothing to unstow)"
+        fi
+    done
+    unstow_ai_agent
+    # unstow both i3/shell and root shell (old stow location)
+    stow -d "$DOTFILES/i3" -t "$HOME" -D shell 2>/dev/null || true
+    stow -d "$DOTFILES" -t "$HOME" -D shell 2>/dev/null || true
+    echo "  ✓ shell"
+
+    # Clean up any leftover dir-level symlinks pointing into dotfiles
+    echo "Cleaning leftover dir symlinks..."
+    local cfg_dirs=(i3 i3blocks i3status kitty polybar rofi picom flameshot tmux nvim xob swayosd wal xdg-desktop-portal)
+    for d in "${cfg_dirs[@]}"; do
+        local target="$HOME/.config/$d"
+        if [[ -L "$target" ]]; then
+            rm "$target" && echo "  ✓ removed $target"
+        fi
+    done
+}
+
+# --- Stow check (dry-run) ---
+stow_check() {
+    local ignore="--ignore=CLAUDE.md --ignore=AGENTS.md --ignore=README.md --ignore=wallpapers --ignore=current-wallpaper"
+    echo "Dry-run stow check (no changes made)..."
+    local has_conflict=0
+
+    check_pkg() {
+        local label=$1; shift
+        local out conflicts
+        out=$(eval "$@" 2>&1) || true
+        conflicts=$(echo "$out" | grep -E "existing target|cannot stow|source is an absolute symlink" || true)
+        if [[ -n "$conflicts" ]]; then
+            echo "  ! $label conflicts:"
+            echo "$conflicts" | sed 's/^/      /'
+            has_conflict=1
+        else
+            echo "  ✓ $label — clean"
+        fi
+    }
+
+    check_pkg i3      "stow -d \"$DOTFILES\" -t \"$HOME\" -n -v $ignore --ignore='^shell\$' --ignore='^sddm-theme\$' --ignore='^default\$' i3"
+    check_pkg shell   "stow -d \"$DOTFILES/i3\" -t \"$HOME\" -n -v shell"
+    check_pkg hyprland "stow -d \"$DOTFILES\" -t \"$HOME\" -n -v $ignore hyprland"
+    check_pkg dwm      "stow -d \"$DOTFILES\" -t \"$HOME\" -n -v $ignore --ignore='flameshot\.ini' --ignore='picom\.conf' --ignore='colors-rofi-dwm\.rasi' --ignore='fzfub' --ignore='notes' dwm"
+    # ai-agent uses custom linking — check key symlinks are correct
+    local ai_ok=1
+    [[ "$(readlink "$HOME/.claude/settings.json" 2>/dev/null)" == *"ai-agent"* ]] || ai_ok=0
+    [[ "$(readlink "$HOME/.config/opencode/opencode.json" 2>/dev/null)" == *"ai-agent"* ]] || ai_ok=0
+    [[ -L "$HOME/.claude/skills" ]] || ai_ok=0
+    if [[ $ai_ok -eq 1 ]]; then
+        echo "  ✓ ai-agent — clean"
+    else
+        echo "  ! ai-agent — run restow to fix (settings.json, skills, or opencode.json missing)"
+        has_conflict=1
+    fi
+
+    [[ $has_conflict -eq 0 ]] && echo "All packages ready to stow." || echo "Fix conflicts above, then run: $0 stow"
+}
+
+# --- AI Agent (custom linking — stow can't handle absolute symlinks in skill dirs) ---
+stow_ai_agent() {
+    local skill_src="$DOTFILES/ai-agent/.config/opencode/skill"
+    local skill_dst="$HOME/.config/opencode/skill"
+
+    mkdir -p "$HOME/.claude" "$HOME/.codex" "$HOME/.config/opencode" "$skill_dst"
+
+    # Core config files
+    rm -f "$HOME/.claude/settings.json"
+    ln -sf "$DOTFILES/ai-agent/.claude/settings.json" "$HOME/.claude/settings.json"
+    rm -f "$HOME/.config/opencode/opencode.json"
+    ln -sf "$DOTFILES/ai-agent/.config/opencode/opencode.json" "$HOME/.config/opencode/opencode.json"
+
+    # Link each skill: real dirs get a symlink to the dotfiles path;
+    # absolute symlinks are recreated as-is (works if target exists, dangling if plugin not installed yet)
+    local linked=0 extern=0
+    while IFS= read -r -d '' item; do
+        local name
+        name=$(basename "$item")
+        if [[ -L "$item" ]]; then
+            # Recreate the absolute symlink so the skill is available if the target exists
+            rm -f "${skill_dst:?}/$name"
+            ln -sfn "$(readlink "$item")" "$skill_dst/$name"
+            (( extern++ )) || true
+        else
+            rm -rf "${skill_dst:?}/$name"
+            ln -sfn "$item" "$skill_dst/$name"
+            (( linked++ )) || true
+        fi
+    done < <(find "$skill_src" -maxdepth 1 -mindepth 1 -print0)
+
+    # claude and codex skills both point to the shared opencode skill dir
+    rm -f "$HOME/.claude/skills" "$HOME/.codex/skills"
+    ln -sfn "$skill_dst" "$HOME/.claude/skills"
+    ln -sfn "$skill_dst" "$HOME/.codex/skills"
+
+    echo "  ✓ ai-agent ($linked skills linked, $extern external plugin symlinks recreated)"
+}
+
+unstow_ai_agent() {
+    rm -f "$HOME/.claude/settings.json" "$HOME/.config/opencode/opencode.json"
+    rm -rf "$HOME/.claude/skills" "$HOME/.codex/skills"
+    local skill_dst="$HOME/.config/opencode/skill"
+    [[ -d "$skill_dst" ]] && find "$skill_dst" -maxdepth 1 -mindepth 1 -type l -delete 2>/dev/null || true
+    echo "  ✓ ai-agent"
+}
+
 # --- Limine ---
 limine_install() {
     echo "Installing Limine config..."
@@ -245,6 +364,17 @@ case "${1:-stow}" in
     stow)
         stow_all
         ;;
+    unstow)
+        unstow_all
+        ;;
+    check)
+        stow_check
+        ;;
+    restow)
+        unstow_all
+        echo ""
+        stow_all
+        ;;
     all)
         install_all
         echo ""
@@ -257,10 +387,13 @@ case "${1:-stow}" in
         limine_force
         ;;
     *)
-        echo "Usage: $0 [all|packages|stow|limine]"
+        echo "Usage: $0 [all|packages|stow|unstow|check|restow|limine]"
         echo "  all      — install packages + stow dotfiles"
         echo "  packages — install required packages"
         echo "  stow     — stow dotfiles only (default)"
+        echo "  unstow   — remove all stow symlinks + leftover dir symlinks"
+        echo "  check    — dry-run: show conflicts without making changes"
+        echo "  restow   — unstow then stow (clean slate)"
         echo "  limine   — copy Limine config to /boot (skips if exists)"
         exit 1
         ;;
