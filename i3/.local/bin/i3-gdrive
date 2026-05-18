@@ -56,6 +56,16 @@ LOG_PATH = Path.home() / ".cache/i3-gdrive.log"
 EMAIL_CACHE = Path.home() / ".cache/i3-gdrive/emails.json"
 DEFAULT_REMOTE_FILE = Path.home() / ".cache/i3-gdrive/default.txt"
 
+BROWSER_CANDIDATES = [
+    ("Brave", "brave"),
+    ("Brave Browser", "brave-browser"),
+    ("Firefox", "firefox"),
+    ("Chromium", "chromium"),
+    ("Google Chrome", "google-chrome-stable"),
+    ("Zen Browser", "zen-browser"),
+    ("LibreWolf", "librewolf"),
+]
+
 
 # ── pywal colors ─────────────────────────────────────────────────────────────
 
@@ -323,6 +333,18 @@ def delete_remote(name: str) -> bool:
         except FileNotFoundError:
             pass
     return True
+
+
+def available_browsers() -> list[tuple[str, str | None]]:
+    browsers: list[tuple[str, str | None]] = []
+    seen: set[str] = set()
+    for label, command in BROWSER_CANDIDATES:
+        path = shutil.which(command)
+        if path and path not in seen:
+            browsers.append((label, path))
+            seen.add(path)
+    browsers.append(("System default", None))
+    return browsers
 
 
 def _userinfo_request(access_token: str) -> tuple[str | None, bool]:
@@ -736,6 +758,51 @@ class AccountPickerScreen(ModalScreen):
             event.stop()
 
 
+class BrowserPickerScreen(ModalScreen):
+    def __init__(self, browsers: list[tuple[str, str | None]], **kwargs):
+        super().__init__(**kwargs)
+        self.browsers = browsers
+
+    def compose(self) -> ComposeResult:
+        with Vertical(id="picker-dialog"):
+            yield Label("󰖟  Choose browser for Google OAuth", id="picker-title")
+            table = DataTable(id="picker-table", cursor_type="row", show_header=False, zebra_stripes=False)
+            table.add_column("browser", width=64)
+            for label, command in self.browsers:
+                detail = command if command else "xdg/system default"
+                table.add_row(f"  {label}  ─  {detail}", key=command or "__default__")
+            yield table
+            yield Label("[j/k] Move  [Enter] Open OAuth  [Esc] Cancel", id="picker-hint")
+
+    def on_mount(self) -> None:
+        table = self.query_one("#picker-table", DataTable)
+        if table.row_count:
+            table.move_cursor(row=0, animate=False)
+        table.focus()
+
+    def _select_current(self) -> None:
+        table = self.query_one("#picker-table", DataTable)
+        if table.row_count == 0:
+            self.dismiss(None)
+            return
+        key = table.coordinate_to_cell_key(table.cursor_coordinate).row_key.value
+        self.dismiss(None if key == "__default__" else key)
+
+    def on_key(self, event) -> None:
+        if event.key == "escape":
+            self.dismiss(False)
+            event.stop()
+        elif event.key == "j":
+            self.query_one("#picker-table", DataTable).action_cursor_down()
+            event.stop()
+        elif event.key == "k":
+            self.query_one("#picker-table", DataTable).action_cursor_up()
+            event.stop()
+        elif event.key == "enter":
+            self._select_current()
+            event.stop()
+
+
 class SetupScreen(ModalScreen):
     def __init__(self, remote_name: str, **kwargs):
         super().__init__(**kwargs)
@@ -745,7 +812,7 @@ class SetupScreen(ModalScreen):
         with Vertical(id="setup-dialog"):
             yield Label(f"󰊫  Google Drive Setup ({self.remote_name})", id="setup-title")
             yield Label(
-                r"Press \[s] to connect via browser OAuth." + "\n"
+                r"Press \[s] to choose a browser and connect via OAuth." + "\n"
                 r"Press \[q] to quit.",
                 id="setup-msg"
             )
@@ -756,18 +823,34 @@ class SetupScreen(ModalScreen):
 
     def on_key(self, event) -> None:
         if event.key == "s":
-            logging.info("setup oauth start remote=%s", self.remote_name)
-            self._set_status("Opening browser… authorize in browser then wait here.")
-            self.run_worker(self._do_auth, thread=True)
+            self._choose_browser()
         elif event.key == "q":
             self.app.exit()
 
-    def _do_auth(self) -> bool:
+    def _choose_browser(self) -> None:
+        def selected(browser: str | None | bool) -> None:
+            if browser is False:
+                self._set_status("Browser selection cancelled — press S to retry.")
+                return
+            logging.info("setup oauth start remote=%s browser=%s",
+                         self.remote_name, browser or "system-default")
+            label = browser if browser else "system default"
+            self._set_status(f"Opening {label}… authorize in browser then wait here.")
+            self.run_worker(lambda: self._do_auth(browser if isinstance(browser, str) else None), thread=True)
+
+        self.app.push_screen(BrowserPickerScreen(available_browsers()), selected)
+
+    def _do_auth(self, browser: str | None = None) -> bool:
+        env = os.environ.copy()
+        if browser:
+            env["BROWSER"] = browser
         result = subprocess.run(
             ["rclone", "authorize", "drive"],
-            capture_output=True, text=True
+            capture_output=True, text=True, env=env
         )
         if result.returncode != 0:
+            logging.warning("rclone authorize failed remote=%s browser=%s stderr=%s stdout=%s",
+                            self.remote_name, browser or "system-default", result.stderr, result.stdout)
             return False
         # Token JSON is in stdout between { and the last }
         stdout = result.stdout
