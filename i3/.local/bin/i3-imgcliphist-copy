@@ -22,4 +22,5 @@ case "$mime" in
     ;;
 esac
 
-exec xclip -selection clipboard -t "$mime" < "$path"
+pkill -f "xclip -selection clipboard -loops" 2>/dev/null || true
+nohup xclip -selection clipboard -t "$mime" -loops 0 < "$path" >/dev/null 2>&1 &
