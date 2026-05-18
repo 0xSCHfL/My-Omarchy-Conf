@@ -25,6 +25,12 @@ dotfiles/
 ├── ai-agent/        # Shared AI agent configs (Claude Code, OpenCode, Codex)
 ├── shell/           # Shared zsh config
 ├── tmux/            # Shared tmux config
+├── limine/          # Limine bootloader + Plymouth theme (not stowed)
+│   ├── limine.conf          # Visuals only (Tokyo Night palette, backdrop)
+│   ├── default-limine       # Kernel cmdline (quiet splash, LUKS, etc.)
+│   ├── omarchy_hooks.conf   # mkinitcpio HOOKS with plymouth before encrypt
+│   ├── backdrop.png         # Boot backdrop image
+│   └── plymouth/            # Custom 0xSSfN Plymouth boot splash theme
 ├── wallpapers/      # Shared wallpapers (not stowed)
 ├── install.sh       # One-command setup script
 └── README.md
@@ -129,31 +135,69 @@ Colorized blocks with nerd font icons — each block has its own color matching 
 | `Super+Ctrl+K` | Show all keybindings |
 | `Super+Ctrl+,` | Toggle notifications (dunst) |
 
-### Limine Bootloader
+### Boot / Login Flow
 
-Tokyo Night themed bootloader using the same base config style as Omarchy. Config tracked at `limine/limine.conf`.
-
-Not stowed (lives on the FAT32 `/boot` partition) — applied manually on fresh installs:
-
-```bash
-./install.sh limine
+```
+Limine (3s menu, Tokyo Night backdrop)
+  └─ Plymouth (graphical LUKS passphrase prompt — 0xSSfN theme)
+       └─ SDDM (i3-login theme, pywal colors — no autologin)
+            └─ i3 session
 ```
 
-**Key settings:**
-- `plymouth.enable=0` is preserved in `limine/default-limine` — Plymouth's disk-unlock UI renders black on this machine, so the encrypted-root prompt is intentionally shown by the kernel directly
-- Tokyo Night palette + custom `backdrop.png` shown behind the Limine menu
-- `limine/limine.conf` holds **visuals only** (no tracked kernel entries, no hashes); `limine/default-limine` holds the kernel cmdline, UKI, fallback, and snapshot settings
-- `i3-limine` copies both files, runs `limine-update` + `limine-snapper-sync`, then verifies `plymouth.enable=0` is present in the generated `/boot/limine.conf`
+### Limine Bootloader
 
-### SDDM Theme
+Tokyo Night themed bootloader. Config split across three files, none stowed (lives on the FAT32 `/boot` partition):
 
-Custom `i3-login` theme — symlinked, not stowed:
+| File | Purpose |
+|------|---------|
+| `limine/limine.conf` | **Visuals only** — palette, backdrop, margins, timeout |
+| `limine/default-limine` | **Kernel cmdline** — `quiet splash`, LUKS args, UKI path |
+| `limine/omarchy_hooks.conf` | mkinitcpio HOOKS with `plymouth` before `keyboard`/`encrypt` |
+
+Apply on a fresh install:
+
+```bash
+./install.sh limine          # skips if /boot/limine.conf exists
+./install.sh limine --force  # always overwrite
+```
+
+`install.sh limine` also deploys the Plymouth theme and runs `limine-mkinitcpio` to bake the hooks into the UKI.
+
+To refresh from dotfiles on the running system (updates config + verifies boot health):
+
+```bash
+i3-limine
+```
+
+`i3-limine` verifies that `quiet splash` is present, `plymouth.enable=0` is absent, the Plymouth hook is in the live initramfs config, and the correct theme is set — exits non-zero if anything is wrong.
+
+### Plymouth Boot Splash
+
+Custom `0xSSfN` Plymouth theme (pixel-art logo, Tokyo Night progress bar, graphical disk unlock).
+
+Theme files live in `limine/plymouth/` and are deployed to `/usr/share/plymouth/themes/0xSSfN/` by `install.sh limine` and `i3-limine`.
+
+**Requirements:** `plymouth` hook must appear before `keyboard` and `encrypt` in mkinitcpio HOOKS (handled by `omarchy_hooks.conf`), and the kernel cmdline must contain `quiet splash` without `plymouth.enable=0`.
+
+### SDDM Login Screen
+
+Custom `i3-login` theme — symlinked from dotfiles, not stowed:
 
 ```
 /usr/share/sddm/themes/i3-login → ~/Work/dotfiles/i3/sddm-theme/i3-login/
 ```
 
-Colors auto-update via pywal when wallpaper changes. Background syncs with `wallpaper-set.sh`.
+**No autologin** — the login screen is shown for security. SDDM runs in X11 mode (the Wayland override `10-wayland.conf` is removed since i3 is X11).
+
+Colors auto-update via pywal when the wallpaper changes (`wallpaper-set.sh`).
+
+Apply on fresh install:
+
+```bash
+./install.sh login    # or ./install.sh stow (runs login setup automatically)
+```
+
+This writes `/etc/sddm.conf.d/autologin.conf` (Theme + X11 only, no `[Autologin]` block), removes `10-wayland.conf`, and strips `pam_gnome_keyring` from `/etc/pam.d/sddm`.
 
 ### Dictation (voxtype)
 

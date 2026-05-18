@@ -4,8 +4,8 @@ TARGET_OS_NAME="Sohaib"
 ESP_PATH="/boot"
 
 KERNEL_CMDLINE[default]+="cryptdevice=PARTUUID=969fa1a7-fbe1-48b6-a0e1-52a39b0d757e:root root=/dev/mapper/root zswap.enabled=0 rootflags=subvol=@ rw rootfstype=btrfs"
-# Disable Plymouth disk-unlock UI — without this the encrypted root prompt was black on this machine
-KERNEL_CMDLINE[default]+="plymouth.enable=0"
+# Enable Omarchy/Plymouth graphical disk unlock.
+KERNEL_CMDLINE[default]+="quiet splash loglevel=0 systemd.show_status=false rd.udev.log_level=0 vt.global_cursor_default=0"
 
 ENABLE_UKI=yes
 CUSTOM_UKI_NAME="omarchy"

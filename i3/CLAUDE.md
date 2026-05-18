@@ -1,66 +1,109 @@
-# CLAUDE.md — Global
+# CLAUDE.md — i3 dotfiles
 
-Global guidance for Claude Code across all projects.
+Guidance for Claude Code when working in this repository (i3 package and boot/login setup).
 
-## System Context
+## Boot / Login Flow
 
-- **OS:** Arch Linux
-- **Shell:** zsh
-- **AUR helper:** yay
-- **Terminal:** kitty (primary), alacritty (popup windows)
-- **WM:** i3 (X11) — also has DWM and Hyprland
+```
+Limine (3s menu, Tokyo Night backdrop)
+  └─ Plymouth (graphical LUKS unlock — 0xSSfN theme, pixel-art logo)
+       └─ SDDM (i3-login theme, pywal colors, no autologin)
+            └─ i3 session
+```
 
-## Authorized CLIs
+## Key Concepts
 
-The following commands are pre-authorized — no need to ask before running them.
+**GNU Stow tree-folding:** When a directory already exists in `$HOME` with unrelated files, stow creates file-level symlinks inside that directory rather than symlinking the whole thing. Use `readlink -f` to verify a file resolves into `~/Work/dotfiles/`, not just `-L` on the parent dir.
 
-### i3 / WM
-- `i3-msg` — reload, restart, get_tree, send IPC
-- `i3 -C -c` — syntax check only
-- `xdotool` — window focus/raise/search
-- `xrandr` — display info/config
-- `xinput` — input device properties
-- `xrdb` — X resource database merge
-- `xclip` / `xsel` — clipboard read/write
+**Limine entry ordering:** `default_entry` is 1-indexed based on `/+NAME` entry order in `/boot/limine.conf`. `limine-snapper-sync` prepends snapshot entries, so entry #1 changes as snapshots are added/removed. The live `/boot/limine.conf` is the authoritative ordering; the repo file holds visuals only.
 
-### Process Management
-- `pgrep` / `pkill` / `kill` — detect and stop known daemons
-- `ps` — process listing
-- `setsid` — detach/launch background processes
+**UKI rebuild required:** After changing `omarchy_hooks.conf` (mkinitcpio HOOKS), the Unified Kernel Image must be rebuilt with `sudo limine-mkinitcpio` before the new hooks take effect at boot. The old UKI remains active until rebuilt.
 
-### Notifications / Audio
-- `notify-send` — send test/status notifications
-- `dunstctl` — pause, resume, close notifications
-- `pactl` — volume, sink, source queries and control
-- `playerctl` — media playback control
+**SDDM + X11:** Omarchy installs a `/etc/sddm.conf.d/10-wayland.conf` that sets `DisplayServer=wayland`. This breaks i3 (X11) — remove it. SDDM must run in X11 mode for i3.
 
-### Network / Bluetooth
-- `ip` — interface and address info
-- `iwgetid` / `iwconfig` — wifi SSID and signal
-- `busctl` / `dbus-send` — D-Bus inspection and queries
-- `bluetoothctl` — bluetooth adapter and device control
+## File Map
 
-### System Info
-- `sensors` — CPU/hardware temps
-- `iostat` — CPU and I/O stats
-- `df` / `free` — disk and memory usage
-- `journalctl` — read system/user logs
+### Boot config (`limine/` — not stowed, lives on FAT32 `/boot`)
 
-### Packages (read-only)
-- `pacman -Q` / `-Ql` / `-Qi` / `-Ss` — query only, never install
-- `yay -Ss` / `-Qi` — AUR query only
+| Repo path | Deployed to | Purpose |
+|-----------|-------------|---------|
+| `limine/limine.conf` | `/boot/limine.conf` | Visuals only (palette, backdrop, margins) |
+| `limine/default-limine` | `/etc/default/limine` | Kernel cmdline (`quiet splash`, LUKS, UKI path) |
+| `limine/omarchy_hooks.conf` | `/etc/mkinitcpio.conf.d/omarchy_hooks.conf` | mkinitcpio HOOKS with `plymouth` before `keyboard`/`encrypt` |
+| `limine/backdrop.png` | `/boot/backdrop.png` | Boot backdrop image |
+| `limine/plymouth/` | `/usr/share/plymouth/themes/0xSSfN/` | Custom Plymouth theme |
 
-### Git
-- `git status` / `diff` / `log` / `add` / `commit` / `push` — full git workflow
+### SDDM (`i3/sddm-theme/` — symlinked, not stowed)
 
-### Dotfiles
-- `stow` — restow packages
-- `chmod` — make scripts executable
-- `find` / `grep` / `awk` / `sed` / `python3` — file search and text processing
+| Repo path | Deployed to |
+|-----------|-------------|
+| `i3/sddm-theme/i3-login/` | `/usr/share/sddm/themes/i3-login` (symlink) |
 
-## Always Ask First
+### System config (written by `install.sh`, not tracked)
 
-- `sudo` — any privileged command
-- `pacman -S` / `yay -S` — installing packages
-- `rm` on files not created in the current session
-- `git push --force`
+| Path | Purpose |
+|------|---------|
+| `/etc/sddm.conf.d/autologin.conf` | SDDM: theme + X11 keyboard, no autologin |
+| `/etc/sddm.conf.d/10-wayland.conf` | Removed — conflicts with X11 i3 session |
+
+## Applying Changes
+
+| What changed | Command |
+|-------------|---------|
+| i3 config, scripts, colors | `i3-msg reload` |
+| Wallpaper + all pywal colors | `wallpaper-set.sh <path>` |
+| Dotfile added/moved in repo | `stow -d ~/Work/dotfiles -t $HOME --restow i3` |
+| Limine visuals (`limine.conf`) | `i3-limine` (copies + verifies) |
+| Kernel cmdline (`default-limine`) | `i3-limine` then reboot |
+| Plymouth theme changed | `i3-limine` then reboot |
+| mkinitcpio hooks changed | `i3-limine` → `sudo limine-mkinitcpio` then reboot |
+| SDDM config | `./install.sh login` |
+| Full fresh-PC setup | `./install.sh all` |
+
+## `i3-limine` Script
+
+Located at `i3/.local/bin/i3-limine`. Run without sudo — it calls sudo internally.
+
+What it does:
+1. Copies `limine.conf`, `default-limine`, `omarchy_hooks.conf`, `backdrop.png` to their system paths
+2. Deploys `limine/plymouth/` → `/usr/share/plymouth/themes/0xSSfN/`
+3. Runs `plymouth-set-default-theme 0xSSfN`
+4. Runs `limine-update` + `limine-snapper-sync`
+5. Verifies: `quiet splash` present, `plymouth.enable=0` absent, `plymouth` hook in live config, theme active
+
+Exits non-zero with a clear error if any verification fails.
+
+## Plymouth Theme (`0xSSfN`)
+
+Custom theme in `limine/plymouth/`:
+- `0xSSfN.plymouth` — theme descriptor
+- `0xSSfN.script` — display logic (logo, progress bar, disk-unlock dialog)
+- `logo.png` — pixel-art SVG logo converted at 800×188 via `rsvg-convert`
+- `bullet.png`, `entry.png`, `lock.png`, `progress_bar.png`, `progress_box.png` — UI assets
+
+Plymouth name (`0xSSfN`) matches the machine hostname.
+
+## Pywal Color Flow
+
+`wallpaper-set.sh` runs on wallpaper change and updates:
+- alacritty (`~/.config/alacritty/alacritty-wal.toml`)
+- dunst (via `~/.config/wal/hooks/dunst-colors`)
+- SDDM theme background
+- flameshot config
+- Xresources
+
+## Packages Required for Boot/Login
+
+```bash
+# Plymouth
+sudo pacman -S plymouth
+
+# Limine tools (Omarchy installs these)
+# limine-mkinitcpio, limine-update, limine-snapper-sync
+
+# SDDM
+sudo pacman -S sddm
+sudo systemctl enable sddm
+```
+
+The Plymouth hook (`/etc/mkinitcpio.conf.d/omarchy_hooks.conf`) must be in place before running `limine-mkinitcpio`.

@@ -179,8 +179,14 @@ stow_all() {
 
     echo "Wallpapers are at $DOTFILES/wallpapers/"
 
-    # SDDM login theme
-    echo "Setting up SDDM login theme..."
+    # SDDM login screen setup
+    login_setup
+}
+
+# --- Login (SDDM + PAM) ---
+login_setup() {
+    echo "Setting up SDDM login screen..."
+
     if [[ -d "$DOTFILES/i3/sddm-theme/i3-login" ]]; then
         sudo rm -rf /usr/share/sddm/themes/i3-login
         sudo ln -sf "$DOTFILES/i3/sddm-theme/i3-login" /usr/share/sddm/themes/i3-login
@@ -189,37 +195,46 @@ stow_all() {
         echo "  ! SDDM theme not found at $DOTFILES/i3/sddm-theme/i3-login"
     fi
 
-    # SDDM config
-    if [[ ! -f /etc/sddm.conf.d/autologin.conf ]]; then
-        sudo mkdir -p /etc/sddm.conf.d
-        sudo tee /etc/sddm.conf.d/autologin.conf > /dev/null << 'EOF'
-[Autologin]
-User=sohaib
-Session=i3
+    # No autologin — login screen shown for security
+    sudo mkdir -p /etc/sddm.conf.d
+    printf '[Theme]\nCurrent=i3-login\n\n[X11]\nXkbLayout=fr\nXkbModel=pc105\nXkbOptions=terminate:ctrl_alt_bksp\n' \
+        | sudo tee /etc/sddm.conf.d/autologin.conf > /dev/null
+    echo "  ✓ SDDM config (login screen, no autologin)"
 
-[Theme]
-Current=i3-login
+    # Remove Wayland override — it conflicts with the X11 i3 session
+    if [[ -f /etc/sddm.conf.d/10-wayland.conf ]]; then
+        sudo rm -f /etc/sddm.conf.d/10-wayland.conf
+        echo "  ✓ Removed SDDM Wayland override (10-wayland.conf)"
+    fi
 
-[X11]
-XkbLayout=fr
-XkbModel=pc105
-XkbOptions=terminate:ctrl_alt_bksp
-EOF
-        echo "  ✓ SDDM config written"
-    else
-        echo "  ~ SDDM config already exists, skipping"
+    # Strip pam_gnome_keyring — causes auth delay on i3 login
+    if grep -q 'pam_gnome_keyring' /etc/pam.d/sddm 2>/dev/null; then
+        sudo sed -i \
+            '/-auth.*pam_gnome_keyring\.so/d; /-password.*pam_gnome_keyring\.so/d' \
+            /etc/pam.d/sddm
+        echo "  ✓ Stripped pam_gnome_keyring from /etc/pam.d/sddm"
     fi
 }
 
 # --- Limine ---
+limine_plymouth() {
+    local theme="0xSSfN"
+    if [[ -d "$DOTFILES/limine/plymouth" ]]; then
+        sudo mkdir -p /usr/share/plymouth/themes/$theme
+        sudo cp -a "$DOTFILES/limine/plymouth/." /usr/share/plymouth/themes/$theme/
+        sudo plymouth-set-default-theme $theme
+        echo "  ✓ Plymouth theme ($theme)"
+    else
+        echo "  ! limine/plymouth/ not found — skipping Plymouth setup"
+    fi
+}
+
 limine_install() {
     echo "Installing Limine config..."
 
     if [[ ! -f /boot/limine.conf ]]; then
         sudo cp "$DOTFILES/limine/limine.conf" /boot/limine.conf
         echo "  ✓ /boot/limine.conf"
-        sudo limine-update
-        sudo limine-snapper-sync
     else
         echo "  ~ /boot/limine.conf already exists, skipping (run with 'limine --force' to overwrite)"
     fi
@@ -230,14 +245,43 @@ limine_install() {
     else
         echo "  ~ /etc/default/limine already exists, skipping"
     fi
+
+    sudo mkdir -p /etc/mkinitcpio.conf.d
+    if [[ ! -f /etc/mkinitcpio.conf.d/omarchy_hooks.conf ]]; then
+        sudo cp "$DOTFILES/limine/omarchy_hooks.conf" /etc/mkinitcpio.conf.d/omarchy_hooks.conf
+        echo "  ✓ /etc/mkinitcpio.conf.d/omarchy_hooks.conf"
+    else
+        echo "  ~ omarchy_hooks.conf already exists, skipping"
+    fi
+
+    if [[ -f "$DOTFILES/limine/backdrop.png" ]]; then
+        sudo cp "$DOTFILES/limine/backdrop.png" /boot/backdrop.png
+        echo "  ✓ /boot/backdrop.png"
+    fi
+
+    limine_plymouth
+    sudo limine-update
+    sudo limine-snapper-sync
+    echo "  → Rebuilding UKI (limine-mkinitcpio)..."
+    sudo limine-mkinitcpio
+    echo "  ✓ UKI rebuilt with Plymouth hook"
 }
 
 limine_force() {
     echo "Force-installing Limine config..."
     sudo cp "$DOTFILES/limine/limine.conf" /boot/limine.conf && echo "  ✓ /boot/limine.conf"
     sudo cp "$DOTFILES/limine/default-limine" /etc/default/limine && echo "  ✓ /etc/default/limine"
+    sudo mkdir -p /etc/mkinitcpio.conf.d
+    sudo cp "$DOTFILES/limine/omarchy_hooks.conf" /etc/mkinitcpio.conf.d/omarchy_hooks.conf && echo "  ✓ /etc/mkinitcpio.conf.d/omarchy_hooks.conf"
+    if [[ -f "$DOTFILES/limine/backdrop.png" ]]; then
+        sudo cp "$DOTFILES/limine/backdrop.png" /boot/backdrop.png && echo "  ✓ /boot/backdrop.png"
+    fi
+    limine_plymouth
     sudo limine-update
     sudo limine-snapper-sync
+    echo "  → Rebuilding UKI (limine-mkinitcpio)..."
+    sudo limine-mkinitcpio
+    echo "  ✓ UKI rebuilt with Plymouth hook"
 }
 
 # --- CLI ---
@@ -248,10 +292,15 @@ case "${1:-stow}" in
     stow)
         stow_all
         ;;
+    login)
+        login_setup
+        ;;
     all)
         install_all
         echo ""
         stow_all
+        echo ""
+        limine_install
         ;;
     limine)
         limine_install
@@ -260,11 +309,13 @@ case "${1:-stow}" in
         limine_force
         ;;
     *)
-        echo "Usage: $0 [all|packages|stow|limine]"
-        echo "  all      — install packages + stow dotfiles"
+        echo "Usage: $0 [all|packages|stow|login|limine]"
+        echo "  all      — install packages + stow dotfiles + limine"
         echo "  packages — install required packages"
-        echo "  stow     — stow dotfiles only (default)"
-        echo "  limine   — copy Limine config to /boot (skips if exists)"
+        echo "  stow     — stow dotfiles + SDDM login setup (default)"
+        echo "  login    — configure SDDM login screen, fix PAM (standalone)"
+        echo "  limine   — install Limine + Plymouth + rebuild UKI (skips if exists)"
+        echo "  limine --force  — force-overwrite all Limine/Plymouth config"
         exit 1
         ;;
 esac
