@@ -1,0 +1,49 @@
+[general]
+live_config_reload = true
+working_directory = "None"
+
+# Themes --
+import = [
+  "~/.config/alacritty/alacritty-wal.toml",
+  "~/.config/alacritty/keybinds.toml"
+]
+
+[window]
+title = "Alacritty"
+decorations = "none"
+blur = true
+# opacity = 0.7
+padding.x = 10
+padding.y = 10
+
+[window.dimensions]
+columns = 160
+lines = 80
+
+[cursor.style]
+shape= "Beam"
+blinking = "Never"
+
+[colors]
+transparent_background_colors = true
+draw_bold_text_with_bright_colors = true
+
+[env]
+TERM = "xterm-256color"
+
+[font]
+glyph_offset = { x = 1, y = 0 }
+normal.family = "Iosevka Term"
+size = 7.0
+normal.style = "Regular"
+
+[font.bold]
+family = "Iosevka"
+style = "auto"
+
+[font.italic]
+family = "Iosevka"
+style = "auto"
+
+[terminal]
+osc52 = "CopyPaste"

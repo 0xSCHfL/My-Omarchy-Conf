@@ -1,0 +1,3 @@
+#!/bin/bash
+# Reload rofi colors when pywal changes wallpaper
+pkill -9 rofi 2>/dev/null || true
