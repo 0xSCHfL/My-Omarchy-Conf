@@ -141,7 +141,8 @@ install_all() {
             limine-mkinitcpio-hook limine-snapper-sync \
             ttf-iosevka-nerd \
             voxtype-bin ydotool \
-            xidlehook python-terminaltexteffects 2>/dev/null || true
+            xidlehook python-terminaltexteffects \
+            auto-cpufreq 2>/dev/null || true
     fi
 
     # voxtype: add user to input group + download small.en model
