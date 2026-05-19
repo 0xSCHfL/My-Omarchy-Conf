@@ -98,9 +98,7 @@ pacd() {
 }
 
 pacu() {
-  if command -v paru &>/dev/null; then
-    paru -Syu --noconfirm
-  elif command -v yay &>/dev/null; then
+  if command -v yay &>/dev/null; then
     yay -Syu --noconfirm
   else
     sudo pacman -Syu --noconfirm
