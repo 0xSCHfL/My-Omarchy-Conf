@@ -146,6 +146,44 @@ install_all() {
     fi
 }
 
+# --- Unstow ---
+unstow_pkg() {
+    local dir=$1 pkg=$2
+    shift 2
+    local extra=("$@")
+    local ignore="--ignore=CLAUDE.md --ignore=AGENTS.md --ignore=README.md --ignore=wallpapers"
+    if stow -d "$dir" -t "$HOME" -D $ignore "${extra[@]}" "$pkg" 2>/dev/null; then
+        echo "  ✓ unstowed $pkg"
+    else
+        echo "  ! $pkg — nothing to unstow or already clean"
+    fi
+}
+
+unstow() {
+    case "${1:-}" in
+        i3)
+            unstow_pkg "$DOTFILES" i3 --ignore='^shell$' --ignore='^sddm-theme$' --ignore='^default$'
+            unstow_pkg "$DOTFILES/i3" shell
+            ;;
+        hyprland)
+            unstow_pkg "$DOTFILES" hyprland --ignore='^\.bashrc$'
+            ;;
+        dwm)
+            unstow_pkg "$DOTFILES" dwm \
+                --ignore='dunstrc$' --ignore='flameshot\.ini$' --ignore='picom\.conf$' \
+                --ignore='colors-rofi-dwm\.rasi$' --ignore='fzfub$' --ignore='notes$' \
+                --ignore='qutebrowser' --ignore='quickmarks$' --ignore='urls$' \
+                --ignore='brightnessnotify$' --ignore='dwm-block-.*$'
+            ;;
+        all)
+            unstow i3
+            unstow hyprland
+            unstow dwm
+            ;;
+        *) echo "Usage: $0 unstow [i3|hyprland|dwm|all]"; exit 1 ;;
+    esac
+}
+
 # --- Stow helpers ---
 _backup_if_plain_file() {
     local path="$1"
@@ -402,6 +440,9 @@ case "${1:-stow}" in
             *) echo "Unknown stow target: $2. Use: i3, hyprland, dwm, or all."; exit 1 ;;
         esac
         ;;
+    unstow)
+        unstow "${2:-}"
+        ;;
     check)
         check_stow
         ;;
@@ -422,11 +463,15 @@ case "${1:-stow}" in
         limine_force
         ;;
     *)
-        echo "Usage: $0 [all|packages|stow [i3|hyprland|dwm]|check|login|limine]"
+        echo "Usage: $0 [all|packages|stow [i3|hyprland|dwm]|unstow [i3|hyprland|dwm]|check|login|limine]"
         echo "  all               — install packages + stow all + limine"
         echo "  packages          — install required packages"
         echo "  stow              — stow all dotfiles + SDDM login setup (default)"
         echo "  stow i3           — stow only i3 package + SDDM login setup"
+        echo "  unstow i3         — remove i3 symlinks from home"
+        echo "  unstow hyprland   — remove hyprland symlinks from home"
+        echo "  unstow dwm        — remove dwm symlinks from home"
+        echo "  unstow all        — remove all symlinks from home"
         echo "  stow hyprland     — stow only hyprland package"
         echo "  stow dwm          — stow only dwm package"
         echo "  check             — dry-run stow and verify key symlinks"
