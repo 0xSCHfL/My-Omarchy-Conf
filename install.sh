@@ -63,6 +63,8 @@ if [[ "$PM" == "pacman" ]]; then
     I3_PKGS=(
         # WM & bar
         i3-wm i3blocks polybar rofi
+        # X11 / VM display support
+        xorg-server xorg-xinit xf86-video-qxl spice-vdagent qemu-guest-agent
         # Terminals & apps
         kitty alacritty btop neovim tmux copyq flameshot
         # Screenshot & OCR
