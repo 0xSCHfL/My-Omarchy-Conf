@@ -97,6 +97,16 @@ pacd() {
   fi
 }
 
+pacu() {
+  if command -v paru &>/dev/null; then
+    paru -Syu --noconfirm
+  elif command -v yay &>/dev/null; then
+    yay -Syu --noconfirm
+  else
+    sudo pacman -Syu --noconfirm
+  fi
+}
+
 yayf() {
   if [ $# -eq 0 ]; then
     yay -Slq | fzf --multi --preview 'yay -Si {1}' --preview-window=down:75% --prompt='Install packages: ' | xargs -ro yay -S --noconfirm --needed
