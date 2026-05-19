@@ -1,6 +1,6 @@
 #!/bin/bash
 
-TERMINAL_BIN="alacritty"
+TERMINAL_BIN="${TERMINAL:-alacritty}"
 
 # Hide when any ethernet interface has an IP (ethernet takes priority)
 eth_ip=$(ip addr | awk '/^[0-9]+: e/{iface=1} iface && /inet /{split($2,a,"/"); print a[1]; iface=0}' | head -1)

@@ -3,7 +3,7 @@
 STATE_FILE="/tmp/timericon"
 PID_FILE="/tmp/i3blocks_timer.pid"
 SIGNAL_NUM=3
-TERMINAL_BIN="alacritty"
+TERMINAL_BIN="${TERMINAL:-alacritty}"
 
 if command -v readlink >/dev/null 2>&1; then
     SCRIPT_PATH="$(readlink -f "$0" 2>/dev/null)"

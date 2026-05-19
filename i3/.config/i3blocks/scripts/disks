@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-TERMINAL_BIN="alacritty"
+TERMINAL_BIN="${TERMINAL:-alacritty}"
 
 # Array of disks and matching icons
 DISKS=("/" "/home")

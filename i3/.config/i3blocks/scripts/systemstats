@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-TERMINAL_BIN="alacritty"
+TERMINAL_BIN="${TERMINAL:-alacritty}"
 
 # Sensor info
 echo "Available sensors:" > /tmp/dwmblocks_debug.log
