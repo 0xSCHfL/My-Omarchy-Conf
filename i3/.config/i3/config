@@ -53,7 +53,7 @@ exec_always --no-startup-id xset s off -dpms
 # xss-lock grabs a logind suspend inhibit lock and will use i3lock to lock the
 # screen before suspend. Use loginctl lock-session to lock your screen.
 exec --no-startup-id xss-lock --transfer-sleep-lock -- i3-lock
-exec --no-startup-id xidlehook --not-when-audio \
+exec --no-startup-id xidlehook \
     --timer 3 'DISPLAY=:0 i3-launch-screensaver' 'pkill -f i3-screensaver' \
     --timer 3 'pkill -f i3-screensaver; DISPLAY=:0 i3-lock' ''
 
