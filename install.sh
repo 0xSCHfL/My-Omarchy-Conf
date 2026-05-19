@@ -53,7 +53,7 @@ fi
 if [[ "$PM" == "pacman" ]]; then
     COMMON_PKGS=(
         # Core
-        stow feh picom dunst network-manager-applet xss-lock polkit-gnome
+        stow feh picom dunst network-manager-applet xss-lock polkit-gnome sddm
         pipewire-pulse brightnessctl playerctl
         # Fonts
         noto-fonts noto-fonts-emoji ttf-jetbrains-mono-nerd
@@ -145,6 +145,20 @@ install_all() {
 # --- Stow ---
 stow_all() {
     # stow_pkg <dir> <pkg> [extra stow args]
+    backup_if_plain_file() {
+        local path="$1"
+        if [[ -e "$path" && ! -L "$path" ]]; then
+            local backup="$path.cachyos.bak"
+            local i=1
+            while [[ -e "$backup" ]]; do
+                backup="$path.cachyos.bak.$i"
+                ((i++))
+            done
+            mv "$path" "$backup"
+            echo "  → Backed up $path to $backup"
+        fi
+    }
+
     stow_pkg() {
         local dir=$1 pkg=$2
         shift 2
@@ -165,12 +179,21 @@ stow_all() {
     }
 
     echo "Stowing dotfiles to $HOME..."
+    backup_if_plain_file "$HOME/.zshrc"
+    backup_if_plain_file "$HOME/.bashrc"
+
     # i3 main package — exclude sub-packages and non-stow dirs
     stow_pkg "$DOTFILES" i3 --ignore='^shell$' --ignore='^sddm-theme$' --ignore='^default$'
     # shell sub-package lives inside i3/
     stow_pkg "$DOTFILES/i3" shell
-    stow_pkg "$DOTFILES" hyprland
-    stow_pkg "$DOTFILES" dwm
+    stow_pkg "$DOTFILES" hyprland --ignore='^\\.bashrc$'
+    stow_pkg "$DOTFILES" dwm \
+        --ignore='dunstrc$' \
+        --ignore='flameshot\\.ini$' \
+        --ignore='picom\\.conf$' \
+        --ignore='colors-rofi-dwm\\.rasi$' \
+        --ignore='fzfub$' \
+        --ignore='notes$'
 
     if [[ ! -f "$HOME/.xinitrc" ]]; then
         ln -sf "Work/dotfiles/i3/.xinitrc.i3" "$HOME/.xinitrc"
@@ -188,6 +211,7 @@ login_setup() {
     echo "Setting up SDDM login screen..."
 
     if [[ -d "$DOTFILES/i3/sddm-theme/i3-login" ]]; then
+        sudo mkdir -p /usr/share/sddm/themes
         sudo rm -rf /usr/share/sddm/themes/i3-login
         sudo ln -sf "$DOTFILES/i3/sddm-theme/i3-login" /usr/share/sddm/themes/i3-login
         echo "  ✓ SDDM theme linked"
