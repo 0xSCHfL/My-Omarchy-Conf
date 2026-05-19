@@ -54,8 +54,8 @@ exec_always --no-startup-id xset s off -dpms
 # screen before suspend. Use loginctl lock-session to lock your screen.
 exec --no-startup-id xss-lock --transfer-sleep-lock -- i3-lock
 exec --no-startup-id xidlehook --not-when-fullscreen --not-when-audio \
-    --timer 150 'i3-launch-screensaver' 'pkill -f i3-screensaver' \
-    --timer 150 'pkill -f i3-screensaver; i3-lock' ''
+    --timer 3 'DISPLAY=:0 i3-launch-screensaver' 'pkill -f i3-screensaver' \
+    --timer 3 'pkill -f i3-screensaver; DISPLAY=:0 i3-lock' ''
 
 # NetworkManager is the most popular way to manage wireless networks on Linux,
 # and nm-applet is a desktop environment-independent system tray GUI for it.

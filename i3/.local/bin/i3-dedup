@@ -35,7 +35,7 @@ ENSURE_RUNNING=(
     "picom|setsid -f picom --daemon"
     "i3blocks|setsid -f i3blocks"
     "voxtype|setsid -f voxtype daemon"
-    "xidlehook|setsid -f xidlehook --not-when-fullscreen --not-when-audio --timer 150 'i3-launch-screensaver' 'pkill -f i3-screensaver' --timer 150 'pkill -f i3-screensaver; i3-lock' ''"
+    "xidlehook|setsid -f xidlehook --not-when-fullscreen --not-when-audio --timer 3 'DISPLAY=:0 i3-launch-screensaver' 'pkill -f i3-screensaver' --timer 3 'pkill -f i3-screensaver; DISPLAY=:0 i3-lock' ''"
 )
 
 killed_any=false
