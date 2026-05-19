@@ -284,11 +284,44 @@ stow_tmux() {
     _stow_pkg "$DOTFILES" tmux
 }
 
+stow_ai_agent() {
+    echo "Stowing ai-agent to $HOME..."
+
+    # .claude/settings.json — back up plain file then symlink
+    local settings_src="$DOTFILES/ai-agent/.claude/settings.json"
+    local settings_dst="$HOME/.claude/settings.json"
+    if [[ -f "$settings_src" ]]; then
+        _backup_if_plain_file "$settings_dst"
+        if [[ ! -L "$settings_dst" ]]; then
+            ln -sf "$settings_src" "$settings_dst"
+            echo "  ✓ ~/.claude/settings.json"
+        else
+            echo "  ~ ~/.claude/settings.json already linked"
+        fi
+    fi
+
+    # .claude/skills/ — symlink each skill that isn't already present
+    local skills_src="$DOTFILES/ai-agent/.claude/skills"
+    local skills_dst="$HOME/.claude/skills"
+    mkdir -p "$skills_dst"
+    local count=0
+    for skill in "$skills_src"/*/; do
+        local name
+        name=$(basename "$skill")
+        if [[ ! -e "$skills_dst/$name" ]]; then
+            ln -sf "$skill" "$skills_dst/$name"
+            ((count++)) || true
+        fi
+    done
+    [[ $count -gt 0 ]] && echo "  ✓ linked $count new skill(s)" || echo "  ~ all skills already linked"
+}
+
 stow_all() {
     stow_i3
     stow_tmux
     stow_hyprland
     stow_dwm
+    stow_ai_agent
     echo "Wallpapers are at $DOTFILES/wallpapers/"
 }
 
@@ -478,12 +511,13 @@ case "${1:-stow}" in
         ;;
     stow)
         case "${2:-all}" in
-            i3)        stow_i3 ;;
-            tmux)      stow_tmux ;;
-            hyprland)  stow_hyprland ;;
-            dwm)       stow_dwm ;;
-            all|"")    stow_all ;;
-            *) echo "Unknown stow target: $2. Use: i3, tmux, hyprland, dwm, or all."; exit 1 ;;
+            i3)              stow_i3 ;;
+            tmux)            stow_tmux ;;
+            hyprland)        stow_hyprland ;;
+            dwm)             stow_dwm ;;
+            ai|ai-agent)     stow_ai_agent ;;
+            all|"")          stow_all ;;
+            *) echo "Unknown stow target: $2. Use: i3, tmux, hyprland, dwm, ai-agent, or all."; exit 1 ;;
         esac
         ;;
     unstow)
@@ -505,6 +539,9 @@ case "${1:-stow}" in
     limine)
         limine_install
         ;;
+    ai|ai-agent)
+        stow_ai_agent
+        ;;
     limine\ --force|limine-force)
         limine_force
         ;;
@@ -517,6 +554,8 @@ case "${1:-stow}" in
         echo "  stow tmux         — stow only tmux package"
         echo "  stow hyprland     — stow only hyprland package"
         echo "  stow dwm          — stow only dwm package"
+        echo "  stow ai-agent     — stow ai-agent + link claude skills (alias: ai)"
+        echo "  ai                — shortcut for stow ai-agent"
         echo "  unstow i3         — remove i3 symlinks from home"
         echo "  unstow tmux       — remove tmux symlinks from home"
         echo "  unstow hyprland   — remove hyprland symlinks from home"
