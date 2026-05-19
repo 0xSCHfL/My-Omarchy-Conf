@@ -177,12 +177,16 @@ unstow() {
                 --ignore='qutebrowser' --ignore='quickmarks$' --ignore='urls$' \
                 --ignore='brightnessnotify$' --ignore='dwm-block-.*$'
             ;;
+        tmux)
+            unstow_pkg "$DOTFILES" tmux
+            ;;
         all)
             unstow i3
+            unstow tmux
             unstow hyprland
             unstow dwm
             ;;
-        *) echo "Usage: $0 unstow [i3|hyprland|dwm|all]"; exit 1 ;;
+        *) echo "Usage: $0 unstow [i3|tmux|hyprland|dwm|all]"; exit 1 ;;
     esac
 }
 
@@ -269,8 +273,14 @@ stow_dwm() {
         --ignore='dwm-block-.*$'
 }
 
+stow_tmux() {
+    echo "Stowing tmux to $HOME..."
+    _stow_pkg "$DOTFILES" tmux
+}
+
 stow_all() {
     stow_i3
+    stow_tmux
     stow_hyprland
     stow_dwm
     echo "Wallpapers are at $DOTFILES/wallpapers/"
@@ -453,10 +463,11 @@ case "${1:-stow}" in
     stow)
         case "${2:-all}" in
             i3)        stow_i3 ;;
+            tmux)      stow_tmux ;;
             hyprland)  stow_hyprland ;;
             dwm)       stow_dwm ;;
             all|"")    stow_all ;;
-            *) echo "Unknown stow target: $2. Use: i3, hyprland, dwm, or all."; exit 1 ;;
+            *) echo "Unknown stow target: $2. Use: i3, tmux, hyprland, dwm, or all."; exit 1 ;;
         esac
         ;;
     unstow)
@@ -482,17 +493,19 @@ case "${1:-stow}" in
         limine_force
         ;;
     *)
-        echo "Usage: $0 [all|packages|stow [i3|hyprland|dwm]|unstow [i3|hyprland|dwm]|check|login|limine]"
+        echo "Usage: $0 [all|packages|stow [i3|tmux|hyprland|dwm]|unstow [i3|tmux|hyprland|dwm]|check|login|limine]"
         echo "  all               — install packages + stow all + limine"
         echo "  packages          — install required packages"
         echo "  stow              — stow all dotfiles + SDDM login setup (default)"
         echo "  stow i3           — stow only i3 package + SDDM login setup"
+        echo "  stow tmux         — stow only tmux package"
+        echo "  stow hyprland     — stow only hyprland package"
+        echo "  stow dwm          — stow only dwm package"
         echo "  unstow i3         — remove i3 symlinks from home"
+        echo "  unstow tmux       — remove tmux symlinks from home"
         echo "  unstow hyprland   — remove hyprland symlinks from home"
         echo "  unstow dwm        — remove dwm symlinks from home"
         echo "  unstow all        — remove all symlinks from home"
-        echo "  stow hyprland     — stow only hyprland package"
-        echo "  stow dwm          — stow only dwm package"
         echo "  check             — dry-run stow and verify key symlinks"
         echo "  login             — configure SDDM login screen, fix PAM (standalone)"
         echo "  limine            — install Limine + Plymouth + rebuild UKI (skips if exists)"
