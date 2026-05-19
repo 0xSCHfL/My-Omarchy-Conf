@@ -5,7 +5,7 @@ command -v tte &>/dev/null || exit 1
 # Don't launch if already running
 pgrep -f "class i3-screensaver" >/dev/null 2>&1 && exit 0
 
-alacritty \
+setsid -f alacritty \
     --class i3-screensaver \
     --config-file "$HOME/.config/alacritty/screensaver.toml" \
-    -e i3-screensaver &
+    -e i3-screensaver
