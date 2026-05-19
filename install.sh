@@ -146,52 +146,59 @@ install_all() {
     fi
 }
 
-# --- Stow ---
-stow_all() {
-    # stow_pkg <dir> <pkg> [extra stow args]
-    backup_if_plain_file() {
-        local path="$1"
-        if [[ -e "$path" && ! -L "$path" ]]; then
-            local backup="$path.cachyos.bak"
-            local i=1
-            while [[ -e "$backup" ]]; do
-                backup="$path.cachyos.bak.$i"
-                ((i++))
-            done
-            mv "$path" "$backup"
-            echo "  → Backed up $path to $backup"
-        fi
-    }
+# --- Stow helpers ---
+_backup_if_plain_file() {
+    local path="$1"
+    if [[ -e "$path" && ! -L "$path" ]]; then
+        local backup="$path.cachyos.bak"
+        local i=1
+        while [[ -e "$backup" ]]; do backup="$path.cachyos.bak.$i"; ((i++)); done
+        mv "$path" "$backup"
+        echo "  → Backed up $path to $backup"
+    fi
+}
 
-    stow_pkg() {
-        local dir=$1 pkg=$2
-        shift 2
-        local extra=("$@")
-        local ignore="--ignore=CLAUDE.md --ignore=AGENTS.md --ignore=README.md --ignore=wallpapers"
-        if stow -d "$dir" -t "$HOME" --restow $ignore "${extra[@]}" "$pkg" 2>/dev/null; then
-            echo "  ✓ $pkg"
+_stow_pkg() {
+    local dir=$1 pkg=$2
+    shift 2
+    local extra=("$@")
+    local ignore="--ignore=CLAUDE.md --ignore=AGENTS.md --ignore=README.md --ignore=wallpapers"
+    if stow -d "$dir" -t "$HOME" --restow $ignore "${extra[@]}" "$pkg" 2>/dev/null; then
+        echo "  ✓ $pkg"
+    else
+        local conflicts
+        conflicts=$(stow -d "$dir" -t "$HOME" -n $ignore "${extra[@]}" "$pkg" 2>&1 | grep "existing target")
+        if [[ -n "$conflicts" ]]; then
+            echo "  ! $pkg conflicts:"
+            echo "$conflicts" | sed 's/.*existing target is not owned by stow: //' | sed 's/^/      - /'
         else
-            local conflicts
-            conflicts=$(stow -d "$dir" -t "$HOME" -n $ignore "${extra[@]}" "$pkg" 2>&1 | grep "existing target")
-            if [[ -n "$conflicts" ]]; then
-                echo "  ! $pkg conflicts:"
-                echo "$conflicts" | sed 's/.*existing target is not owned by stow: //' | sed 's/^/      - /'
-            else
-                echo "  ✗ $pkg (unknown error)"
-            fi
+            echo "  ✗ $pkg (unknown error)"
         fi
-    }
+    fi
+}
 
-    echo "Stowing dotfiles to $HOME..."
-    backup_if_plain_file "$HOME/.zshrc"
-    backup_if_plain_file "$HOME/.bashrc"
+# --- Stow per-package ---
+stow_i3() {
+    echo "Stowing i3 to $HOME..."
+    _backup_if_plain_file "$HOME/.zshrc"
+    _stow_pkg "$DOTFILES" i3 --ignore='^shell$' --ignore='^sddm-theme$' --ignore='^default$'
+    _stow_pkg "$DOTFILES/i3" shell
+    if [[ ! -f "$HOME/.xinitrc" ]]; then
+        ln -sf "Work/dotfiles/i3/.xinitrc.i3" "$HOME/.xinitrc"
+        echo "  → Created ~/.xinitrc symlink (i3)"
+    fi
+    login_setup
+}
 
-    # i3 main package — exclude sub-packages and non-stow dirs
-    stow_pkg "$DOTFILES" i3 --ignore='^shell$' --ignore='^sddm-theme$' --ignore='^default$'
-    # shell sub-package lives inside i3/
-    stow_pkg "$DOTFILES/i3" shell
-    stow_pkg "$DOTFILES" hyprland --ignore='^\.bashrc$'
-    stow_pkg "$DOTFILES" dwm \
+stow_hyprland() {
+    echo "Stowing hyprland to $HOME..."
+    _stow_pkg "$DOTFILES" hyprland --ignore='^\.bashrc$'
+}
+
+stow_dwm() {
+    echo "Stowing dwm to $HOME..."
+    _backup_if_plain_file "$HOME/.bashrc"
+    _stow_pkg "$DOTFILES" dwm \
         --ignore='dunstrc$' \
         --ignore='flameshot\.ini$' \
         --ignore='picom\.conf$' \
@@ -203,16 +210,13 @@ stow_all() {
         --ignore='urls$' \
         --ignore='brightnessnotify$' \
         --ignore='dwm-block-.*$'
+}
 
-    if [[ ! -f "$HOME/.xinitrc" ]]; then
-        ln -sf "Work/dotfiles/i3/.xinitrc.i3" "$HOME/.xinitrc"
-        echo "  → Created ~/.xinitrc symlink (i3) — use 'xsession dwm' to switch"
-    fi
-
+stow_all() {
+    stow_i3
+    stow_hyprland
+    stow_dwm
     echo "Wallpapers are at $DOTFILES/wallpapers/"
-
-    # SDDM login screen setup
-    login_setup
 }
 
 # --- Stow check ---
@@ -290,11 +294,11 @@ login_setup() {
         echo "  ! SDDM theme not found at $DOTFILES/i3/sddm-theme/i3-login"
     fi
 
-    # No autologin — login screen shown for security
+    # No autologin — login screen shown for security; default to i3
     sudo mkdir -p /etc/sddm.conf.d
-    printf '[Theme]\nCurrent=i3-login\n\n[X11]\nXkbLayout=fr\nXkbModel=pc105\nXkbOptions=terminate:ctrl_alt_bksp\n' \
+    printf '[General]\nDefaultSession=i3.desktop\n\n[Theme]\nCurrent=i3-login\n\n[X11]\nXkbLayout=fr\nXkbModel=pc105\nXkbOptions=terminate:ctrl_alt_bksp\n' \
         | sudo tee /etc/sddm.conf.d/autologin.conf > /dev/null
-    echo "  ✓ SDDM config (login screen, no autologin)"
+    echo "  ✓ SDDM config (i3 default session, no autologin)"
 
     # Remove Wayland override — it conflicts with the X11 i3 session
     if [[ -f /etc/sddm.conf.d/10-wayland.conf ]]; then
@@ -390,7 +394,13 @@ case "${1:-stow}" in
         install_all
         ;;
     stow)
-        stow_all
+        case "${2:-all}" in
+            i3)        stow_i3 ;;
+            hyprland)  stow_hyprland ;;
+            dwm)       stow_dwm ;;
+            all|"")    stow_all ;;
+            *) echo "Unknown stow target: $2. Use: i3, hyprland, dwm, or all."; exit 1 ;;
+        esac
         ;;
     check)
         check_stow
@@ -412,14 +422,17 @@ case "${1:-stow}" in
         limine_force
         ;;
     *)
-        echo "Usage: $0 [all|packages|stow|check|login|limine]"
-        echo "  all      — install packages + stow dotfiles + limine"
-        echo "  packages — install required packages"
-        echo "  stow     — stow dotfiles + SDDM login setup (default)"
-        echo "  check    — dry-run stow and verify key symlinks"
-        echo "  login    — configure SDDM login screen, fix PAM (standalone)"
-        echo "  limine   — install Limine + Plymouth + rebuild UKI (skips if exists)"
-        echo "  limine --force  — force-overwrite all Limine/Plymouth config"
+        echo "Usage: $0 [all|packages|stow [i3|hyprland|dwm]|check|login|limine]"
+        echo "  all               — install packages + stow all + limine"
+        echo "  packages          — install required packages"
+        echo "  stow              — stow all dotfiles + SDDM login setup (default)"
+        echo "  stow i3           — stow only i3 package + SDDM login setup"
+        echo "  stow hyprland     — stow only hyprland package"
+        echo "  stow dwm          — stow only dwm package"
+        echo "  check             — dry-run stow and verify key symlinks"
+        echo "  login             — configure SDDM login screen, fix PAM (standalone)"
+        echo "  limine            — install Limine + Plymouth + rebuild UKI (skips if exists)"
+        echo "  limine --force    — force-overwrite all Limine/Plymouth config"
         exit 1
         ;;
 esac
