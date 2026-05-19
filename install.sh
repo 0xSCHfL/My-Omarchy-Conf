@@ -543,6 +543,13 @@ case "${1:-stow}" in
     ai|ai-agent)
         stow_ai_agent
         ;;
+    pacman)
+        if [[ -f "$DOTFILES/pacman.conf" ]]; then
+            sudo cp "$DOTFILES/pacman.conf" /etc/pacman.conf && echo "  ✓ /etc/pacman.conf installed"
+        else
+            echo "  ! pacman.conf not found in dotfiles"
+        fi
+        ;;
     limine\ --force|limine-force)
         limine_force
         ;;
@@ -564,6 +571,7 @@ case "${1:-stow}" in
         echo "  unstow all        — remove all symlinks from home"
         echo "  check             — dry-run stow and verify key symlinks"
         echo "  login             — configure SDDM login screen, fix PAM (standalone)"
+        echo "  pacman            — install pacman.conf to /etc/pacman.conf"
         echo "  limine            — install Limine + Plymouth + rebuild UKI (skips if exists)"
         echo "  limine --force    — force-overwrite all Limine/Plymouth config"
         exit 1
