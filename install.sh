@@ -345,8 +345,8 @@ login_setup() {
     if [[ -d "$DOTFILES/i3/sddm-theme/i3-login" ]]; then
         sudo mkdir -p /usr/share/sddm/themes
         sudo rm -rf /usr/share/sddm/themes/i3-login
-        sudo ln -sf "$DOTFILES/i3/sddm-theme/i3-login" /usr/share/sddm/themes/i3-login
-        echo "  ✓ SDDM theme linked"
+        sudo cp -a "$DOTFILES/i3/sddm-theme/i3-login" /usr/share/sddm/themes/i3-login
+        echo "  ✓ SDDM theme copied"
     else
         echo "  ! SDDM theme not found at $DOTFILES/i3/sddm-theme/i3-login"
     fi
