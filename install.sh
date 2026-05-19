@@ -186,14 +186,19 @@ stow_all() {
     stow_pkg "$DOTFILES" i3 --ignore='^shell$' --ignore='^sddm-theme$' --ignore='^default$'
     # shell sub-package lives inside i3/
     stow_pkg "$DOTFILES/i3" shell
-    stow_pkg "$DOTFILES" hyprland --ignore='^\\.bashrc$'
+    stow_pkg "$DOTFILES" hyprland --ignore='^\.bashrc$'
     stow_pkg "$DOTFILES" dwm \
         --ignore='dunstrc$' \
-        --ignore='flameshot\\.ini$' \
-        --ignore='picom\\.conf$' \
-        --ignore='colors-rofi-dwm\\.rasi$' \
+        --ignore='flameshot\.ini$' \
+        --ignore='picom\.conf$' \
+        --ignore='colors-rofi-dwm\.rasi$' \
         --ignore='fzfub$' \
-        --ignore='notes$'
+        --ignore='notes$' \
+        --ignore='qutebrowser' \
+        --ignore='quickmarks$' \
+        --ignore='urls$' \
+        --ignore='brightnessnotify$' \
+        --ignore='dwm-block-.*$'
 
     if [[ ! -f "$HOME/.xinitrc" ]]; then
         ln -sf "Work/dotfiles/i3/.xinitrc.i3" "$HOME/.xinitrc"
@@ -204,6 +209,68 @@ stow_all() {
 
     # SDDM login screen setup
     login_setup
+}
+
+# --- Stow check ---
+check_stow() {
+    local ignore="--ignore=CLAUDE.md --ignore=AGENTS.md --ignore=README.md --ignore=wallpapers"
+    local failed=0
+
+    check_pkg() {
+        local dir=$1 pkg=$2
+        shift 2
+        local extra=("$@")
+        local out conflicts
+
+        out=$(stow -d "$dir" -t "$HOME" -n -v $ignore "${extra[@]}" "$pkg" 2>&1 || true)
+        conflicts=$(echo "$out" | grep -E "existing target|cannot stow|source is an absolute symlink" || true)
+        if [[ -n "$conflicts" ]]; then
+            echo "  ! $pkg conflicts:"
+            echo "$conflicts" | sed 's/^/      /'
+            failed=1
+        else
+            echo "  ✓ $pkg"
+        fi
+    }
+
+    echo "Checking stow targets for $HOME..."
+    check_pkg "$DOTFILES" i3 --ignore='^shell$' --ignore='^sddm-theme$' --ignore='^default$'
+    check_pkg "$DOTFILES/i3" shell
+    check_pkg "$DOTFILES" hyprland --ignore='^\.bashrc$'
+    check_pkg "$DOTFILES" dwm \
+        --ignore='dunstrc$' \
+        --ignore='flameshot\.ini$' \
+        --ignore='picom\.conf$' \
+        --ignore='colors-rofi-dwm\.rasi$' \
+        --ignore='fzfub$' \
+        --ignore='notes$' \
+        --ignore='qutebrowser' \
+        --ignore='quickmarks$' \
+        --ignore='urls$' \
+        --ignore='brightnessnotify$' \
+        --ignore='dwm-block-.*$'
+
+    echo ""
+    echo "Checking key links..."
+    for target in \
+        "$HOME/.config/i3/config" \
+        "$HOME/.config/i3blocks/config" \
+        "$HOME/.local/bin/i3-gdrive" \
+        "$HOME/.zshrc"; do
+        if [[ -e "$target" && "$(readlink -f "$target")" == "$DOTFILES"* ]]; then
+            echo "  ✓ $target"
+        else
+            echo "  ! $target is not linked to $DOTFILES"
+            failed=1
+        fi
+    done
+
+    if [[ $failed -eq 0 ]]; then
+        echo "All stow checks passed."
+    else
+        echo "Stow check found issues."
+        return 1
+    fi
 }
 
 # --- Login (SDDM + PAM) ---
@@ -316,6 +383,9 @@ case "${1:-stow}" in
     stow)
         stow_all
         ;;
+    check)
+        check_stow
+        ;;
     login)
         login_setup
         ;;
@@ -333,10 +403,11 @@ case "${1:-stow}" in
         limine_force
         ;;
     *)
-        echo "Usage: $0 [all|packages|stow|login|limine]"
+        echo "Usage: $0 [all|packages|stow|check|login|limine]"
         echo "  all      — install packages + stow dotfiles + limine"
         echo "  packages — install required packages"
         echo "  stow     — stow dotfiles + SDDM login setup (default)"
+        echo "  check    — dry-run stow and verify key symlinks"
         echo "  login    — configure SDDM login screen, fix PAM (standalone)"
         echo "  limine   — install Limine + Plymouth + rebuild UKI (skips if exists)"
         echo "  limine --force  — force-overwrite all Limine/Plymouth config"
