@@ -225,6 +225,19 @@ stow_i3() {
         ln -sf "Work/dotfiles/i3/.xinitrc.i3" "$HOME/.xinitrc"
         echo "  → Created ~/.xinitrc symlink (i3)"
     fi
+
+    # Set zsh as default shell if not already
+    if [[ "$(getent passwd "$USER" | cut -d: -f7)" != */zsh ]]; then
+        if command -v zsh &>/dev/null; then
+            chsh -s "$(command -v zsh)"
+            echo "  ✓ Default shell set to zsh (re-login required)"
+        else
+            echo "  ! zsh not found — install it first"
+        fi
+    else
+        echo "  ~ Default shell already zsh"
+    fi
+
     login_setup
 }
 
