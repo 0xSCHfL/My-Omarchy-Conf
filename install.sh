@@ -62,6 +62,12 @@ if [[ "$PM" == "pacman" ]]; then
         ttc-iosevka
         # Shell/Dev
         python-pywal fzf jq libnotify
+        # Shell tools (used in .zshrc / aliases)
+        zoxide starship fastfetch
+        # File manager & trash
+        yazi trash-cli
+        # Disk usage & search
+        ncdu ripgrep fd
     )
     I3_PKGS=(
         # WM & bar
@@ -80,7 +86,7 @@ if [[ "$PM" == "pacman" ]]; then
         yad xob
         # System info (i3blocks scripts)
         sysstat wireless_tools imagemagick
-        # Image processing (i3-lock)
+        # Pager / syntax highlight
         bat
         # Markdown preview (peek.nvim)
         deno
@@ -89,7 +95,7 @@ if [[ "$PM" == "pacman" ]]; then
         base-devel imv mpv autocutsel ueberzugpp
     )
     HYPR_PKGS=(
-        hyprland waybar ghostty neovim tmux fastfetch starship
+        hyprland waybar ghostty neovim tmux
     )
 elif [[ "$PM" == "apt" ]]; then
     COMMON_PKGS=(stow feh picom dunst copyq network-manager-gnome policykit-1-gnome pipewire-pulse fonts-noto fonts-noto-color-emoji brightnessctl playerctl fzf jq libnotify-bin)
