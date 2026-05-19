@@ -1,10 +1,14 @@
 #!/bin/bash
-# Refresh Limine bootloader config from i3 dotfiles — same as omarchy-refresh-limine
+# Refresh Limine bootloader config from i3 dotfiles
 
 DOTFILES="$HOME/Work/dotfiles"
 
 echo "Resetting Limine config..."
 sudo cp "$DOTFILES/limine/limine.conf" /boot/limine.conf
+sudo cp "$DOTFILES/limine/default-limine" /etc/default/limine
+sudo rm -f /etc/mkinitcpio.conf.d/omarchy_hooks.conf /etc/mkinitcpio.conf.d/omarchy_resume.conf
+sudo cp "$DOTFILES/limine/i3_hooks.conf" /etc/mkinitcpio.conf.d/i3_hooks.conf
+sudo cp "$DOTFILES/limine/i3_resume.conf" /etc/mkinitcpio.conf.d/i3_resume.conf
 
 echo "Copying backdrop..."
 sudo cp "$DOTFILES/limine/backdrop.png" /boot/backdrop.png

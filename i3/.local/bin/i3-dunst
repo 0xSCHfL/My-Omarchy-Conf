@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+export XAUTHORITY="${XAUTHORITY:-$HOME/.Xauthority}"
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=$XDG_RUNTIME_DIR/bus}"
+
+display_works() {
+    DISPLAY="$1" xdpyinfo >/dev/null 2>&1
+}
+
+if [[ -n "${DISPLAY:-}" ]] && display_works "$DISPLAY"; then
+    exec dunst
+fi
+
+for socket in /tmp/.X11-unix/X*; do
+    [[ -S "$socket" ]] || continue
+    candidate=":${socket##*X}"
+    if display_works "$candidate"; then
+        export DISPLAY="$candidate"
+        exec dunst
+    fi
+done
+
+echo "i3-dunst: could not find a usable X11 display" >&2
+exit 1

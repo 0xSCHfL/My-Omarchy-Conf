@@ -31,7 +31,7 @@ ENSURE_RUNNING=(
     "i3-cliphist|setsid -f bash $HOME/.local/bin/i3-cliphist"
     "i3-imgclipwatch|setsid -f $HOME/.local/bin/i3-imgclipwatch"
     "\.local/bin/batmon|setsid -f $HOME/.local/bin/batmon"
-    "dunst|setsid -f dunst"
+    "dunst|setsid -f $HOME/.local/bin/i3-dunst"
     "picom|setsid -f picom --daemon"
     "i3blocks|setsid -f i3blocks"
     "voxtype|setsid -f voxtype daemon"

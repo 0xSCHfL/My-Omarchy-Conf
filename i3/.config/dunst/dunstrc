@@ -1,0 +1,41 @@
+[global]
+    monitor = 0
+    follow = keyboard
+    width = 300
+    height = (0, 300)
+    origin = top-right
+    offset = (10, 10)
+    notification_limit = 5
+    progress_bar = true
+    transparency = 10
+    separator_height = 2
+    padding = 12
+    horizontal_padding = 12
+    frame_width = 2
+    frame_color = "#D7A352"
+    gap_size = 5
+    font = monospace 10
+    markup = full
+    format = "<b>%s</b>\n%b"
+    alignment = left
+    icon_position = left
+    min_icon_size = 32
+    max_icon_size = 128
+    corner_radius = 8
+    timeout = 5
+
+[urgency_low]
+    background = "#0a0806"
+    foreground = "#8e8988"
+    timeout = 5
+
+[urgency_normal]
+    background = "#0a0806"
+    foreground = "#cbc4c3"
+    timeout = 5
+
+[urgency_critical]
+    background = "#0a0806"
+    foreground = "#cbc4c3"
+    frame_color = "#A25423"
+    timeout = 0

@@ -25,6 +25,13 @@ dotfiles/
 ├── ai-agent/        # Shared AI agent configs (Claude Code, OpenCode, Codex)
 ├── shell/           # Shared zsh config
 ├── tmux/            # Shared tmux config
+├── limine/          # Limine bootloader + Plymouth theme (not stowed)
+│   ├── limine.conf          # Visuals only (Tokyo Night palette, backdrop)
+│   ├── default-limine       # Kernel cmdline (quiet splash, LUKS, etc.)
+│   ├── i3_hooks.conf        # mkinitcpio HOOKS with plymouth before encrypt
+│   ├── i3_resume.conf       # mkinitcpio resume hook drop-in
+│   ├── backdrop.png         # Boot backdrop image
+│   └── plymouth/            # Custom 0xSSfN Plymouth boot splash theme
 ├── wallpapers/      # Shared wallpapers (not stowed)
 ├── install.sh       # One-command setup script
 └── README.md
@@ -37,7 +44,6 @@ dotfiles/
 ```bash
 git clone git@github.com:0xSCHfL/dotfiles.git ~/Work/dotfiles
 cd ~/Work/dotfiles
-sudo pacman -Syu        # full system upgrade first — avoids dependency conflicts
 ./install.sh
 ```
 
@@ -103,7 +109,7 @@ Colorized blocks with nerd font icons — each block has its own color matching 
 | `i3-dedup` | Kill duplicate daemons and revive crashed ones |
 | `i3-gdrive` | Google Drive TUI (browse, download, upload, account switching) |
 | `notes` | Rofi notes launcher — browse/search Obsidian vaults, open in nvim |
-| `i3-limine` | Refresh Limine config + backdrop from dotfiles (like omarchy-refresh-limine) |
+| `i3-limine` | Refresh Limine config from dotfiles |
 | `batmon` | Battery alert daemon (notify at ≤20%, no spam) |
 | `fzfub` | fzf + ueberzugpp image browser |
 | `xsession` | Switch between i3 / DWM / Hyprland |
@@ -130,30 +136,69 @@ Colorized blocks with nerd font icons — each block has its own color matching 
 | `Super+Ctrl+K` | Show all keybindings |
 | `Super+Ctrl+,` | Toggle notifications (dunst) |
 
+### Boot / Login Flow
+
+```
+Limine (3s menu, Tokyo Night backdrop)
+  └─ Plymouth (graphical LUKS passphrase prompt — 0xSSfN theme)
+       └─ SDDM (i3-login theme, pywal colors — no autologin)
+            └─ i3 session
+```
+
 ### Limine Bootloader
 
-Tokyo Night themed bootloader with custom branding. Config tracked at `limine/limine.conf`.
+Tokyo Night themed bootloader. Config split across three files, none stowed (lives on the FAT32 `/boot` partition):
 
-Not stowed (lives on the FAT32 `/boot` partition) — applied manually on fresh installs:
+| File | Purpose |
+|------|---------|
+| `limine/limine.conf` | **Visuals only** — palette, backdrop, margins, timeout |
+| `limine/default-limine` | **Kernel cmdline** — `quiet splash`, LUKS args, UKI path |
+| `limine/i3_hooks.conf` | mkinitcpio HOOKS with `plymouth` before `keyboard`/`encrypt` |
+
+Apply on a fresh install:
 
 ```bash
-./install.sh limine
+./install.sh limine          # skips if /boot/limine.conf exists
+./install.sh limine --force  # always overwrite
 ```
 
-**Key settings:**
-- `plymouth.enable=0` in cmdline — keeps boot output visible (prevents black screen)
-- Tokyo Night palette + `interface_branding: i3 Bootloader`
-- Fallback EFI chainload entry in case the UKI fails
+`install.sh limine` also deploys the Plymouth theme and runs `limine-mkinitcpio` to bake the hooks into the UKI.
 
-### SDDM Theme
+To refresh from dotfiles on the running system (updates config + verifies boot health):
 
-Custom `i3-login` theme — symlinked, not stowed:
-
-```
-/usr/share/sddm/themes/i3-login → ~/Work/dotfiles/i3/sddm-theme/i3-login/
+```bash
+i3-limine
 ```
 
-Colors auto-update via pywal when wallpaper changes. Background syncs with `wallpaper-set.sh`.
+`i3-limine` verifies that `quiet splash` is present, `plymouth.enable=0` is absent, the Plymouth hook is in the live initramfs config, and the correct theme is set — exits non-zero if anything is wrong.
+
+### Plymouth Boot Splash
+
+Custom `0xSSfN` Plymouth theme (pixel-art logo, Tokyo Night progress bar, graphical disk unlock).
+
+Theme files live in `limine/plymouth/` and are deployed to `/usr/share/plymouth/themes/0xSSfN/` by `install.sh limine` and `i3-limine`.
+
+**Requirements:** `plymouth` hook must appear before `keyboard` and `encrypt` in mkinitcpio HOOKS (handled by `i3_hooks.conf`), and the kernel cmdline must contain `quiet splash` without `plymouth.enable=0`.
+
+### SDDM Login Screen
+
+Custom `i3-login` theme — copied from dotfiles, not stowed:
+
+```
+~/Work/dotfiles/i3/sddm-theme/i3-login/ → /usr/share/sddm/themes/i3-login/
+```
+
+**No autologin** — the login screen is shown for security. SDDM runs in X11 mode (the Wayland override `10-wayland.conf` is removed since i3 is X11).
+
+Colors auto-update via pywal when the wallpaper changes (`wallpaper-set.sh`).
+
+Apply on fresh install:
+
+```bash
+./install.sh login
+```
+
+This writes `/etc/sddm.conf.d/autologin.conf` (Theme + X11 only, no `[Autologin]` block), removes `10-wayland.conf`, and strips `pam_gnome_keyring` from `/etc/pam.d/sddm`.
 
 ### Dictation (voxtype)
 

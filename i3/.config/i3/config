@@ -59,7 +59,7 @@ exec_always --no-startup-id $HOME/.local/bin/i3-idle
 # and nm-applet is a desktop environment-independent system tray GUI for it.
 #exec_always --no-startup-id $HOME/.config/polybar/launch.sh
 exec --no-startup-id picom --daemon
-exec --no-startup-id dunst
+exec --no-startup-id $HOME/.local/bin/i3-dunst
 exec --no-startup-id /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
 exec --no-startup-id copyq
 exec --no-startup-id bitwarden-desktop --hidden
