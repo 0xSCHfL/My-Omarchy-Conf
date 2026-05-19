@@ -207,7 +207,7 @@ _stow_pkg() {
         echo "  ✓ $pkg"
     else
         local conflicts
-        conflicts=$(stow -d "$dir" -t "$HOME" -n $ignore "${extra[@]}" "$pkg" 2>&1 | grep "existing target")
+        conflicts=$(stow -d "$dir" -t "$HOME" -n $ignore "${extra[@]}" "$pkg" 2>&1 | grep "existing target" || true)
         if [[ -n "$conflicts" ]]; then
             echo "  ! $pkg conflicts:"
             echo "$conflicts" | sed 's/.*existing target is not owned by stow: //' | sed 's/^/      - /'
