@@ -53,16 +53,27 @@ fi
 if [[ "$PM" == "pacman" ]]; then
     COMMON_PKGS=(
         # Core
-        stow feh picom dunst network-manager-applet xss-lock polkit-gnome
+        stow feh picom dunst network-manager-applet xss-lock polkit-gnome sddm
+        # SDDM greeter Qt5 deps (missing these = black screen on login)
+        qt5-base qt5-declarative qt5-svg
         pipewire-pulse brightnessctl playerctl
         # Fonts
         noto-fonts noto-fonts-emoji ttf-jetbrains-mono-nerd
+        ttc-iosevka
         # Shell/Dev
-        python-pywal python-textual fzf jq libnotify
+        python-pywal fzf jq libnotify
+        # Shell tools (used in .zshrc / aliases)
+        zoxide starship fastfetch
+        # File manager & trash
+        yazi trash-cli
+        # Disk usage & search
+        ncdu ripgrep fd
     )
     I3_PKGS=(
         # WM & bar
         i3-wm i3blocks polybar rofi
+        # X11 / VM display support
+        xorg-server xorg-xinit xf86-video-qxl spice-vdagent qemu-guest-agent
         # Terminals & apps
         kitty alacritty btop neovim tmux copyq flameshot
         # Screenshot & OCR
@@ -74,8 +85,8 @@ if [[ "$PM" == "pacman" ]]; then
         # Audio/volume OSD
         yad xob
         # System info (i3blocks scripts)
-        sysstat wireless_tools imagemagick rclone
-        # Image processing (i3-lock)
+        sysstat wireless_tools imagemagick
+        # Pager / syntax highlight
         bat
         # Markdown preview (peek.nvim)
         deno
@@ -84,11 +95,11 @@ if [[ "$PM" == "pacman" ]]; then
         base-devel imv mpv autocutsel ueberzugpp
     )
     HYPR_PKGS=(
-        hyprland waybar ghostty neovim tmux fastfetch starship
+        hyprland waybar ghostty neovim tmux
     )
 elif [[ "$PM" == "apt" ]]; then
     COMMON_PKGS=(stow feh picom dunst copyq network-manager-gnome policykit-1-gnome pipewire-pulse fonts-noto fonts-noto-color-emoji brightnessctl playerctl fzf jq libnotify-bin)
-    I3_PKGS=(i3 i3blocks polybar rofi kitty alacritty btop neovim tmux maim xclip xdotool flameshot tesseract-ocr imagemagick x11-utils sysstat wireless-tools rclone)
+    I3_PKGS=(i3 i3blocks polybar rofi kitty alacritty btop neovim tmux maim xclip xdotool flameshot tesseract-ocr imagemagick x11-utils sysstat wireless-tools)
     DWM_PKGS=(build-essential imv mpv autocutsel)
     HYPR_PKGS=(neovim tmux fastfetch starship)
 elif [[ "$PM" == "dnf" ]]; then
@@ -127,7 +138,10 @@ install_all() {
             i3lock-color \
             impala wiremix \
             python-pywal xob \
-            voxtype-bin ydotool 2>/dev/null || true
+            limine-mkinitcpio-hook limine-snapper-sync \
+            ttf-iosevka-nerd \
+            voxtype-bin ydotool \
+            xidlehook python-terminaltexteffects 2>/dev/null || true
     fi
 
     # voxtype: add user to input group + download small.en model
@@ -142,195 +156,256 @@ install_all() {
     fi
 }
 
-# --- Stow ---
+# --- Unstow ---
+unstow_pkg() {
+    local dir=$1 pkg=$2
+    shift 2
+    local extra=("$@")
+    local ignore="--ignore=CLAUDE.md --ignore=AGENTS.md --ignore=README.md --ignore=wallpapers"
+    if stow -d "$dir" -t "$HOME" -D $ignore "${extra[@]}" "$pkg" 2>/dev/null; then
+        echo "  ✓ unstowed $pkg"
+    else
+        echo "  ! $pkg — nothing to unstow or already clean"
+    fi
+}
+
+unstow() {
+    case "${1:-}" in
+        i3)
+            unstow_pkg "$DOTFILES" i3 --ignore='^shell$' --ignore='^sddm-theme$' --ignore='^default$'
+            unstow_pkg "$DOTFILES/i3" shell
+            ;;
+        hyprland)
+            unstow_pkg "$DOTFILES" hyprland --ignore='^\.bashrc$'
+            ;;
+        dwm)
+            unstow_pkg "$DOTFILES" dwm \
+                --ignore='dunstrc$' --ignore='flameshot\.ini$' --ignore='picom\.conf$' \
+                --ignore='colors-rofi-dwm\.rasi$' --ignore='fzfub$' --ignore='notes$' \
+                --ignore='qutebrowser' --ignore='quickmarks$' --ignore='urls$' \
+                --ignore='brightnessnotify$' --ignore='dwm-block-.*$'
+            ;;
+        tmux)
+            unstow_pkg "$DOTFILES" tmux
+            ;;
+        all)
+            unstow i3
+            unstow tmux
+            unstow hyprland
+            unstow dwm
+            ;;
+        *) echo "Usage: $0 unstow [i3|tmux|hyprland|dwm|all]"; exit 1 ;;
+    esac
+}
+
+# --- Stow helpers ---
+_backup_if_plain_file() {
+    local path="$1"
+    if [[ -e "$path" && ! -L "$path" ]]; then
+        local backup="$path.cachyos.bak"
+        local i=1
+        while [[ -e "$backup" ]]; do backup="$path.cachyos.bak.$i"; ((i++)); done
+        mv "$path" "$backup"
+        echo "  → Backed up $path to $backup"
+    fi
+}
+
+_stow_pkg() {
+    local dir=$1 pkg=$2
+    shift 2
+    local extra=("$@")
+    local ignore="--ignore=CLAUDE.md --ignore=AGENTS.md --ignore=README.md --ignore=wallpapers"
+    if stow -d "$dir" -t "$HOME" --restow $ignore "${extra[@]}" "$pkg" 2>/dev/null; then
+        echo "  ✓ $pkg"
+    else
+        local conflicts
+        conflicts=$(stow -d "$dir" -t "$HOME" -n $ignore "${extra[@]}" "$pkg" 2>&1 | grep "existing target" || true)
+        if [[ -n "$conflicts" ]]; then
+            echo "  ! $pkg conflicts:"
+            echo "$conflicts" | sed 's/.*existing target is not owned by stow: //' | sed 's/^/      - /'
+        else
+            echo "  ✗ $pkg (unknown error)"
+        fi
+    fi
+}
+
+# --- Stow per-package ---
+stow_i3() {
+    echo "Stowing i3 to $HOME..."
+    # Back up plain files that conflict with stow symlinks
+    _backup_if_plain_file "$HOME/.zshrc"
+    _backup_if_plain_file "$HOME/.config/dunst/dunstrc"
+    _backup_if_plain_file "$HOME/.config/picom/picom.conf"
+    _backup_if_plain_file "$HOME/.config/alacritty/alacritty.toml"
+    _stow_pkg "$DOTFILES" i3 --ignore='^shell$' --ignore='^sddm-theme$' --ignore='^default$'
+    _stow_pkg "$DOTFILES/i3" shell
+    if [[ ! -f "$HOME/.xinitrc" ]]; then
+        ln -sf "Work/dotfiles/i3/.xinitrc.i3" "$HOME/.xinitrc"
+        echo "  → Created ~/.xinitrc symlink (i3)"
+    fi
+
+    # Set zsh as default shell if not already
+    if [[ "$(getent passwd "$USER" | cut -d: -f7)" != */zsh ]]; then
+        if command -v zsh &>/dev/null; then
+            chsh -s "$(command -v zsh)"
+            echo "  ✓ Default shell set to zsh (re-login required)"
+        else
+            echo "  ! zsh not found — install it first"
+        fi
+    else
+        echo "  ~ Default shell already zsh"
+    fi
+}
+
+stow_hyprland() {
+    echo "Stowing hyprland to $HOME..."
+    _stow_pkg "$DOTFILES" hyprland --ignore='^\.bashrc$'
+}
+
+stow_dwm() {
+    echo "Stowing dwm to $HOME..."
+    _backup_if_plain_file "$HOME/.bashrc"
+    _stow_pkg "$DOTFILES" dwm \
+        --ignore='dunstrc$' \
+        --ignore='flameshot\.ini$' \
+        --ignore='picom\.conf$' \
+        --ignore='colors-rofi-dwm\.rasi$' \
+        --ignore='fzfub$' \
+        --ignore='notes$' \
+        --ignore='qutebrowser' \
+        --ignore='quickmarks$' \
+        --ignore='urls$' \
+        --ignore='brightnessnotify$' \
+        --ignore='dwm-block-.*$'
+}
+
+stow_tmux() {
+    echo "Stowing tmux to $HOME..."
+    _stow_pkg "$DOTFILES" tmux
+}
+
 stow_all() {
-    # stow_pkg <dir> <pkg> [extra stow args]
-    stow_pkg() {
+    stow_i3
+    stow_tmux
+    stow_hyprland
+    stow_dwm
+    echo "Wallpapers are at $DOTFILES/wallpapers/"
+}
+
+# --- Stow check ---
+check_stow() {
+    local ignore="--ignore=CLAUDE.md --ignore=AGENTS.md --ignore=README.md --ignore=wallpapers"
+    local failed=0
+
+    check_pkg() {
         local dir=$1 pkg=$2
         shift 2
         local extra=("$@")
-        local ignore="--ignore=CLAUDE.md --ignore=AGENTS.md --ignore=README.md --ignore=wallpapers"
-        if stow -d "$dir" -t "$HOME" --restow $ignore "${extra[@]}" "$pkg" 2>/dev/null; then
-            echo "  ✓ $pkg"
+        local out conflicts
+
+        out=$(stow -d "$dir" -t "$HOME" -n -v $ignore "${extra[@]}" "$pkg" 2>&1 || true)
+        conflicts=$(echo "$out" | grep -E "existing target|cannot stow|source is an absolute symlink" || true)
+        if [[ -n "$conflicts" ]]; then
+            echo "  ! $pkg conflicts:"
+            echo "$conflicts" | sed 's/^/      /'
+            failed=1
         else
-            local conflicts
-            conflicts=$(stow -d "$dir" -t "$HOME" -n $ignore "${extra[@]}" "$pkg" 2>&1 | grep "existing target" || true)
-            if [[ -n "$conflicts" ]]; then
-                echo "  ! $pkg conflicts:"
-                echo "$conflicts" | sed 's/.*existing target is not owned by stow: //' | sed 's/^/      - /'
-            else
-                echo "  ✗ $pkg (unknown error)"
-            fi
+            echo "  ✓ $pkg"
         fi
     }
 
-    echo "Stowing dotfiles to $HOME..."
-    # i3 main package — exclude sub-packages and non-stow dirs
-    stow_pkg "$DOTFILES" i3 --ignore='^shell$' --ignore='^sddm-theme$' --ignore='^default$' --ignore='current-wallpaper'
-    # shell sub-package lives inside i3/ — remove any existing .zshrc (real or wrong symlink)
-    rm -f "$HOME/.zshrc"
-    stow_pkg "$DOTFILES/i3" shell
-    stow_pkg "$DOTFILES" hyprland
-    # ignore files already provided by i3 so i3's versions always win
-    stow_pkg "$DOTFILES" dwm \
-        --ignore='flameshot\.ini' --ignore='picom\.conf' \
-        --ignore='colors-rofi-dwm\.rasi' --ignore='fzfub' --ignore='notes'
-    stow_ai_agent
+    echo "Checking stow targets for $HOME..."
+    check_pkg "$DOTFILES" i3 --ignore='^shell$' --ignore='^sddm-theme$' --ignore='^default$'
+    check_pkg "$DOTFILES/i3" shell
+    check_pkg "$DOTFILES" hyprland --ignore='^\.bashrc$'
+    check_pkg "$DOTFILES" dwm \
+        --ignore='dunstrc$' \
+        --ignore='flameshot\.ini$' \
+        --ignore='picom\.conf$' \
+        --ignore='colors-rofi-dwm\.rasi$' \
+        --ignore='fzfub$' \
+        --ignore='notes$' \
+        --ignore='qutebrowser' \
+        --ignore='quickmarks$' \
+        --ignore='urls$' \
+        --ignore='brightnessnotify$' \
+        --ignore='dwm-block-.*$'
 
-    if [[ ! -f "$HOME/.xinitrc" ]]; then
-        ln -sf "Work/dotfiles/i3/.xinitrc.i3" "$HOME/.xinitrc"
-        echo "  → Created ~/.xinitrc symlink (i3) — use 'xsession dwm' to switch"
+    echo ""
+    echo "Checking key links..."
+    for target in \
+        "$HOME/.config/i3/config" \
+        "$HOME/.config/i3blocks/config" \
+        "$HOME/.local/bin/i3-gdrive" \
+        "$HOME/.zshrc"; do
+        if [[ -e "$target" && "$(readlink -f "$target")" == "$DOTFILES"* ]]; then
+            echo "  ✓ $target"
+        else
+            echo "  ! $target is not linked to $DOTFILES"
+            failed=1
+        fi
+    done
+
+    if [[ $failed -eq 0 ]]; then
+        echo "All stow checks passed."
+    else
+        echo "Stow check found issues."
+        return 1
     fi
+}
 
-    echo "Wallpapers are at $DOTFILES/wallpapers/"
+# --- Login (SDDM + PAM) ---
+login_setup() {
+    echo "Setting up SDDM login screen..."
 
-    # SDDM login theme
-    echo "Setting up SDDM login theme..."
     if [[ -d "$DOTFILES/i3/sddm-theme/i3-login" ]]; then
+        sudo mkdir -p /usr/share/sddm/themes
         sudo rm -rf /usr/share/sddm/themes/i3-login
-        sudo ln -sf "$DOTFILES/i3/sddm-theme/i3-login" /usr/share/sddm/themes/i3-login
-        echo "  ✓ SDDM theme linked"
+        sudo cp -a "$DOTFILES/i3/sddm-theme/i3-login" /usr/share/sddm/themes/i3-login
+        echo "  ✓ SDDM theme copied"
     else
         echo "  ! SDDM theme not found at $DOTFILES/i3/sddm-theme/i3-login"
     fi
 
-    # SDDM config
-    if [[ ! -f /etc/sddm.conf.d/autologin.conf ]]; then
-        sudo mkdir -p /etc/sddm.conf.d
-        sudo tee /etc/sddm.conf.d/autologin.conf > /dev/null << 'EOF'
-[Autologin]
-User=sohaib
-Session=i3
+    # No autologin — login screen shown for security; default to i3
+    sudo mkdir -p /etc/sddm.conf.d
+    printf '[General]\nDefaultSession=i3.desktop\nRememberLastSession=false\nRememberLastUser=true\n\n[Theme]\nCurrent=i3-login\n\n[X11]\nXkbLayout=fr\nXkbModel=pc105\nXkbOptions=terminate:ctrl_alt_bksp\n' \
+        | sudo tee /etc/sddm.conf.d/autologin.conf > /dev/null
+    echo "  ✓ SDDM config (i3 default session, no autologin)"
 
-[Theme]
-Current=i3-login
-
-[X11]
-XkbLayout=fr
-XkbModel=pc105
-XkbOptions=terminate:ctrl_alt_bksp
-EOF
-        echo "  ✓ SDDM config written"
-    else
-        echo "  ~ SDDM config already exists, skipping"
-    fi
-}
-
-# --- Unstow ---
-unstow_all() {
-    local ignore="--ignore=CLAUDE.md --ignore=AGENTS.md --ignore=README.md --ignore=wallpapers"
-    echo "Unstowing dotfiles from $HOME..."
-    for pkg in i3 hyprland dwm; do
-        if stow -d "$DOTFILES" -t "$HOME" -D $ignore "$pkg" 2>/dev/null; then
-            echo "  ✓ $pkg"
-        else
-            echo "  ~ $pkg (nothing to unstow)"
-        fi
-    done
-    unstow_ai_agent
-    # unstow both i3/shell and root shell (old stow location)
-    stow -d "$DOTFILES/i3" -t "$HOME" -D shell 2>/dev/null || true
-    stow -d "$DOTFILES" -t "$HOME" -D shell 2>/dev/null || true
-    echo "  ✓ shell"
-
-    # Clean up any leftover dir-level symlinks pointing into dotfiles
-    echo "Cleaning leftover dir symlinks..."
-    local cfg_dirs=(i3 i3blocks i3status kitty polybar rofi picom flameshot tmux nvim xob swayosd wal xdg-desktop-portal)
-    for d in "${cfg_dirs[@]}"; do
-        local target="$HOME/.config/$d"
-        if [[ -L "$target" ]]; then
-            rm "$target" && echo "  ✓ removed $target"
-        fi
-    done
-}
-
-# --- Stow check (dry-run) ---
-stow_check() {
-    local ignore="--ignore=CLAUDE.md --ignore=AGENTS.md --ignore=README.md --ignore=wallpapers --ignore=current-wallpaper"
-    echo "Dry-run stow check (no changes made)..."
-    local has_conflict=0
-
-    check_pkg() {
-        local label=$1; shift
-        local out conflicts
-        out=$(eval "$@" 2>&1) || true
-        conflicts=$(echo "$out" | grep -E "existing target|cannot stow|source is an absolute symlink" || true)
-        if [[ -n "$conflicts" ]]; then
-            echo "  ! $label conflicts:"
-            echo "$conflicts" | sed 's/^/      /'
-            has_conflict=1
-        else
-            echo "  ✓ $label — clean"
-        fi
-    }
-
-    check_pkg i3      "stow -d \"$DOTFILES\" -t \"$HOME\" -n -v $ignore --ignore='^shell\$' --ignore='^sddm-theme\$' --ignore='^default\$' i3"
-    check_pkg shell   "stow -d \"$DOTFILES/i3\" -t \"$HOME\" -n -v shell"
-    check_pkg hyprland "stow -d \"$DOTFILES\" -t \"$HOME\" -n -v $ignore hyprland"
-    check_pkg dwm      "stow -d \"$DOTFILES\" -t \"$HOME\" -n -v $ignore --ignore='flameshot\.ini' --ignore='picom\.conf' --ignore='colors-rofi-dwm\.rasi' --ignore='fzfub' --ignore='notes' dwm"
-    # ai-agent uses custom linking — check key symlinks are correct
-    local ai_ok=1
-    [[ "$(readlink "$HOME/.claude/settings.json" 2>/dev/null)" == *"ai-agent"* ]] || ai_ok=0
-    [[ "$(readlink "$HOME/.config/opencode/opencode.json" 2>/dev/null)" == *"ai-agent"* ]] || ai_ok=0
-    [[ -L "$HOME/.claude/skills" ]] || ai_ok=0
-    if [[ $ai_ok -eq 1 ]]; then
-        echo "  ✓ ai-agent — clean"
-    else
-        echo "  ! ai-agent — run restow to fix (settings.json, skills, or opencode.json missing)"
-        has_conflict=1
+    # Remove Wayland override — it conflicts with the X11 i3 session
+    if [[ -f /etc/sddm.conf.d/10-wayland.conf ]]; then
+        sudo rm -f /etc/sddm.conf.d/10-wayland.conf
+        echo "  ✓ Removed SDDM Wayland override (10-wayland.conf)"
     fi
 
-    [[ $has_conflict -eq 0 ]] && echo "All packages ready to stow." || echo "Fix conflicts above, then run: $0 stow"
-}
+    # Strip pam_gnome_keyring — causes auth delay on i3 login
+    if grep -q 'pam_gnome_keyring' /etc/pam.d/sddm 2>/dev/null; then
+        sudo sed -i \
+            '/-auth.*pam_gnome_keyring\.so/d; /-password.*pam_gnome_keyring\.so/d' \
+            /etc/pam.d/sddm
+        echo "  ✓ Stripped pam_gnome_keyring from /etc/pam.d/sddm"
+    fi
 
-# --- AI Agent (custom linking — stow can't handle absolute symlinks in skill dirs) ---
-stow_ai_agent() {
-    local skill_src="$DOTFILES/ai-agent/.config/opencode/skill"
-    local skill_dst="$HOME/.config/opencode/skill"
-
-    mkdir -p "$HOME/.claude" "$HOME/.codex" "$HOME/.config/opencode" "$skill_dst"
-
-    # Core config files
-    rm -f "$HOME/.claude/settings.json"
-    ln -sf "$DOTFILES/ai-agent/.claude/settings.json" "$HOME/.claude/settings.json"
-    rm -f "$HOME/.config/opencode/opencode.json"
-    ln -sf "$DOTFILES/ai-agent/.config/opencode/opencode.json" "$HOME/.config/opencode/opencode.json"
-
-    # Link each skill: real dirs get a symlink to the dotfiles path;
-    # absolute symlinks are recreated as-is (works if target exists, dangling if plugin not installed yet)
-    local linked=0 extern=0
-    while IFS= read -r -d '' item; do
-        local name
-        name=$(basename "$item")
-        if [[ -L "$item" ]]; then
-            # Recreate the absolute symlink so the skill is available if the target exists
-            rm -f "${skill_dst:?}/$name"
-            ln -sfn "$(readlink "$item")" "$skill_dst/$name"
-            (( extern++ )) || true
-        else
-            rm -rf "${skill_dst:?}/$name"
-            ln -sfn "$item" "$skill_dst/$name"
-            (( linked++ )) || true
-        fi
-    done < <(find "$skill_src" -maxdepth 1 -mindepth 1 -print0)
-
-    # claude and codex skills both point to the shared opencode skill dir
-    rm -f "$HOME/.claude/skills" "$HOME/.codex/skills"
-    ln -sfn "$skill_dst" "$HOME/.claude/skills"
-    ln -sfn "$skill_dst" "$HOME/.codex/skills"
-
-    echo "  ✓ ai-agent ($linked skills linked, $extern external plugin symlinks recreated)"
-}
-
-unstow_ai_agent() {
-    rm -f "$HOME/.claude/settings.json" "$HOME/.config/opencode/opencode.json"
-    rm -rf "$HOME/.claude/skills" "$HOME/.codex/skills"
-    local skill_dst="$HOME/.config/opencode/skill"
-    [[ -d "$skill_dst" ]] && find "$skill_dst" -maxdepth 1 -mindepth 1 -type l -delete 2>/dev/null || true
-    echo "  ✓ ai-agent"
+    if command -v systemctl &>/dev/null; then
+        sudo systemctl enable sddm.service
+        echo "  ✓ SDDM service enabled"
+    fi
 }
 
 # --- Limine ---
+limine_plymouth() {
+    local theme="0xSSfN"
+    if [[ -d "$DOTFILES/limine/plymouth" ]]; then
+        sudo mkdir -p /usr/share/plymouth/themes/$theme
+        sudo cp -a "$DOTFILES/limine/plymouth/." /usr/share/plymouth/themes/$theme/
+        sudo plymouth-set-default-theme $theme
+        echo "  ✓ Plymouth theme ($theme)"
+    else
+        echo "  ! limine/plymouth/ not found — skipping Plymouth setup"
+    fi
+}
+
 limine_install() {
     echo "Installing Limine config..."
 
@@ -347,13 +422,53 @@ limine_install() {
     else
         echo "  ~ /etc/default/limine already exists, skipping"
     fi
+
+    sudo mkdir -p /etc/mkinitcpio.conf.d
+    sudo rm -f /etc/mkinitcpio.conf.d/omarchy_hooks.conf /etc/mkinitcpio.conf.d/omarchy_resume.conf
+    if [[ ! -f /etc/mkinitcpio.conf.d/i3_hooks.conf ]]; then
+        sudo cp "$DOTFILES/limine/i3_hooks.conf" /etc/mkinitcpio.conf.d/i3_hooks.conf
+        echo "  ✓ /etc/mkinitcpio.conf.d/i3_hooks.conf"
+    else
+        echo "  ~ i3_hooks.conf already exists, skipping"
+    fi
+    if [[ ! -f /etc/mkinitcpio.conf.d/i3_resume.conf ]]; then
+        sudo cp "$DOTFILES/limine/i3_resume.conf" /etc/mkinitcpio.conf.d/i3_resume.conf
+        echo "  ✓ /etc/mkinitcpio.conf.d/i3_resume.conf"
+    else
+        echo "  ~ i3_resume.conf already exists, skipping"
+    fi
+
+    if [[ -f "$DOTFILES/limine/backdrop.png" ]]; then
+        sudo cp "$DOTFILES/limine/backdrop.png" /boot/backdrop.png
+        echo "  ✓ /boot/backdrop.png"
+    fi
+
+    limine_plymouth
+    sudo limine-update
+    sudo limine-snapper-sync
+    echo "  → Rebuilding UKI (limine-mkinitcpio)..."
+    sudo limine-mkinitcpio
+    echo "  ✓ UKI rebuilt with Plymouth hook"
 }
 
 limine_force() {
     echo "Force-installing Limine config..."
     sudo cp "$DOTFILES/limine/limine.conf" /boot/limine.conf && echo "  ✓ /boot/limine.conf"
     sudo cp "$DOTFILES/limine/default-limine" /etc/default/limine && echo "  ✓ /etc/default/limine"
-    echo "  ! Rebuild UKI to apply cmdline changes: sudo limine-mkinitcpio"
+    sudo mkdir -p /etc/mkinitcpio.conf.d
+    sudo rm -f /etc/mkinitcpio.conf.d/omarchy_hooks.conf
+    sudo cp "$DOTFILES/limine/i3_hooks.conf" /etc/mkinitcpio.conf.d/i3_hooks.conf && echo "  ✓ /etc/mkinitcpio.conf.d/i3_hooks.conf"
+    sudo rm -f /etc/mkinitcpio.conf.d/omarchy_resume.conf
+    sudo cp "$DOTFILES/limine/i3_resume.conf" /etc/mkinitcpio.conf.d/i3_resume.conf && echo "  ✓ /etc/mkinitcpio.conf.d/i3_resume.conf"
+    if [[ -f "$DOTFILES/limine/backdrop.png" ]]; then
+        sudo cp "$DOTFILES/limine/backdrop.png" /boot/backdrop.png && echo "  ✓ /boot/backdrop.png"
+    fi
+    limine_plymouth
+    sudo limine-update
+    sudo limine-snapper-sync
+    echo "  → Rebuilding UKI (limine-mkinitcpio)..."
+    sudo limine-mkinitcpio
+    echo "  ✓ UKI rebuilt with Plymouth hook"
 }
 
 # --- CLI ---
@@ -362,23 +477,30 @@ case "${1:-stow}" in
         install_all
         ;;
     stow)
-        stow_all
+        case "${2:-all}" in
+            i3)        stow_i3 ;;
+            tmux)      stow_tmux ;;
+            hyprland)  stow_hyprland ;;
+            dwm)       stow_dwm ;;
+            all|"")    stow_all ;;
+            *) echo "Unknown stow target: $2. Use: i3, tmux, hyprland, dwm, or all."; exit 1 ;;
+        esac
         ;;
     unstow)
-        unstow_all
+        unstow "${2:-}"
         ;;
     check)
-        stow_check
+        check_stow
         ;;
-    restow)
-        unstow_all
-        echo ""
-        stow_all
+    login)
+        login_setup
         ;;
     all)
         install_all
         echo ""
         stow_all
+        echo ""
+        limine_install
         ;;
     limine)
         limine_install
@@ -387,14 +509,23 @@ case "${1:-stow}" in
         limine_force
         ;;
     *)
-        echo "Usage: $0 [all|packages|stow|unstow|check|restow|limine]"
-        echo "  all      — install packages + stow dotfiles"
-        echo "  packages — install required packages"
-        echo "  stow     — stow dotfiles only (default)"
-        echo "  unstow   — remove all stow symlinks + leftover dir symlinks"
-        echo "  check    — dry-run: show conflicts without making changes"
-        echo "  restow   — unstow then stow (clean slate)"
-        echo "  limine   — copy Limine config to /boot (skips if exists)"
+        echo "Usage: $0 [all|packages|stow [i3|tmux|hyprland|dwm]|unstow [i3|tmux|hyprland|dwm]|check|login|limine]"
+        echo "  all               — install packages + stow all + limine"
+        echo "  packages          — install required packages"
+        echo "  stow              — stow all dotfiles + SDDM login setup (default)"
+        echo "  stow i3           — stow only i3 package + SDDM login setup"
+        echo "  stow tmux         — stow only tmux package"
+        echo "  stow hyprland     — stow only hyprland package"
+        echo "  stow dwm          — stow only dwm package"
+        echo "  unstow i3         — remove i3 symlinks from home"
+        echo "  unstow tmux       — remove tmux symlinks from home"
+        echo "  unstow hyprland   — remove hyprland symlinks from home"
+        echo "  unstow dwm        — remove dwm symlinks from home"
+        echo "  unstow all        — remove all symlinks from home"
+        echo "  check             — dry-run stow and verify key symlinks"
+        echo "  login             — configure SDDM login screen, fix PAM (standalone)"
+        echo "  limine            — install Limine + Plymouth + rebuild UKI (skips if exists)"
+        echo "  limine --force    — force-overwrite all Limine/Plymouth config"
         exit 1
         ;;
 esac
