@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-TERMINAL_BIN="${TERMINAL:-kitty}"
+TERMINAL_BIN="${TERMINAL:-alacritty}"
 
 # Array of disks and matching icons
 DISKS=("/" "/home")
@@ -31,7 +31,7 @@ SPACE=$(df -h "$CURRENT_DISK" | awk 'NR==2 {print $4}')
 # Middle-click to change format
 # Modulo used to wrap around when it reaches end of disks array or format
 case $BLOCK_BUTTON in
-		1) setsid -f "$TERMINAL_BIN" --class i3diskpopup bash -lc "selected='${DISKS[$INDEX]}'; read -r device mountpoint size used avail usepct < <(findmnt -T \"\$selected\" -no SOURCE,TARGET,SIZE,USED,AVAIL,USE%); printf 'Path: %s\n' \"\$selected\"; printf 'Device: %s\n' \"\$device\"; printf 'Mounted at: %s\n' \"\$mountpoint\"; printf 'Usage: %s used, %s free, %s of %s\n' \"\$used\" \"\$avail\" \"\$usepct\" \"\$size\"; if [ \"\$selected\" != \"\$mountpoint\" ]; then printf '\nThis path lives on the partition mounted at %s.\n' \"\$mountpoint\"; fi; printf '\n--- NVMe Health ---\n'; smart=\$(sudo smartctl-safe -a /dev/nvme0n1 2>/dev/null); wear=\$(echo \"\$smart\" | awk '/^Percentage Used:/ {gsub(/%/,\"\",\$3); print \$3}'); temp=\$(echo \"\$smart\" | awk '/^Temperature:/ {print \$2}'); spare=\$(echo \"\$smart\" | awk '/^Available Spare:/ {print \$3}'); hours=\$(echo \"\$smart\" | awk '/^Power On Hours:/ {gsub(/,/,\"\",\$4); print \$4}'); printf 'Wear: %s%%\n' \"\$wear\"; printf 'Temp: %s°C\n' \"\$temp\"; printf 'Spare: %s\n' \"\$spare\"; printf 'Power On: %s hrs\n' \"\$hours\"; printf '\nPress q to close...'; while IFS= read -rsn1 key; do [ \"\$key\" = 'q' ] && break; done" ;;
+		1) setsid -f "$TERMINAL_BIN" --class i3diskpopup -e bash -lc "selected='${DISKS[$INDEX]}'; read -r device mountpoint size used avail usepct < <(findmnt -T \"\$selected\" -no SOURCE,TARGET,SIZE,USED,AVAIL,USE%); printf 'Path: %s\n' \"\$selected\"; printf 'Device: %s\n' \"\$device\"; printf 'Mounted at: %s\n' \"\$mountpoint\"; printf 'Usage: %s used, %s free, %s of %s\n' \"\$used\" \"\$avail\" \"\$usepct\" \"\$size\"; if [ \"\$selected\" != \"\$mountpoint\" ]; then printf '\nThis path lives on the partition mounted at %s.\n' \"\$mountpoint\"; fi; printf '\n--- NVMe Health ---\n'; smart=\$(sudo smartctl-safe -a /dev/nvme0n1 2>/dev/null); wear=\$(echo \"\$smart\" | awk '/^Percentage Used:/ {gsub(/%/,\"\",\$3); print \$3}'); temp=\$(echo \"\$smart\" | awk '/^Temperature:/ {print \$2}'); spare=\$(echo \"\$smart\" | awk '/^Available Spare:/ {print \$3}'); hours=\$(echo \"\$smart\" | awk '/^Power On Hours:/ {gsub(/,/,\"\",\$4); print \$4}'); printf 'Wear: %s%%\n' \"\$wear\"; printf 'Temp: %s°C\n' \"\$temp\"; printf 'Spare: %s\n' \"\$spare\"; printf 'Power On: %s hrs\n' \"\$hours\"; printf '\nPress q to close...'; while IFS= read -rsn1 key; do [ \"\$key\" = 'q' ] && break; done" ;;
 		3) echo "$INDEX $(( ($FORMAT + 1) % 2 ))" > "$DISKS_FILE"
 		   notify-send -t 2000 "Disk: ${DISKS[$INDEX]}" "$([ $(( ($FORMAT + 1) % 2 )) -eq 0 ] && echo 'usage %' || echo 'free space')"
 		   pkill -RTMIN+3 i3blocks 2>/dev/null ;;
