@@ -52,7 +52,8 @@ exec_always --no-startup-id xset s off -dpms
 
 # xss-lock grabs a logind suspend inhibit lock and will use i3lock to lock the
 # screen before suspend. Use loginctl lock-session to lock your screen.
-exec --no-startup-id xss-lock --transfer-sleep-lock -- i3-lock
+exec --no-startup-id xss-lock --transfer-sleep-lock -- $HOME/.local/bin/i3-lock
+exec_always --no-startup-id $HOME/.local/bin/i3-idle
 
 # NetworkManager is the most popular way to manage wireless networks on Linux,
 # and nm-applet is a desktop environment-independent system tray GUI for it.
@@ -102,6 +103,7 @@ set $right l
 
 # use Mouse+Mod4 to drag floating windows to their wanted position
 floating_modifier Mod4
+for_window [class="i3-screensaver"] fullscreen enable, border none
 for_window [class="Nsxiv"] floating enable, resize set 1200 700, move position center
 for_window [class="fzfmenu"] floating enable, move position center
 for_window [class="fzf"] floating enable, move position center

@@ -23,6 +23,7 @@ SCRIPT_SINGLETONS=(
     "i3-cliphist"
     "i3-imgclipwatch"
     "\.local/bin/batmon"
+    "xidlehook"
 )
 
 # Daemons to ensure are running: "pgrep_f_pattern|start_command"
@@ -34,6 +35,7 @@ ENSURE_RUNNING=(
     "picom|setsid -f picom --daemon"
     "i3blocks|setsid -f i3blocks"
     "voxtype|setsid -f voxtype daemon"
+    "xidlehook|setsid -f $HOME/.local/bin/i3-idle"
 )
 
 killed_any=false
@@ -71,9 +73,17 @@ ensure_running() {
     local label="${pattern//\\/}"
 
     if ! pgrep -f "$pattern" >/dev/null 2>&1; then
-        eval "$cmd" >/dev/null 2>&1
-        echo -e "  ${CYAN}${label}${RESET}: not running ${RED}→${RESET} ${GREEN}started${RESET}"
-        started_any=true
+        if eval "$cmd" >/dev/null 2>&1; then
+            sleep 0.2
+            if pgrep -f "$pattern" >/dev/null 2>&1; then
+                echo -e "  ${CYAN}${label}${RESET}: not running ${RED}→${RESET} ${GREEN}started${RESET}"
+                started_any=true
+            else
+                echo -e "  ${CYAN}${label}${RESET}: not running ${RED}→${RESET} ${YELLOW}start command returned, but process not found${RESET}"
+            fi
+        else
+            echo -e "  ${CYAN}${label}${RESET}: not running ${RED}→ failed to start${RESET}"
+        fi
     fi
 }
 
