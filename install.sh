@@ -305,6 +305,11 @@ login_setup() {
             /etc/pam.d/sddm
         echo "  ✓ Stripped pam_gnome_keyring from /etc/pam.d/sddm"
     fi
+
+    if command -v systemctl &>/dev/null; then
+        sudo systemctl enable sddm.service
+        echo "  ✓ SDDM service enabled"
+    fi
 }
 
 # --- Limine ---
