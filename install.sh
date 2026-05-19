@@ -59,6 +59,7 @@ if [[ "$PM" == "pacman" ]]; then
         pipewire-pulse brightnessctl playerctl
         # Fonts
         noto-fonts noto-fonts-emoji ttf-jetbrains-mono-nerd
+        ttc-iosevka ttf-iosevka-nerd
         # Shell/Dev
         python-pywal fzf jq libnotify
     )
