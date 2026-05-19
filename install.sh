@@ -54,6 +54,8 @@ if [[ "$PM" == "pacman" ]]; then
     COMMON_PKGS=(
         # Core
         stow feh picom dunst network-manager-applet xss-lock polkit-gnome sddm
+        # SDDM greeter Qt5 deps (missing these = black screen on login)
+        qt5-base qt5-declarative qt5-svg
         pipewire-pulse brightnessctl playerctl
         # Fonts
         noto-fonts noto-fonts-emoji ttf-jetbrains-mono-nerd

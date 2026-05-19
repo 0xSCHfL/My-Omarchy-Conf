@@ -1,6 +1,6 @@
 #!/bin/bash
 
-TERMINAL_BIN="${TERMINAL:-kitty}"
+TERMINAL_BIN="alacritty"
 
 VOL=$(pactl get-sink-volume @DEFAULT_SINK@ 2>/dev/null | awk '/Volume/{printf "%d", $5}')
 MUTE=$(pactl get-sink-mute @DEFAULT_SINK@ 2>/dev/null)

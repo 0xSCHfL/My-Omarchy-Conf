@@ -1,6 +1,6 @@
 #!/bin/bash
 
-TERMINAL_BIN="${TERMINAL:-kitty}"
+TERMINAL_BIN="alacritty"
 
 ESSID=$(iwgetid -r 2>/dev/null)
 
