@@ -334,7 +334,7 @@ login_setup() {
 
     # No autologin — login screen shown for security; default to i3
     sudo mkdir -p /etc/sddm.conf.d
-    printf '[General]\nDefaultSession=i3.desktop\n\n[Theme]\nCurrent=i3-login\n\n[X11]\nXkbLayout=fr\nXkbModel=pc105\nXkbOptions=terminate:ctrl_alt_bksp\n' \
+    printf '[General]\nDefaultSession=i3.desktop\nRememberLastSession=false\nRememberLastUser=true\n\n[Theme]\nCurrent=i3-login\n\n[X11]\nXkbLayout=fr\nXkbModel=pc105\nXkbOptions=terminate:ctrl_alt_bksp\n' \
         | sudo tee /etc/sddm.conf.d/autologin.conf > /dev/null
     echo "  ✓ SDDM config (i3 default session, no autologin)"
 
