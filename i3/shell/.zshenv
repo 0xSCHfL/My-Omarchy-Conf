@@ -25,7 +25,7 @@ export PATH="$HOME/.local/bin:$HOME/.cargo/bin:/var/lib/flatpak/exports/bin:$HOM
 export PATH="$PATH:/home/sohaib/.spicetify"
 
 # Terminal
-export TERMINAL=alacritty
+export TERMINAL=kitty
 
 # Dark mode
 export GTK_THEME=Adwaita-dark
