@@ -1,0 +1,15 @@
+[general]
+live_config_reload = false
+
+[window]
+decorations = "none"
+padding.x = 0
+padding.y = 0
+opacity = 1.0
+
+[font]
+size = 18.0
+
+[colors.primary]
+background = "#000000"
+foreground = "#ffffff"

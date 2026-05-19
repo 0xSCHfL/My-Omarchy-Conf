@@ -64,6 +64,8 @@ if [[ "$PM" == "pacman" ]]; then
         python-pywal fzf jq libnotify
         # Shell tools (used in .zshrc / aliases)
         zoxide starship fastfetch
+        # Idle detection + screensaver
+        xidlehook python-terminaltexteffects
         # File manager & trash
         yazi trash-cli
         # Disk usage & search
