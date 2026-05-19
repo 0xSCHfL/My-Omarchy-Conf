@@ -8,4 +8,4 @@ pgrep -f "class i3-screensaver" >/dev/null 2>&1 && exit 0
 setsid -f alacritty \
     --class i3-screensaver \
     --config-file "$HOME/.config/alacritty/screensaver.toml" \
-    -e i3-screensaver
+    -e "$HOME/.local/bin/i3-screensaver"

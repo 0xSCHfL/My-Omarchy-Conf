@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+pkill -x tte 2>/dev/null || true
+pkill -f "$HOME/.local/bin/i3-screensaver" 2>/dev/null || true
+pkill -f "alacritty.*--class i3-screensaver" 2>/dev/null || true
