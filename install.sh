@@ -59,7 +59,7 @@ if [[ "$PM" == "pacman" ]]; then
         pipewire-pulse brightnessctl playerctl
         # Fonts
         noto-fonts noto-fonts-emoji ttf-jetbrains-mono-nerd
-        ttc-iosevka ttf-iosevka-nerd
+        ttc-iosevka
         # Shell/Dev
         python-pywal fzf jq libnotify
     )
@@ -132,6 +132,7 @@ install_all() {
             i3lock-color \
             impala wiremix \
             python-pywal xob \
+            ttf-iosevka-nerd \
             voxtype-bin ydotool 2>/dev/null || true
     fi
 
@@ -219,7 +220,11 @@ _stow_pkg() {
 # --- Stow per-package ---
 stow_i3() {
     echo "Stowing i3 to $HOME..."
+    # Back up plain files that conflict with stow symlinks
     _backup_if_plain_file "$HOME/.zshrc"
+    _backup_if_plain_file "$HOME/.config/dunst/dunstrc"
+    _backup_if_plain_file "$HOME/.config/picom/picom.conf"
+    _backup_if_plain_file "$HOME/.config/alacritty/alacritty.toml"
     _stow_pkg "$DOTFILES" i3 --ignore='^shell$' --ignore='^sddm-theme$' --ignore='^default$'
     _stow_pkg "$DOTFILES/i3" shell
     if [[ ! -f "$HOME/.xinitrc" ]]; then
