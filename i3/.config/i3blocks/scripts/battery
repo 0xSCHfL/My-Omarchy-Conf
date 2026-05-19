@@ -34,5 +34,5 @@ else
 fi
 
 case $BLOCK_BUTTON in
-    1) setsid -f alacritty --class i3cpufreq -e sudo auto-cpufreq --monitor ;;
+    1) setsid -f alacritty --class i3cpufreq -e auto-cpufreq --stats ;;
 esac
