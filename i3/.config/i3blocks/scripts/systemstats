@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-TERMINAL_BIN="${TERMINAL:-alacritty}"
+TERMINAL_BIN="${TERMINAL:-kitty}"
 
 # Sensor info
 echo "Available sensors:" > /tmp/dwmblocks_debug.log
@@ -84,7 +84,7 @@ echo "$COLOR"
 
 # Clicking on bar
 case $BLOCK_BUTTON in
-		1) setsid -f "$TERMINAL_BIN" --class i3statspopup -e bash -lc 'htop' ;;
+		1) setsid -f "$TERMINAL_BIN" --class i3statspopup bash -lc 'htop' ;;
 		3) notify-send -t 10000 -h string:bgcolor:$COLOR Stats "$CPU_USE\n\nGPU: $GPU_TEMP°C\n\nFan Speed: $FAN_SPEED" ;;
 		6) setsid -f "$TERMINAL" -e "$EDITOR" "$0" ;;
 esac

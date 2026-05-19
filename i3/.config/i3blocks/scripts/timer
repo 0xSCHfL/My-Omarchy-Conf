@@ -3,7 +3,7 @@
 STATE_FILE="/tmp/timericon"
 PID_FILE="/tmp/i3blocks_timer.pid"
 SIGNAL_NUM=3
-TERMINAL_BIN="${TERMINAL:-alacritty}"
+TERMINAL_BIN="${TERMINAL:-kitty}"
 
 if command -v readlink >/dev/null 2>&1; then
     SCRIPT_PATH="$(readlink -f "$0" 2>/dev/null)"
@@ -91,7 +91,7 @@ menu () {
     if command -v i3-input >/dev/null 2>&1; then
         setsid -f i3-input -F "$SCRIPT_PATH minutes-run %s" -P "Timer minutes"
     else
-        setsid -f "$TERMINAL_BIN" --class i3timerpopup -e "$SCRIPT_PATH" prompt
+        setsid -f "$TERMINAL_BIN" --class i3timerpopup "$SCRIPT_PATH" prompt
     fi
 }
 

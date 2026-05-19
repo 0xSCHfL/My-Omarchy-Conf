@@ -15,7 +15,7 @@ rofi_menu() {
 
 open_note() {
   local path="$1"
-  setsid -f alacritty --class notes-nvim -e nvim "$path" >/dev/null 2>&1
+  setsid -f kitty --class notes-nvim -e nvim "$path" >/dev/null 2>&1
 }
 
 new_note() {
