@@ -1,5 +1,12 @@
 #!/bin/bash
 STATE_FILE="/tmp/i3-screenrecord-state"
+
+# Any click stops the recording
+if [[ -n $BLOCK_BUTTON && -s $STATE_FILE ]]; then
+    setsid -f "$HOME/.local/bin/i3-screenrecord"
+    exit 0
+fi
+
 if [[ -s $STATE_FILE ]]; then
     echo "<span color=\"#d75f5f\">$(cat "$STATE_FILE")</span>"
 fi

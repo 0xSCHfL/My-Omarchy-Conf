@@ -11,6 +11,7 @@ interval=once
 signal=9
 markup=pango
 separator=false
+click_events=true
 
 [window_title]
 command=~/.config/i3blocks/scripts/window-title
