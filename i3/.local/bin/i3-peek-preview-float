@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+for _ in {1..30}; do
+  window_id="$(
+    i3-msg -t get_tree 2>/dev/null |
+      jq -r '.. | objects | select(.window_properties? and (((.window_properties.class // "") | test("^i3-peek-preview$")) or ((.window_properties.title // "") | test("^(Peek preview|localhost:[0-9]+)")))) | .id' |
+      head -1
+  )"
+
+  if [[ -n "${window_id:-}" && "$window_id" != "null" ]]; then
+    i3-msg "[con_id=$window_id] floating enable" >/dev/null
+    i3-msg "[con_id=$window_id] resize set 920 680" >/dev/null
+    i3-msg "[con_id=$window_id] move position center" >/dev/null
+    exit 0
+  fi
+
+  sleep 0.1
+done
+
+exit 1

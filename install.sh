@@ -90,8 +90,8 @@ if [[ "$PM" == "pacman" ]]; then
         sysstat wireless_tools imagemagick
         # Pager / syntax highlight
         bat
-        # Markdown preview (peek.nvim)
-        deno
+        # Markdown preview (peek.nvim + local terminal preview)
+        deno glow
     )
     DWM_PKGS=(
         base-devel imv mpv autocutsel ueberzugpp
