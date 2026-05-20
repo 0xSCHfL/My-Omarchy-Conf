@@ -61,7 +61,6 @@ exec_always --no-startup-id $HOME/.local/bin/i3-idle
 exec --no-startup-id picom --daemon
 exec --no-startup-id dunst
 exec --no-startup-id /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
-exec --no-startup-id copyq
 exec --no-startup-id $HOME/.config/i3/scripts/wallpaper/wallpaper-set.sh
 exec_always --no-startup-id bash -c 'pkill -f "\.local/bin/i3-cliphist$" 2>/dev/null; sleep 0.1; exec $HOME/.local/bin/i3-cliphist'
 exec_always --no-startup-id bash -c 'pkill -f "\.local/bin/i3-imgclipwatch$" 2>/dev/null; sleep 0.1; exec $HOME/.local/bin/i3-imgclipwatch'
@@ -74,6 +73,15 @@ bindsym XF86AudioRaiseVolume exec --no-startup-id $HOME/.config/i3/scripts/media
 bindsym XF86AudioLowerVolume exec --no-startup-id $HOME/.config/i3/scripts/media/volume-osd.sh down
 bindsym XF86AudioMute exec --no-startup-id $HOME/.config/i3/scripts/media/volume-osd.sh mute
 bindsym XF86AudioMicMute exec --no-startup-id pactl set-source-mute @DEFAULT_SOURCE@ toggle
+
+# Spotify playback controls pinned to Spotify, so Brave/YouTube does not steal them
+bindsym XF86AudioPlay exec --no-startup-id playerctl -p spotify play-pause
+bindsym XF86AudioNext exec --no-startup-id playerctl -p spotify next
+bindsym XF86AudioPrev exec --no-startup-id playerctl -p spotify previous
+bindsym XF86AudioStop exec --no-startup-id playerctl -p spotify stop
+bindsym Mod4+Mod1+p exec --no-startup-id playerctl -p spotify play-pause
+bindsym Mod4+Mod1+n exec --no-startup-id playerctl -p spotify next
+bindsym Mod4+Mod1+b exec --no-startup-id playerctl -p spotify previous
 
 # Brightness controls
 bindsym XF86MonBrightnessUp exec --no-startup-id brightnessctl set +5%
@@ -103,13 +111,11 @@ set $right l
 # use Mouse+Mod4 to drag floating windows to their wanted position
 floating_modifier Mod4
 for_window [class="i3-screensaver"] fullscreen enable, border none
-for_window [class="Nsxiv"] floating enable, resize set 1200 700, move position center
 for_window [class="fzfmenu"] floating enable, move position center
 for_window [class="fzf"] floating enable, move position center
 for_window [class="Walker"] floating enable, resize set 644 300, move position center
 for_window [class="walker"] floating enable, resize set 644 300, move position center
 for_window [title="Walker"] floating enable, resize set 644 300, move position center
-for_window [class="copyq"] floating enable, resize set 500 400, move position 3330 640
 for_window [title="volume-osd"] floating enable, resize set 360 100, move position center
 for_window [class="i3statspopup"] floating enable, resize set 900 650, move position center
 for_window [class="i3diskpopup"] floating enable, resize set 760 360, move position center
@@ -120,6 +126,8 @@ for_window [class="i3-audio"] floating enable, resize set 800 600, move position
 for_window [class="i3-bluetooth"] floating enable, resize set 800 600, move position center
 for_window [class="i3-gdrive"] floating enable, resize set 1100 680, move position center
 for_window [class="i3-gdrive-setup"] floating enable, resize set 800 500, move position center
+for_window [class="i3-check"] floating enable, resize set 630 700, move position center
+for_window [class="i3-manuals"] floating enable, resize set 1150 760, move position center
 for_window [class="notes-nvim"] floating enable, resize set 1200 800, move position center
 for_window [class="^i3-peek-preview$"] floating enable, resize set 920 680, move position center
 for_window [title="^Peek preview.*"] floating enable, resize set 920 680, move position center
@@ -243,6 +251,8 @@ bindsym Mod4+7 workspace number $ws7
 bindsym Mod4+8 workspace number $ws8
 bindsym Mod4+9 workspace number $ws9
 bindsym Mod4+0 workspace number $ws10
+bindsym Mod4+Next workspace next_on_output
+bindsym Mod4+Prior workspace prev_on_output
 
 # move focused container to workspace
 bindsym Mod4+Shift+1 move container to workspace number $ws1; workspace number $ws1
@@ -263,12 +273,16 @@ bindsym Mod4+Ctrl+r exec i3-msg reload
 bindsym Mod4+x exec --no-startup-id i3-lock
 bindsym Mod4+Shift+q exec "echo -e 'No\nYes'| rofi -dmenu -no-sort -i -theme ~/.config/rofi/dwm-keys.rasi -kb-row-up 'k,Up' -kb-row-down 'j,Down' -kb-cancel 'Escape,h,q' -p 'Exit i3?'| grep -q 'Yes' && i3-msg exit"
 bindsym Mod4+Ctrl+space exec --no-startup-id $HOME/.config/i3/scripts/wallpaper/wallpaper-pick.sh
-bindsym Mod4+Ctrl+v exec --no-startup-id copyq show
 bindsym Print exec --no-startup-id i3-screenshot
 bindsym Mod4+Print exec --no-startup-id i3-screenrecord
 bindsym Mod4+Ctrl+Print exec --no-startup-id i3-ocr
-bindsym Mod4+Ctrl+k exec --no-startup-id i3-keys
-bindsym Mod4+Ctrl+e exec --no-startup-id i3-emojipick
+bindsym Mod4+Ctrl+k exec --no-startup-id $HOME/.local/bin/i3-keys
+bindsym Mod4+Mod1+k exec --no-startup-id $HOME/.local/bin/i3-keys
+bindsym Mod4+Ctrl+e exec --no-startup-id $HOME/.local/bin/i3-emojipick
+bindsym Mod4+Ctrl+b exec --no-startup-id $HOME/.local/bin/i3-cpufreq
+bindsym Mod4+Mod1+c exec --no-startup-id $HOME/.local/bin/i3-check-popup
+bindsym Mod4+Mod1+m exec --no-startup-id $HOME/.local/bin/i3-manuals
+bindsym Mod4+Mod1+space exec --no-startup-id $HOME/.local/bin/i3-manuals
 bindsym Mod4+q exec --no-startup-id qutebrowser
 bindsym Mod4+Shift+o exec --no-startup-id obsidian
 bindsym Mod4+Shift+i exec --no-startup-id i3-imgpicker

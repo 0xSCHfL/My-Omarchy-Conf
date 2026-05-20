@@ -50,7 +50,9 @@ from textual.widgets import (
 )
 
 REMOTE = "gdrive"
-MOUNT_POINT = Path.home() / "GoogleDrive"
+MOUNT_ROOT = Path.home() / "GoogleDrive"
+# Backward-compatible alias for older single-mount logic/comments.
+MOUNT_POINT = MOUNT_ROOT
 RCLONE_CONF = Path.home() / ".config/rclone/rclone.conf"
 LOG_PATH = Path.home() / ".cache/i3-gdrive.log"
 EMAIL_CACHE = Path.home() / ".cache/i3-gdrive/emails.json"
@@ -431,15 +433,58 @@ def get_remote_emails(remotes: list[str]) -> dict:
     return cache
 
 
-def is_mounted() -> bool:
+def mount_label(remote: str) -> str:
+    """Filesystem-friendly folder name for a Drive remote."""
+    label = re.sub(r"[^A-Za-z0-9._-]+", "", remote.strip())
+    return label or "Drive"
+
+
+def mount_point_for(remote: str) -> Path:
+    return MOUNT_ROOT / mount_label(remote)
+
+
+def unmount_path(path: Path) -> bool:
+    for cmd in ("fusermount3", "fusermount"):
+        if shutil.which(cmd):
+            result = subprocess.run([cmd, "-u", str(path)], capture_output=True, text=True)
+            if result.returncode == 0:
+                return True
+    return False
+
+
+def is_path_mounted(path: Path) -> bool:
     try:
         result = subprocess.run(
-            ["mountpoint", "-q", str(MOUNT_POINT)],
+            ["mountpoint", "-q", str(path)],
             capture_output=True
         )
         return result.returncode == 0
     except FileNotFoundError:
         return False
+
+
+def is_mounted(remote: str | None = None) -> bool:
+    return is_path_mounted(mount_point_for(remote)) if remote else is_path_mounted(MOUNT_ROOT)
+
+
+def mounted_drive_count(remotes: list[str] | None = None) -> tuple[int, int]:
+    remotes = remotes or drive_remotes()
+    return sum(1 for r in remotes if is_mounted(r)), len(remotes)
+
+
+def ensure_multi_mount_root() -> None:
+    """Prepare ~/GoogleDrive for per-account mounts.
+
+    Older versions mounted one remote directly on ~/GoogleDrive.  Multi-mount
+    mode needs ~/GoogleDrive to be a normal directory containing per-account
+    mountpoints, so unmount the legacy root mount first if it exists.
+    """
+    if is_path_mounted(MOUNT_ROOT):
+        logging.info("legacy root mount detected; unmounting mount_point=%s", MOUNT_ROOT)
+        unmount_path(MOUNT_ROOT)
+        if is_path_mounted(MOUNT_ROOT):
+            raise RuntimeError(f"Could not unmount legacy root mount: {MOUNT_ROOT}")
+    MOUNT_ROOT.mkdir(exist_ok=True)
 
 
 def fmt_size(n: int) -> str:
@@ -618,7 +663,8 @@ class HelpScreen(ModalScreen):
             ("Del",         "Delete"),
         ]),
         ("Drive", [
-            ("m",           "Toggle mount"),
+            ("m",           "Toggle selected account mount"),
+            ("M",           "Mount all accounts"),
             ("a",           "Account picker"),
         ]),
         ("Account picker", [
@@ -1068,6 +1114,7 @@ class GDriveApp(App):
         Binding("n",         "mkdir",        "New dir",      show=True),
         Binding("delete",    "delete_entry", "Delete",       show=True),
         Binding("m",         "toggle_mount", "Mount",        show=True),
+        Binding("shift+m",   "mount_all",    "Mount all",    show=True),
         Binding("a",         "switch_account", "Account",    show=True),
         Binding("slash",     "search",       "Search",       show=True),
         Binding("question_mark", "help",     "Help",         show=True),
@@ -1105,6 +1152,19 @@ class GDriveApp(App):
         self._sync_active()
         if not has_remote(self.remote_name):
             self.push_screen(SetupScreen(self.remote_name), self._on_setup_done)
+        else:
+            # FilePane widgets mount before App.on_mount(), so the first remote
+            # listing can run with the fallback REMOTE value ("gdrive").  Refresh
+            # after selecting the real/default rclone remote so cloud files appear
+            # immediately on startup.
+            self.remote_pane.path = ""
+            self.remote_pane.refresh_listing()
+            self._refresh_status()
+            if len(remotes) > 1:
+                # Startup account picker: after the logo and main TUI appear,
+                # ask which Drive account to open. Esc keeps the preselected
+                # default/first account; Enter switches to the selected account.
+                self.call_later(self.action_switch_account)
         self.run_worker(self._wal_watcher, thread=True, exclusive=False)
 
     def _modal_active(self) -> bool:
@@ -1143,6 +1203,20 @@ class GDriveApp(App):
         # Don't hijack keys while a modal (like account input) is on top.
         if self._modal_active():
             return
+        # Textual/DataTable focus can swallow the Binding("q", "quit") path on
+        # some versions, so handle q explicitly at the app level when not in a
+        # modal or search prompt.
+        if event.key == "q" and not self.active_pane._searching:
+            logging.info("quit requested via q")
+            self.exit()
+            event.prevent_default()
+            event.stop()
+            return
+        if event.character == "M" and not self.active_pane._searching:
+            self.action_mount_all()
+            event.prevent_default()
+            event.stop()
+            return
         pane = self.active_pane
         if not pane._searching:
             return
@@ -1180,13 +1254,14 @@ class GDriveApp(App):
         if pane.side == "local":
             target = str(Path(pane.path) / entry["name"])
         else:
-            if not is_mounted():
+            remote_mount = mount_point_for(self.remote_name)
+            if not is_mounted(self.remote_name):
                 self.query_one("#status-bar", Static).update(
-                    " ✗ Mount Drive (press m) to open remote files"
+                    f" ✗ Mount {self.remote_name} first (press m) to open remote files"
                 )
                 return
             rel = (pane.path + "/" + entry["name"]).lstrip("/")
-            target = str(MOUNT_POINT / rel)
+            target = str(remote_mount / rel)
         try:
             subprocess.Popen(
                 ["xdg-open", target],
@@ -1422,8 +1497,10 @@ class GDriveApp(App):
         self.remote_pane.active = self.active_side == "remote"
 
     def _status_text(self) -> str:
-        mount = "● Mounted" if is_mounted() else "○ Unmounted"
-        return f" {mount}   acct:{self.remote_name}   Tab switch panes · a account · / search · q quit"
+        mounted, total = mounted_drive_count()
+        current = "●" if is_mounted(self.remote_name) else "○"
+        mount = f"{current} Mounted {mounted}/{total}" if total else "○ No accounts"
+        return f" {mount}   acct:{self.remote_name}   Tab switch panes · m mount · M all · a account · / search · q quit"
 
     def _refresh_status(self) -> None:
         self.query_one("#status-bar", Static).update(self._status_text())
@@ -1604,20 +1681,52 @@ class GDriveApp(App):
 
         self.push_screen(ConfirmScreen(msg), do_delete)
 
+    def _mount_remote(self, remote: str) -> Path:
+        ensure_multi_mount_root()
+        mount_point = mount_point_for(remote)
+        mount_point.mkdir(parents=True, exist_ok=True)
+        if is_mounted(remote):
+            logging.info("mount skipped already mounted remote=%s mount_point=%s", remote, mount_point)
+            return mount_point
+        logging.info("mount requested remote=%s mount_point=%s", remote, mount_point)
+        subprocess.Popen([
+            "rclone", "mount", f"{remote}:",
+            str(mount_point),
+            "--vfs-cache-mode", "full",
+            "--vfs-cache-max-size", "2G",
+            "--daemon",
+        ])
+        return mount_point
+
+    def action_mount_all(self) -> None:
+        remotes = drive_remotes()
+        if not remotes:
+            self.query_one("#status-bar", Static).update(" ✗ No Drive accounts configured")
+            return
+        for remote in remotes:
+            try:
+                self._mount_remote(remote)
+            except Exception as e:
+                logging.exception("mount all failed remote=%s", remote)
+                self.query_one("#status-bar", Static).update(f" ✗ Mount all failed: {e}")
+                return
+        self.query_one("#status-bar", Static).update(
+            f" ⏳ Mounting {len(remotes)} Drive accounts under {MOUNT_ROOT}…"
+        )
+        self.set_timer(1.5, self._refresh_status)
+
     def action_toggle_mount(self) -> None:
-        if is_mounted():
-            logging.info("unmount requested mount_point=%s", MOUNT_POINT)
-            subprocess.run(["fusermount", "-u", str(MOUNT_POINT)], capture_output=True)
+        mount_point = mount_point_for(self.remote_name)
+        if is_mounted(self.remote_name):
+            logging.info("unmount requested remote=%s mount_point=%s", self.remote_name, mount_point)
+            unmount_path(mount_point)
         else:
-            logging.info("mount requested remote=%s mount_point=%s", self.remote_name, MOUNT_POINT)
-            MOUNT_POINT.mkdir(exist_ok=True)
-            subprocess.Popen([
-                "rclone", "mount", f"{self.remote_name}:",
-                str(MOUNT_POINT),
-                "--vfs-cache-mode", "full",
-                "--vfs-cache-max-size", "2G",
-                "--daemon",
-            ])
+            try:
+                self._mount_remote(self.remote_name)
+            except Exception as e:
+                logging.exception("mount failed remote=%s", self.remote_name)
+                self.query_one("#status-bar", Static).update(f" ✗ Mount failed: {e}")
+                return
         self.set_timer(1.5, self._refresh_status)
 
 

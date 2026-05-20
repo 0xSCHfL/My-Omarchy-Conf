@@ -7,19 +7,19 @@ gap_size = 15
 padding = 10
 horizontal_padding = 15
 frame_width = 2
-frame_color = "#B2904B"
-background = "#100e0b"
-foreground = "#cccbc2"
+frame_color = "#AD9770"
+background = "#130f0f"
+foreground = "#b2bdba"
 
 [urgency_low]
-background = "#100e0b"
-foreground = "#cccbc2"
+background = "#130f0f"
+foreground = "#b2bdba"
 
 [urgency_normal]
-background = "#100e0b"
-foreground = "#cccbc2"
+background = "#130f0f"
+foreground = "#b2bdba"
 
 [urgency_critical]
-background = "#67562D"
-foreground = "#cccbc2"
+background = "#79857B"
+foreground = "#b2bdba"
 timeout = 30

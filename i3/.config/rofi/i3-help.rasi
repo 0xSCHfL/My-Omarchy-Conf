@@ -1,4 +1,4 @@
-/* Super+Space app launcher — pywal card style */
+/* i3 keybinding help — simple readable sheet */
 @import "~/.cache/wal/colors-rofi-dwm.rasi"
 
 * {
@@ -18,24 +18,22 @@
 
 window {
     location:         center;
-    width:            640px;
+    width:            820px;
     border:           1px;
-    border-radius:    18px;
+    border-radius:    10px;
     border-color:     @border;
     background-color: @bg;
 }
 
 mainbox {
-    padding: 18px;
-    spacing: 12px;
+    padding: 14px 0;
+    spacing: 8px;
 }
 
 inputbar {
-    padding:       13px 15px;
-    spacing:       10px;
-    border-radius: 14px;
-    background-color: rgba(255, 255, 255, 0.04);
-    children:      [ prompt, entry ];
+    padding: 4px 18px 12px 18px;
+    spacing: 8px;
+    children: [ prompt, entry ];
 }
 
 prompt {
@@ -45,40 +43,32 @@ prompt {
 
 entry {
     font:              "Iosevka Nerd Font 13";
-    placeholder:       "launch app...";
+    placeholder:       "search keys...";
     placeholder-color: @fg-dim;
 }
 
 listview {
-    lines:        8;
+    lines:        12;
     columns:      1;
-    fixed-height: true;
-    spacing:      7px;
-    border:       0;
+    fixed-height: false;
+    border:       1px 0 0 0;
+    border-color: @border;
+    padding:      6px 0 0 0;
 }
 
 element {
-    padding:       10px 14px;
-    spacing:       12px;
-    border:        1px;
-    border-radius: 12px;
-    border-color:  transparent;
-    background-color: transparent;
+    padding:      8px 18px;
+    border:       0 0 0 3px;
+    border-color: transparent;
 }
 
-element selected normal,
-element selected active {
+element selected normal {
     border-color:     @prompt;
-    background-color: rgba(255, 255, 255, 0.06);
-}
-
-element-icon {
-    size:   26px;
-    margin: 0 8px 0 0;
+    background-color: rgba(255, 255, 255, 0.04);
 }
 
 element-text {
-    font:           "Iosevka Nerd Font 12";
+    font:           "Iosevka Nerd Font 13";
     text-color:     @fg;
     vertical-align: 0.5;
 }

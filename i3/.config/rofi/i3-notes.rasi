@@ -1,4 +1,4 @@
-/* Super+Space app launcher — pywal card style */
+/* Notes launcher — compact pywal card */
 @import "~/.cache/wal/colors-rofi-dwm.rasi"
 
 * {
@@ -18,63 +18,56 @@
 
 window {
     location:         center;
-    width:            640px;
+    width:            500px;
     border:           1px;
-    border-radius:    18px;
+    border-radius:    16px;
     border-color:     @border;
     background-color: @bg;
 }
 
 mainbox {
-    padding: 18px;
-    spacing: 12px;
+    padding: 14px;
+    spacing: 10px;
 }
 
 inputbar {
-    padding:       13px 15px;
-    spacing:       10px;
-    border-radius: 14px;
+    padding:       10px 12px;
+    spacing:       8px;
+    border-radius: 12px;
     background-color: rgba(255, 255, 255, 0.04);
     children:      [ prompt, entry ];
 }
 
 prompt {
-    font:       "Iosevka Nerd Font Bold 13";
+    font:       "Iosevka Nerd Font Bold 12";
     text-color: @prompt;
 }
 
 entry {
-    font:              "Iosevka Nerd Font 13";
-    placeholder:       "launch app...";
+    font:              "Iosevka Nerd Font 12";
+    placeholder:       "search notes...";
     placeholder-color: @fg-dim;
 }
 
 listview {
-    lines:        8;
+    lines:        9;
     columns:      1;
-    fixed-height: true;
-    spacing:      7px;
+    fixed-height: false;
+    spacing:      6px;
     border:       0;
 }
 
 element {
-    padding:       10px 14px;
-    spacing:       12px;
+    padding:       8px 12px;
     border:        1px;
-    border-radius: 12px;
+    border-radius: 10px;
     border-color:  transparent;
     background-color: transparent;
 }
 
-element selected normal,
-element selected active {
+element selected normal {
     border-color:     @prompt;
     background-color: rgba(255, 255, 255, 0.06);
-}
-
-element-icon {
-    size:   26px;
-    margin: 0 8px 0 0;
 }
 
 element-text {

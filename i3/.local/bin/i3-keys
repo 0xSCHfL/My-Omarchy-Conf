@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 ROFI_NAV='-kb-row-up "k,Up" -kb-row-down "j,Down" -kb-cancel "Escape,h,q"'
-ROFI_THEME="$HOME/.config/rofi/dwm-keys.rasi"
+ROFI_THEME="$HOME/.config/rofi/i3-help.rasi"
 
 rofi_menu() {
   eval rofi -dmenu -no-sort -i -theme "$ROFI_THEME" $ROFI_NAV -p "$1"
@@ -34,8 +34,11 @@ EOF
 workspace_keys() { cat <<'EOF'
 Super + 1-0          → Switch to workspace
 Super + Shift + 1-0  → Move window to workspace
+Super + PageDown     → Next workspace (also touchpad 3-finger swipe left)
+Super + PageUp       → Previous workspace (also touchpad 3-finger swipe right)
 Super + Ctrl + g     → Gaps mode
-Super + Tab          → Cycle focus (alt-tab)
+Alt + Tab            → Cycle focus
+Alt + Shift + Tab    → Cycle focus backward
 EOF
 }
 
@@ -65,14 +68,18 @@ Super + Shift + d    → Discord
 Super + Shift + e    → Email picker (Gmail app window)
 Super + Shift + n    → Neovim
 Super + v            → Clipboard manager (Walker, Ctrl+d deletes)
-Super + Ctrl + v     → Copyq show
 Super + n            → Notes
 Super + Ctrl + k     → Keybindings help
+Super + Alt + k      → Keybindings help
 Super + Ctrl + e     → Emoji picker
+Super + Ctrl + b     → Battery CPU profile menu (auto-cpufreq)
+Super + Alt + c      → Run i3-check in a popup terminal
+Super + Alt + m      → Local manuals / Learn menu
+Super + Alt + Space  → Local manuals / Learn menu
 Super + Ctrl + x     → Dictation toggle (transcribed text auto-types at cursor)
 Super + Shift + g    → Google Drive TUI
 Super + Shift + r    → Restart i3
-Super + Ctrl + r     → Reload i3 config + run i3-dedup (heal/check daemons)
+Super + Ctrl + r     → Reload i3 config
 Super + x            → Lock screen (i3lock)
 Super + Shift + q    → Exit i3
 EOF
@@ -83,6 +90,13 @@ XF86AudioRaiseVol    → Volume up (popup)
 XF86AudioLowerVol    → Volume down (popup)
 XF86AudioMute        → Mute/unmute (popup)
 XF86AudioMicMute     → Mute microphone
+XF86AudioPlay        → Spotify-only play-pause
+XF86AudioNext        → Spotify-only next track
+XF86AudioPrev        → Spotify-only previous track
+XF86AudioStop        → Spotify-only stop
+Super + Alt + p      → Spotify-only play-pause
+Super + Alt + n      → Spotify-only next track
+Super + Alt + b      → Spotify-only previous track
 Brightness Up/Down   → Brightness +/- (Fn keys)
 Print                → Screenshot → clipboard
 Super + Print        → Screen recording (start/stop)

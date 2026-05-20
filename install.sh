@@ -64,8 +64,8 @@ if [[ "$PM" == "pacman" ]]; then
         python-pywal fzf jq libnotify
         # Shell tools (used in .zshrc / aliases)
         zoxide starship fastfetch
-        # Idle detection + screensaver
-        xidlehook python-terminaltexteffects
+        # Idle detection, screensaver, touchpad gestures
+        xidlehook python-terminaltexteffects touchegg
         # File manager & trash
         yazi trash-cli
         # Disk usage & search
@@ -138,7 +138,7 @@ install_all() {
         $PM_AUR -S --needed --noconfirm \
             hyprland waybar ghostty \
             i3lock-color \
-            impala wiremix \
+            impala wiremix auto-cpufreq \
             python-pywal xob \
             ttf-iosevka-nerd \
             voxtype-bin ydotool 2>/dev/null || true
@@ -153,6 +153,12 @@ install_all() {
             voxtype setup model --set small.en 2>/dev/null || echo "  ! Could not set model — run: voxtype setup model"
         fi
         voxtype setup systemd 2>/dev/null && echo "  ✓ voxtype systemd service set up"
+    fi
+
+    if command -v touchegg &>/dev/null && command -v systemctl &>/dev/null; then
+        echo "  → Setting up touchpad gestures..."
+        sudo systemctl enable --now touchegg.service 2>/dev/null \
+            && echo "  ✓ Touchégg service enabled"
     fi
 }
 
@@ -408,6 +414,22 @@ limine_plymouth() {
     fi
 }
 
+limine_generate_default() {
+    local tmp status
+    [[ -x "$DOTFILES/limine/generate-default-limine" ]] \
+        || { echo "Missing executable: $DOTFILES/limine/generate-default-limine" >&2; return 1; }
+
+    tmp="$(mktemp)"
+    if "$DOTFILES/limine/generate-default-limine" > "$tmp"; then
+        sudo cp "$tmp" /etc/default/limine
+        status=$?
+    else
+        status=$?
+    fi
+    rm -f "$tmp"
+    return "$status"
+}
+
 limine_install() {
     echo "Installing Limine config..."
 
@@ -419,8 +441,8 @@ limine_install() {
     fi
 
     if [[ ! -f /etc/default/limine ]]; then
-        sudo cp "$DOTFILES/limine/default-limine" /etc/default/limine
-        echo "  ✓ /etc/default/limine"
+        limine_generate_default
+        echo "  ✓ /etc/default/limine (auto-detected root profile)"
     else
         echo "  ~ /etc/default/limine already exists, skipping"
     fi
@@ -449,7 +471,7 @@ limine_install() {
 limine_force() {
     echo "Force-installing Limine config..."
     sudo cp "$DOTFILES/limine/limine.conf" /boot/limine.conf && echo "  ✓ /boot/limine.conf"
-    sudo cp "$DOTFILES/limine/default-limine" /etc/default/limine && echo "  ✓ /etc/default/limine"
+    limine_generate_default && echo "  ✓ /etc/default/limine (auto-detected root profile)"
     sudo mkdir -p /etc/mkinitcpio.conf.d
     sudo cp "$DOTFILES/limine/omarchy_hooks.conf" /etc/mkinitcpio.conf.d/omarchy_hooks.conf && echo "  ✓ /etc/mkinitcpio.conf.d/omarchy_hooks.conf"
     if [[ -f "$DOTFILES/limine/backdrop.png" ]]; then
@@ -495,9 +517,13 @@ case "${1:-stow}" in
         limine_install
         ;;
     limine)
-        limine_install
+        if [[ "${2:-}" == "--force" ]]; then
+            limine_force
+        else
+            limine_install
+        fi
         ;;
-    limine\ --force|limine-force)
+    limine-force)
         limine_force
         ;;
     *)

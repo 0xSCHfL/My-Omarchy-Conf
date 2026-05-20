@@ -26,8 +26,8 @@ wallpaper-set.sh --no-wal [path]    # Set wallpaper without running pywal
    - `accent`     = `colors.color3` (yellow)
    - `error`      = `colors.color1` (red)
    - `dimmed`     = `colors.color8` (bright black)
-7. **flameshot** draw color → updates `~/.config/flameshot/flameshot.ini`
-8. `xrdb -merge colors.Xresources` — loads colors into X resources
+
+7. `xrdb -merge colors.Xresources` — loads colors into X resources
 
 ## Per-App Pywal Integration
 

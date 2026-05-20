@@ -1,0 +1,215 @@
+#!/usr/bin/env bash
+# Validate the i3 dotfiles package without changing the live session.
+# Use --fix-perms to chmod scripts with shebangs, and --dedup to run i3-dedup.
+
+set -u
+
+RED='\033[0;31m'
+YELLOW='\033[0;33m'
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+DIM='\033[2m'
+RESET='\033[0m'
+
+FIX_PERMS=0
+RUN_DEDUP=0
+FAILED=0
+WARNED=0
+
+usage() {
+    cat <<'EOF'
+Usage: i3-check [--fix-perms] [--dedup]
+
+Checks:
+  - i3 config syntax from the dotfiles repo
+  - bash syntax for shell scripts in .local/bin, .config/i3/scripts, i3blocks, tmux, wal, shell
+  - executable bit on shebang scripts
+  - important command dependencies
+  - common keybinding documentation drift
+
+Options:
+  --fix-perms   chmod +x scripts that have a shebang but are not executable
+  --dedup       run i3-dedup after validation to heal runtime daemons
+  -h, --help    show this help
+EOF
+}
+
+for arg in "$@"; do
+    case "$arg" in
+        --fix-perms) FIX_PERMS=1 ;;
+        --dedup) RUN_DEDUP=1 ;;
+        -h|--help) usage; exit 0 ;;
+        *) echo -e "${RED}Unknown option:${RESET} $arg" >&2; usage; exit 2 ;;
+    esac
+done
+
+script_path="${BASH_SOURCE[0]}"
+while [[ -L "$script_path" ]]; do
+    dir="$(cd -P "$(dirname "$script_path")" >/dev/null 2>&1 && pwd)"
+    script_path="$(readlink "$script_path")"
+    [[ "$script_path" != /* ]] && script_path="$dir/$script_path"
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$script_path")" >/dev/null 2>&1 && pwd)"
+I3_ROOT="$(cd "$SCRIPT_DIR/../.." >/dev/null 2>&1 && pwd)"
+DOTFILES_ROOT="$(cd "$I3_ROOT/.." >/dev/null 2>&1 && pwd)"
+I3_CONFIG="$I3_ROOT/.config/i3/config"
+
+ok() { echo -e "  ${GREEN}✓${RESET} $*"; }
+warn() { echo -e "  ${YELLOW}!${RESET} $*"; WARNED=1; }
+fail() { echo -e "  ${RED}✗${RESET} $*"; FAILED=1; }
+section() { echo; echo -e "${BOLD}$*${RESET}"; }
+
+section "󰍹 i3 dotfiles check"
+echo -e "  ${DIM}root:${RESET} $I3_ROOT"
+
+section "󰌽 i3 config syntax"
+if [[ ! -f "$I3_CONFIG" ]]; then
+    fail "missing config: $I3_CONFIG"
+elif command -v i3 >/dev/null 2>&1; then
+    if output="$(i3 -C -c "$I3_CONFIG" 2>&1)"; then
+        ok "i3 config syntax passed"
+    else
+        fail "i3 config syntax failed"
+        printf '%s\n' "$output" | sed 's/^/    /'
+    fi
+else
+    warn "i3 command not found; skipped config syntax check"
+fi
+
+section "󰈙 shell syntax"
+script_dirs=(
+    "$I3_ROOT/.local/bin"
+    "$I3_ROOT/.config/i3/scripts"
+    "$I3_ROOT/.config/i3blocks/scripts"
+    "$I3_ROOT/.config/tmux/scripts"
+    "$I3_ROOT/.config/wal"
+    "$I3_ROOT/shell"
+)
+
+checked=0
+syntax_failed=0
+not_exec=()
+
+for dir in "${script_dirs[@]}"; do
+    [[ -d "$dir" ]] || continue
+    while IFS= read -r -d '' file; do
+        [[ -f "$file" ]] || continue
+        head="$(head -c 80 "$file" 2>/dev/null || true)"
+        [[ "$head" == '#!'* ]] || continue
+        checked=$((checked + 1))
+
+        case "$head" in
+            *bash*|*'/sh'*)
+                if ! err="$(bash -n "$file" 2>&1)"; then
+                    syntax_failed=$((syntax_failed + 1))
+                    fail "bash syntax failed: ${file#$I3_ROOT/}"
+                    printf '%s\n' "$err" | sed 's/^/    /'
+                fi
+                ;;
+        esac
+
+        if [[ ! -x "$file" ]]; then
+            not_exec+=("$file")
+        fi
+    done < <(find "$dir" -type f ! -path '*/__pycache__/*' -print0 2>/dev/null)
+done
+
+if [[ "$syntax_failed" -eq 0 ]]; then
+    ok "bash syntax passed for $checked shebang scripts"
+fi
+
+section "󰐕 executable bits"
+if [[ "${#not_exec[@]}" -eq 0 ]]; then
+    ok "all shebang scripts are executable"
+else
+    for file in "${not_exec[@]}"; do
+        rel="${file#$I3_ROOT/}"
+        if [[ "$FIX_PERMS" -eq 1 ]]; then
+            if chmod +x "$file"; then
+                ok "chmod +x $rel"
+            else
+                fail "could not chmod +x $rel"
+            fi
+        else
+            warn "not executable: $rel"
+        fi
+    done
+    [[ "$FIX_PERMS" -eq 0 ]] && warn "run: i3-check --fix-perms"
+fi
+
+section "󰇚 important dependencies"
+required=(
+    i3 i3-msg i3blocks rofi kitty alacritty feh wal xrdb picom dunst dunstctl
+    xss-lock xidlehook maim magick i3lock xclip xdotool brightnessctl pactl playerctl
+    jq python3 bash find pgrep ps sed awk grep cut
+)
+optional=(
+    qutebrowser chromium brave flatpak impala wiremix auto-cpufreq tesseract
+    ffmpeg slop ueberzugpp fzf imv mpv zathura nautilus Telegram discord
+)
+missing_required=0
+for cmd in "${required[@]}"; do
+    if command -v "$cmd" >/dev/null 2>&1; then
+        :
+    else
+        warn "missing required-ish command: $cmd"
+        missing_required=$((missing_required + 1))
+    fi
+done
+if [[ "$missing_required" -eq 0 ]]; then
+    ok "core commands found"
+fi
+
+missing_optional=()
+for cmd in "${optional[@]}"; do
+    command -v "$cmd" >/dev/null 2>&1 || missing_optional+=("$cmd")
+done
+if [[ "${#missing_optional[@]}" -gt 0 ]]; then
+    warn "optional commands not found: ${missing_optional[*]}"
+else
+    ok "optional app commands found"
+fi
+
+section "󰌌 docs/keybinding drift"
+if [[ -f "$I3_ROOT/.local/bin/i3-keys" ]]; then
+    keys_text="$(cat "$I3_ROOT/.local/bin/i3-keys")"
+    if grep -q 'bindsym Mod1+Tab .*focus-next' "$I3_CONFIG" && grep -q 'Super + Tab.*Cycle focus' <<<"$keys_text"; then
+        warn "i3-keys says Super+Tab cycles focus, but config uses Alt+Tab"
+    else
+        ok "Alt/Super Tab help text looks consistent"
+    fi
+
+    if grep -q 'Super + Ctrl + r.*i3-dedup' <<<"$keys_text" && ! grep -q 'Mod4+Ctrl+r.*i3-dedup' "$I3_CONFIG"; then
+        warn "i3-keys says Super+Ctrl+r runs i3-dedup, but config only reloads i3"
+    else
+        ok "reload/dedup help text looks consistent"
+    fi
+else
+    warn "missing i3-keys help script"
+fi
+
+section "󰐥 runtime daemons"
+if [[ "$RUN_DEDUP" -eq 1 ]]; then
+    if command -v i3-dedup >/dev/null 2>&1; then
+        i3-dedup || fail "i3-dedup returned non-zero"
+    elif [[ -x "$I3_ROOT/.local/bin/i3-dedup" ]]; then
+        "$I3_ROOT/.local/bin/i3-dedup" || fail "i3-dedup returned non-zero"
+    else
+        warn "i3-dedup not found/executable"
+    fi
+else
+    ok "skipped daemon healing; run: i3-check --dedup"
+fi
+
+section "Summary"
+if [[ "$FAILED" -eq 0 && "$WARNED" -eq 0 ]]; then
+    echo -e "${GREEN}${BOLD}All checks passed.${RESET}"
+    exit 0
+elif [[ "$FAILED" -eq 0 ]]; then
+    echo -e "${YELLOW}${BOLD}Checks passed with warnings.${RESET}"
+    exit 0
+else
+    echo -e "${RED}${BOLD}Checks failed.${RESET}"
+    exit 1
+fi

@@ -7,6 +7,7 @@ DOTFILES="$HOME/Work/dotfiles"
 MACHINE_ID="$(cat /etc/machine-id)"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 PLYMOUTH_THEME="0xSSfN"
+TMP_DEFAULT_LIMINE=""
 
 backup_if_exists() {
   local path="$1"
@@ -14,6 +15,12 @@ backup_if_exists() {
     sudo cp -a "$path" "$path.bak.$STAMP"
   fi
 }
+
+cleanup() {
+  [[ -n "$TMP_DEFAULT_LIMINE" && -f "$TMP_DEFAULT_LIMINE" ]] && rm -f "$TMP_DEFAULT_LIMINE"
+}
+
+trap cleanup EXIT
 
 if [[ -f /boot/EFI/Linux/omarchy_linux.efi && -f /boot/EFI/Linux/${MACHINE_ID}_linux.efi ]]; then
   echo "Cleanup extra UKI"
@@ -26,8 +33,15 @@ backup_if_exists /etc/default/limine
 backup_if_exists /etc/mkinitcpio.conf.d/omarchy_hooks.conf
 
 echo "Resetting Limine, cmdline, and initramfs hook config..."
+if [[ ! -x "$DOTFILES/limine/generate-default-limine" ]]; then
+  echo "ERROR: missing executable: $DOTFILES/limine/generate-default-limine" >&2
+  exit 1
+fi
+
+TMP_DEFAULT_LIMINE="$(mktemp)"
+"$DOTFILES/limine/generate-default-limine" > "$TMP_DEFAULT_LIMINE"
 sudo cp "$DOTFILES/limine/limine.conf" /boot/limine.conf
-sudo cp "$DOTFILES/limine/default-limine" /etc/default/limine
+sudo cp "$TMP_DEFAULT_LIMINE" /etc/default/limine
 sudo mkdir -p /etc/mkinitcpio.conf.d
 sudo cp "$DOTFILES/limine/omarchy_hooks.conf" /etc/mkinitcpio.conf.d/omarchy_hooks.conf
 

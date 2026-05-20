@@ -1,4 +1,4 @@
-/* Super+Space app launcher — pywal card style */
+/* Battery / auto-cpufreq menu — pywal-aware compact card */
 @import "~/.cache/wal/colors-rofi-dwm.rasi"
 
 * {
@@ -8,6 +8,9 @@
     accent:      @wal-accent;
     prompt:      @wal-prompt;
     border:      @wal-border;
+    urgent:      #e78284;
+    warning:     #e5c890;
+    success:     #a6d189;
 
     background-color: transparent;
     text-color:       @fg;
@@ -18,7 +21,7 @@
 
 window {
     location:         center;
-    width:            640px;
+    width:            520px;
     border:           1px;
     border-radius:    18px;
     border-color:     @border;
@@ -31,7 +34,7 @@ mainbox {
 }
 
 inputbar {
-    padding:       13px 15px;
+    padding:       12px 14px;
     spacing:       10px;
     border-radius: 14px;
     background-color: rgba(255, 255, 255, 0.04);
@@ -44,13 +47,24 @@ prompt {
 }
 
 entry {
-    font:              "Iosevka Nerd Font 13";
-    placeholder:       "launch app...";
+    font:              "Iosevka Nerd Font 12";
+    placeholder:       "choose power mode...";
     placeholder-color: @fg-dim;
 }
 
+message {
+    padding:       0;
+    border-radius: 12px;
+}
+
+textbox {
+    padding:    0 2px;
+    font:       "Iosevka Nerd Font 10";
+    text-color: @fg-dim;
+}
+
 listview {
-    lines:        8;
+    lines:        6;
     columns:      1;
     fixed-height: true;
     spacing:      7px;
@@ -58,23 +72,16 @@ listview {
 }
 
 element {
-    padding:       10px 14px;
-    spacing:       12px;
+    padding:       11px 14px;
     border:        1px;
     border-radius: 12px;
     border-color:  transparent;
     background-color: transparent;
 }
 
-element selected normal,
-element selected active {
+element selected normal {
     border-color:     @prompt;
     background-color: rgba(255, 255, 255, 0.06);
-}
-
-element-icon {
-    size:   26px;
-    margin: 0 8px 0 0;
 }
 
 element-text {
@@ -88,5 +95,6 @@ element selected element-text {
 }
 
 scrollbar {
-    width: 0;
+    width:        0;
+    handle-color: @border;
 }

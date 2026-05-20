@@ -89,7 +89,6 @@ Plymouth name (`0xSSfN`) matches the machine hostname.
 - alacritty (`~/.config/alacritty/alacritty-wal.toml`)
 - dunst (via `~/.config/wal/hooks/dunst-colors`)
 - SDDM theme background
-- flameshot config
 - Xresources
 
 ## Packages Required for Boot/Login

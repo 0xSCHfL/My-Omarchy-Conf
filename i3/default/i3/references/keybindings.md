@@ -57,6 +57,8 @@ Mod = Super (Windows key)
 |-----|--------|
 | `Mod+1-0` | Switch to workspace |
 | `Mod+Shift+1-0` | Move window to workspace (and follow) |
+| `Mod+PageDown` | Next workspace (also touchpad 3-finger swipe left) |
+| `Mod+PageUp` | Previous workspace (also touchpad 3-finger swipe right) |
 
 ## System
 
@@ -69,6 +71,10 @@ Mod = Super (Windows key)
 | `Mod+Delete` | Process killer (i3-kill) |
 | `Mod+x` | Lock screen (i3lock-color + maim blur) |
 | `Mod+Ctrl+k` | Keybinding cheatsheet (i3-keys) |
+| `Mod+Alt+k` | Keybinding cheatsheet (i3-keys) |
+| `Mod+Alt+c` | Run i3-check in a popup terminal |
+| `Mod+Alt+m` | Local manuals / Learn menu (i3-manuals) |
+| `Mod+Alt+Space` | Local manuals / Learn menu (i3-manuals) |
 
 ## Media & Volume
 
@@ -78,10 +84,18 @@ Mod = Super (Windows key)
 | `XF86AudioLowerVolume` | Volume down |
 | `XF86AudioMute` | Toggle mute |
 | `XF86AudioMicMute` | Toggle mic mute (pactl) |
+| `XF86AudioPlay` | Spotify-only play-pause |
+| `XF86AudioNext` | Spotify-only next track |
+| `XF86AudioPrev` | Spotify-only previous track |
+| `XF86AudioStop` | Spotify-only stop |
+| `Mod+Alt+p` | Spotify-only play-pause |
+| `Mod+Alt+n` | Spotify-only next track |
+| `Mod+Alt+b` | Spotify-only previous track |
 | `XF86MonBrightnessUp` | Brightness +5% (brightnessctl) |
 | `XF86MonBrightnessDown` | Brightness -5% |
 | `Mod+Ctrl+w` | WiFi TUI (impala in alacritty) |
 | `Mod+Ctrl+a` | Audio mixer TUI (wiremix in alacritty) |
+| `Mod+Ctrl+b` | Battery CPU profile menu (auto-cpufreq) |
 | `Mod+Shift+t` | btop (kitty) |
 
 ## Notifications (dunst)
@@ -107,7 +121,6 @@ Mod = Super (Windows key)
 | Key | Action |
 |-----|--------|
 | `Mod+v` | Text clipboard history (cliphist + rofi) |
-| `Mod+Ctrl+v` | CopyQ show |
 | `Mod+Shift+v` | Image clipboard history (i3-imgcliphist) |
 | `Mod+Shift+i` | Image picker (fzfub + ueberzugpp) |
 

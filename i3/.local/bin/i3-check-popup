@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Open i3-check in a floating Alacritty popup and keep it open for reading.
+
+set -euo pipefail
+
+exec alacritty --class i3-check -e bash -lc '$HOME/.local/bin/i3-check; status=$?; echo; read -rp "Press enter to close..."; exit "$status"'

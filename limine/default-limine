@@ -1,3 +1,6 @@
+# Legacy/reference config for this laptop only.
+# Scripts now generate /etc/default/limine with limine/generate-default-limine.
+# Do not copy this file to another machine unless its root layout matches.
 #TARGET_OS_NAME="Omarchy"
 TARGET_OS_NAME="Sohaib"
 

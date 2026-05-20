@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+MANUAL_DIR="$HOME/Work/dotfiles/i3/manuals"
+ROFI_THEME="$HOME/.config/rofi/i3-manuals.rasi"
+
+menu() {
+  rofi -dmenu -i -no-sort \
+    -theme "$ROFI_THEME" \
+    -kb-row-up "k,Up" \
+    -kb-row-down "j,Down" \
+    -kb-cancel "Escape,q" \
+    -p "$1"
+}
+
+open_manual() {
+  local file="$1"
+
+  if [[ ! -f "$file" ]]; then
+    notify-send "Manual missing" "$file" -u critical 2>/dev/null || true
+    exit 1
+  fi
+
+  setsid -f kitty --class i3-manuals -e nvim "$file" >/dev/null 2>&1
+}
+
+choice="$(
+  cat <<'EOF' | menu "Learn"
+  Neovim
+  Tmux
+󱆃  Shell
+  i3
+󰕮  Rofi Menus
+󰚰  Maintenance
+EOF
+)"
+
+case "${choice:-}" in
+  *Neovim*)      open_manual "$MANUAL_DIR/neovim.md" ;;
+  *Tmux*)        open_manual "$MANUAL_DIR/tmux.md" ;;
+  *Shell*)       open_manual "$MANUAL_DIR/shell.md" ;;
+  *i3*)          open_manual "$MANUAL_DIR/i3.md" ;;
+  *Rofi*)        open_manual "$MANUAL_DIR/rofi.md" ;;
+  *Maintenance*) open_manual "$MANUAL_DIR/maintenance.md" ;;
+esac
