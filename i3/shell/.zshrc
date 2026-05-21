@@ -75,7 +75,7 @@ fi
 #######################################################
 pacf() {
   if [ $# -eq 0 ]; then
-    pacman -Slq | fzf --multi --preview 'pacman -Si {1}' --preview-window=down:75% --prompt='Install packages: ' | xargs -ro sudo pacman -S --noconfirm --needed
+    pacman -Q | fzf --multi --preview 'pacman -Si {1}' --preview-window=down:75% --prompt='Installed packages: ' | xargs -ro sudo pacman -S --noconfirm --needed
   else
     sudo pacman -S --noconfirm --needed "$@"
   fi

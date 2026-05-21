@@ -58,6 +58,13 @@ The following commands are pre-authorized — no need to ask before running them
 - `chmod` — make scripts executable
 - `find` / `grep` / `awk` / `sed` / `python3` — file search and text processing
 
+## Git Branch Strategy
+
+- **`main`** → home PC configuration
+- **`work`** → work PC configuration
+- Shared fixes: commit on one branch, `git cherry-pick <hash>` onto the other
+- Machine-specific changes: commit only on the relevant branch
+
 ## Always Ask First
 
 - `sudo` — any privileged command

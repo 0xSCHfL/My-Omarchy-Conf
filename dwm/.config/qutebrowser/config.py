@@ -19,6 +19,10 @@ c.url.searchengines = {
 c.fonts.default_family = "monospace"
 c.fonts.default_size = "11pt"
 
+# Spoof Chrome user agent for Google login (qutebrowser blocked otherwise)
+config.set('content.headers.user_agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36', 'https://*.google.com/*')
+config.set('content.headers.user_agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36', 'https://accounts.google.com/*')
+
 # Editor
 c.editor.command = ["st", "-e", "nvim", "{}"]
 

@@ -3,6 +3,13 @@
 # Show a splash immediately while the slow textual import runs.
 import sys as _sys
 import shutil as _shutil
+import atexit as _atexit
+
+def _restore_terminal() -> None:
+    _sys.stdout.write("\033[0m\033[?25h")
+    _sys.stdout.flush()
+
+_atexit.register(_restore_terminal)
 
 _LOGO_LINES = [
     "█████████████▄  ███████████   ████       ████▄████     ████   █████████    ███  ███████████",
@@ -23,7 +30,7 @@ _pad = " " * _left
 _lines = [f"\033[{_top + i + 1};1H{_pad}{l}" for i, l in enumerate(_LOGO_LINES)]
 _sub_line = f"\033[{_top + len(_LOGO_LINES) + 2};1H{' ' * _sub_left}\033[38;5;245m{_SUBTITLE}\033[0m"
 
-_sys.stdout.write("\033[?25l\033[2J\033[1;38;5;180m" + "".join(_lines) + "\033[0m" + _sub_line)
+_sys.stdout.write("\033[0m\033[?25l\033[2J\033[H\033[1;38;5;180m" + "".join(_lines) + "\033[0m" + _sub_line)
 _sys.stdout.flush()
 
 import json
@@ -736,6 +743,83 @@ class AccountPickerScreen(ModalScreen):
             event.stop()
 
 
+class BrowserPickerScreen(ModalScreen):
+    BROWSERS = {
+        "default": ("Default browser", None, None),
+        "brave": ("Brave", "brave", "Brave-browser"),
+        "firefox": ("Firefox", "firefox", "firefox"),
+        "chromium": ("Chromium", "chromium", "Chromium"),
+    }
+    DEFAULT_BROWSER_MAP = {
+        "brave-browser.desktop": ("Default browser (Brave)", "brave", "Brave-browser"),
+        "brave.desktop": ("Default browser (Brave)", "brave", "Brave-browser"),
+        "chromium.desktop": ("Default browser (Chromium)", "chromium", "Chromium"),
+        "firefox.desktop": ("Default browser (Firefox)", "firefox", "firefox"),
+    }
+
+    @classmethod
+    def default_browser(cls) -> tuple[str, str | None, str | None]:
+        for cmd in (
+            ["xdg-settings", "get", "default-web-browser"],
+            ["xdg-mime", "query", "default", "x-scheme-handler/https"],
+            ["xdg-mime", "query", "default", "x-scheme-handler/http"],
+        ):
+            try:
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=1)
+            except Exception:
+                continue
+            desktop = result.stdout.strip().lower()
+            if desktop in cls.DEFAULT_BROWSER_MAP:
+                return cls.DEFAULT_BROWSER_MAP[desktop]
+        return cls.BROWSERS["default"]
+
+    def compose(self) -> ComposeResult:
+        with Vertical(id="picker-dialog"):
+            yield Label("󰖟  Choose OAuth browser", id="picker-title")
+            table = DataTable(id="picker-table", cursor_type="row", show_header=False, zebra_stripes=False)
+            table.add_column("browser", width=64)
+            for key, (name, command, _window_class) in self.BROWSERS.items():
+                if key == "default":
+                    name, command, _window_class = self.default_browser()
+                installed = "system default" if command is None else (shutil.which(command) or "not found")
+                table.add_row(f"  {name:<16}  {installed}", key=key)
+            yield table
+            yield Label(r"\[j/k] Move    \[Enter] Select    \[Esc] Cancel", id="picker-hint")
+
+    def on_mount(self) -> None:
+        self.query_one("#picker-table", DataTable).focus()
+
+    def _cursor_key(self) -> str | None:
+        table = self.query_one("#picker-table", DataTable)
+        if table.row_count == 0:
+            return None
+        return table.coordinate_to_cell_key(table.cursor_coordinate).row_key.value
+
+    def _select_current(self) -> None:
+        key = self._cursor_key()
+        if key is None:
+            self.dismiss(None)
+            return
+        if key == "default":
+            self.dismiss(self.default_browser())
+            return
+        self.dismiss(self.BROWSERS[key])
+
+    def on_key(self, event) -> None:
+        if event.key == "escape":
+            self.dismiss(None)
+            event.stop()
+        elif event.key == "j":
+            self.query_one("#picker-table", DataTable).action_cursor_down()
+            event.stop()
+        elif event.key == "k":
+            self.query_one("#picker-table", DataTable).action_cursor_up()
+            event.stop()
+        elif event.key == "enter":
+            self._select_current()
+            event.stop()
+
+
 class SetupScreen(ModalScreen):
     def __init__(self, remote_name: str, **kwargs):
         super().__init__(**kwargs)
@@ -756,21 +840,138 @@ class SetupScreen(ModalScreen):
 
     def on_key(self, event) -> None:
         if event.key == "s":
-            logging.info("setup oauth start remote=%s", self.remote_name)
-            self._set_status("Opening browser… authorize in browser then wait here.")
-            self.run_worker(self._do_auth, thread=True)
+            self.app.push_screen(BrowserPickerScreen(), self._on_browser_chosen)
+            event.stop()
         elif event.key == "q":
             self.app.exit()
+            event.stop()
 
-    def _do_auth(self) -> bool:
-        result = subprocess.run(
-            ["rclone", "authorize", "drive"],
-            capture_output=True, text=True
+    def _on_browser_chosen(self, result: tuple[str, str | None, str | None] | None) -> None:
+        if result is None:
+            self._set_status("")
+            return
+        name, command, window_class = result
+        logging.info("setup oauth start remote=%s browser=%s", self.remote_name, command or "default")
+        self._set_status(f"Opening {name}… authorize in browser then wait here.")
+        self.run_worker(lambda: self._do_auth(command, window_class), thread=True)
+
+    def _get_window_ids(self, window_class: str) -> set[str]:
+        r = subprocess.run(["xdotool", "search", "--class", window_class], capture_output=True, text=True)
+        return set(r.stdout.strip().split()) if r.stdout.strip() else set()
+
+    def _float_window_by_id(self, wid: str) -> None:
+        subprocess.run(
+            ["i3-msg", f"[id={wid}] floating enable, resize set 980 760, move position center, focus"],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         )
-        if result.returncode != 0:
+
+    def _float_auth_window(self, window_class: str, existing_ids: set[str]) -> None:
+        for _ in range(160):
+            _time.sleep(0.05)
+            # Custom class: new instance with --class flag
+            subprocess.run(
+                ["i3-msg", '[class="i3-gdrive-browser"] floating enable, resize set 980 760, move position center, focus'],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            )
+            # Native class: reused instance detected by new window ID
+            new_ids = self._get_window_ids(window_class) - existing_ids
+            for wid in new_ids:
+                self._float_window_by_id(wid)
+
+    def _monitor_auth_browser(self, proc: subprocess.Popen, window_class: str, existing_ids: set[str]) -> None:
+        # Wait up to 15s for a new browser window to appear
+        for _ in range(30):
+            _time.sleep(0.5)
+            has_custom = subprocess.run(["xdotool", "search", "--class", "i3-gdrive-browser"],
+                                        capture_output=True).stdout.strip()
+            has_native = self._get_window_ids(window_class) - existing_ids
+            if has_custom or has_native:
+                break
+        else:
+            return
+        # Watch for all auth windows to close
+        while proc.poll() is None:
+            _time.sleep(1)
+            has_custom = subprocess.run(["xdotool", "search", "--class", "i3-gdrive-browser"],
+                                        capture_output=True).stdout.strip()
+            has_native = self._get_window_ids(window_class) - existing_ids
+            if not has_custom and not has_native:
+                proc.terminate()
+                self.app.call_from_thread(self._set_status, "Browser closed — press S to retry.")
+                break
+
+    def _open_auth_url(self, browser_cmd: str, window_class: str | None, url: str) -> bool:
+        browser = shutil.which(browser_cmd)
+        if not browser:
+            logging.warning("browser command not found: %s", browser_cmd)
             return False
+        existing_ids = self._get_window_ids(window_class) if window_class else set()
+        args = [browser, url]
+        if browser_cmd in {"brave", "chromium"}:
+            args = [browser, "--class=i3-gdrive-browser", "--new-window", url]
+        elif browser_cmd == "firefox":
+            args = [browser, "--class", "i3-gdrive-browser", "--new-window", url]
+        try:
+            subprocess.Popen(
+                args,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+            if window_class:
+                threading.Thread(target=self._float_auth_window, args=(window_class, existing_ids), daemon=True).start()
+            return True
+        except Exception:
+            logging.exception("failed to open browser=%s url=%s", browser_cmd, url)
+            return False
+
+    def _do_auth(self, browser_cmd: str | None = None, window_class: str | None = None) -> bool:
+        if browser_cmd is None:
+            result = subprocess.run(
+                ["rclone", "authorize", "drive"],
+                capture_output=True, text=True
+            )
+            stdout = result.stdout
+            if result.returncode != 0:
+                logging.warning("rclone authorize failed rc=%s stderr=%s", result.returncode, result.stderr)
+                return False
+        else:
+            proc = subprocess.Popen(
+                ["rclone", "authorize", "drive", "--auth-no-open-browser"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+            )
+            output: list[str] = []
+            opened = False
+            url_re = re.compile(r"https?://\S+")
+            assert proc.stdout is not None
+            for line in proc.stdout:
+                output.append(line)
+                if opened:
+                    continue
+                match = url_re.search(line)
+                if match and "/auth?" in match.group(0):
+                    url = match.group(0).strip().strip('"').rstrip('".,)')
+                    existing_ids = self._get_window_ids(window_class) if window_class else set()
+                    opened = self._open_auth_url(browser_cmd, window_class, url)
+                    if opened and window_class:
+                        threading.Thread(
+                            target=self._monitor_auth_browser,
+                            args=(proc, window_class, existing_ids),
+                            daemon=True,
+                        ).start()
+            proc.wait()
+            stdout = "".join(output)
+            if proc.returncode != 0:
+                logging.warning("rclone authorize failed rc=%s output=%s", proc.returncode, stdout)
+                return False
+            if not opened:
+                logging.warning("rclone authorize did not expose auth url browser=%s", browser_cmd)
+                return False
+
         # Token JSON is in stdout between { and the last }
-        stdout = result.stdout
         start = stdout.find("{")
         end = stdout.rfind("}") + 1
         if start == -1 or end == 0:
