@@ -1,9 +1,12 @@
 #!/bin/bash
+# Text clipboard history picker (rofi, vim-style nav)
 while true; do
     sel=$(cliphist list | rofi -dmenu -no-sort -i \
         -theme ~/.config/rofi/dwm-keys.rasi \
-        -kb-row-up 'k,Up' \
-        -kb-row-down 'j,Down' \
+        -kb-accept-entry 'Return,KP_Enter' \
+        -kb-remove-to-eol '' \
+        -kb-row-up 'ctrl+k,Up' \
+        -kb-row-down 'ctrl+j,Down' \
         -kb-cancel 'Escape,h,q' \
         -kb-remove-char-forward '' \
         -kb-custom-1 'ctrl+d' \
@@ -11,7 +14,7 @@ while true; do
 
     case $? in
         0)  cliphist decode <<< "$sel" | xclip -selection clipboard; break ;;
-        10) cliphist delete <<< "$sel" ;;  # delete and loop back
+        10) cliphist delete <<< "$sel" ;;  # delete and stay open
         *)  break ;;                        # Escape/cancel → close
     esac
 done

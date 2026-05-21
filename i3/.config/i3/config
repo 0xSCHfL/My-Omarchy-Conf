@@ -69,36 +69,57 @@ exec_always --no-startup-id bash -c 'pkill -f "\.local/bin/batmon$" 2>/dev/null;
 # exec_always --no-startup-id bash -c 'pkill -f "i3-autolayout" 2>/dev/null; sleep 0.1; exec i3-autolayout autolayout'
 
 # Volume keys with a real i3 floating popup
+# Volume up with floating OSD (volume-osd.sh)
 bindsym XF86AudioRaiseVolume exec --no-startup-id $HOME/.config/i3/scripts/media/volume-osd.sh up
+# Volume down with floating OSD (volume-osd.sh)
 bindsym XF86AudioLowerVolume exec --no-startup-id $HOME/.config/i3/scripts/media/volume-osd.sh down
+# Toggle mute with OSD (volume-osd.sh)
 bindsym XF86AudioMute exec --no-startup-id $HOME/.config/i3/scripts/media/volume-osd.sh mute
+# Toggle microphone mute (pactl)
 bindsym XF86AudioMicMute exec --no-startup-id pactl set-source-mute @DEFAULT_SOURCE@ toggle
 
 # Spotify playback controls pinned to Spotify, so Brave/YouTube does not steal them
+# Spotify play/pause (playerctl)
 bindsym XF86AudioPlay exec --no-startup-id playerctl -p spotify play-pause
+# Spotify next track (playerctl)
 bindsym XF86AudioNext exec --no-startup-id playerctl -p spotify next
+# Spotify previous track (playerctl)
 bindsym XF86AudioPrev exec --no-startup-id playerctl -p spotify previous
+# Spotify stop (playerctl)
 bindsym XF86AudioStop exec --no-startup-id playerctl -p spotify stop
+# Spotify play/pause (playerctl)
 bindsym Mod4+Mod1+p exec --no-startup-id playerctl -p spotify play-pause
+# Spotify next track (playerctl)
 bindsym Mod4+Mod1+n exec --no-startup-id playerctl -p spotify next
+# Spotify previous track (playerctl)
 bindsym Mod4+Mod1+b exec --no-startup-id playerctl -p spotify previous
 
 # Brightness controls
+# Brightness up 5% (brightnessctl)
 bindsym XF86MonBrightnessUp exec --no-startup-id brightnessctl set +5%
+# Brightness down 5% (brightnessctl)
 bindsym XF86MonBrightnessDown exec --no-startup-id brightnessctl set 5%-
 
 # WiFi and Audio controls
+# WiFi TUI in floating terminal (i3-launch-wifi.sh)
 bindsym Mod4+Ctrl+w exec --no-startup-id $HOME/.config/i3/scripts/media/i3-launch-wifi.sh
+# Audio TUI in floating terminal (i3-launch-audio.sh)
 bindsym Mod4+Ctrl+a exec --no-startup-id $HOME/.config/i3/scripts/media/i3-launch-audio.sh
+# Google Drive TUI (i3-gdrive)
 bindsym Mod4+Shift+g exec --no-startup-id alacritty --class i3-gdrive -e i3-gdrive
 
 # Dictation (voxtype) — toggle: Super+Ctrl+X to record, press again to stop & auto-type
+# Dictation toggle, auto-types result (voxtype-toggle-paste.sh)
 bindsym Mod4+Ctrl+x exec --no-startup-id $HOME/.config/i3/scripts/utils/voxtype-toggle-paste.sh
 
 # Notification controls (dunst)
+# Dismiss last notification (dunstctl)
 bindsym Mod4+comma exec dunstctl close
+# Dismiss all notifications (dunstctl)
 bindsym Mod4+Shift+comma exec dunstctl close-all
+# Pause/unpause notifications (dunstctl)
 bindsym Mod4+Ctrl+comma exec dunstctl set-paused toggle
+# Invoke last notification action (dunstctl)
 bindsym Mod4+Mod1+comma exec dunstctl invoke
 
 # use these keys for focus, movement, and resize directions when reaching for
@@ -112,6 +133,7 @@ set $right l
 floating_modifier Mod4
 for_window [class="i3-screensaver"] fullscreen enable, border none
 for_window [class="fzfmenu"] floating enable, move position center
+for_window [class="i3-cliphist-fzf"] floating enable, resize set 1000 500, move position center
 for_window [class="fzf"] floating enable, move position center
 for_window [class="Walker"] floating enable, resize set 644 300, move position center
 for_window [class="walker"] floating enable, resize set 644 300, move position center
@@ -145,19 +167,28 @@ for_window [class="^Zathura$"] floating enable, resize set 1100 800, move positi
 tiling_drag modifier titlebar
 
 # start a terminal
+# Open a terminal (kitty)
 bindsym Mod4+Return exec kitty
+# Open Brave browser (i3-brave)
 bindsym Mod4+Shift+b exec --no-startup-id i3-brave
+# Launch Spotify (flatpak)
 bindsym Mod4+Shift+s exec bash -c 'rm -f ~/.var/app/com.spotify.Client/cache/spotify/Singleton* && flatpak run com.spotify.Client'
+# Brave in incognito mode (i3-brave)
 bindsym Mod4+Shift+Mod1+b exec --no-startup-id i3-brave --incognito
+# Open Chromium (X11) (chromium)
 bindsym Mod4+Shift+c exec bash -c 'rm -f ~/.config/chromium/Singleton* && chromium --ozone-platform=x11'
 # Super+Shift+v merged into Super+v (combined text+image picker)
+# System monitor in terminal (btop)
 bindsym Mod4+Shift+t exec --no-startup-id kitty -e btop
+# Pomodoro/timer menu (timer)
 bindsym Mod4+Shift+m exec --no-startup-id ~/.config/i3blocks/scripts/timer menu
 
 # kill focused window
+# Close focused window (i3 kill)
 bindsym Mod4+w kill
 
 # start dmenu (a program launcher)
+# App launcher grid (rofi drun)
 bindsym Mod4+space exec --no-startup-id rofi -show drun -theme ~/.config/rofi/i3-launcher.rasi
 # A more modern dmenu replacement is rofi:
 # bindsym Mod4+d exec "rofi -modi drun,run -show drun"
@@ -166,65 +197,93 @@ bindsym Mod4+space exec --no-startup-id rofi -show drun -theme ~/.config/rofi/i3
 # bindsym Mod4+d exec --no-startup-id i3-dmenu-desktop
 
 # change focus
+# Focus window left (vim h)
 bindsym Mod4+$left focus left
+# Focus window down (vim j)
 bindsym Mod4+$down focus down
+# Focus window up (vim k)
 bindsym Mod4+$up focus up
+# Focus window right (vim l)
 bindsym Mod4+$right focus right
 
 # alternatively, you can use the cursor keys:
+# Focus window left (arrow)
 bindsym Mod4+Left focus left
+# Focus window down (arrow)
 bindsym Mod4+Down focus down
+# Focus window up (arrow)
 bindsym Mod4+Up focus up
+# Focus window right (arrow)
 bindsym Mod4+Right focus right
 
 # move focused window
+# Move window left (vim h)
 bindsym Mod4+Shift+$left move left
+# Move window down (vim j)
 bindsym Mod4+Shift+$down move down
+# Move window up (vim k)
 bindsym Mod4+Shift+$up move up
+# Move window right (vim l)
 bindsym Mod4+Shift+$right move right
 
 # alternatively, you can use the cursor keys:
+# Move window left (arrow)
 bindsym Mod4+Shift+Left move left
+# Move window down (arrow)
 bindsym Mod4+Shift+Down move down
+# Move window up (arrow)
 bindsym Mod4+Shift+Up move up
+# Move window right (arrow)
 bindsym Mod4+Shift+Right move right
 
 # split in horizontal orientation
+# Next window opens horizontally (i3 split)
 bindsym Mod4+Ctrl+h split h
 # split in vertical orientation
+# Next window opens vertically (i3 split)
 bindsym Mod4+Ctrl+l split v
 
 
 # true fullscreen: hides bar (like Hyprland fullscreen 0)
+# True fullscreen, hides bar (fullscreen.sh)
 bindsym Mod4+f exec --no-startup-id ~/.config/i3/scripts/utils/fullscreen.sh
 
 # file manager
+# Open file manager (nautilus)
 bindsym Mod4+Shift+f exec --no-startup-id nautilus --new-window
 # maximize: fills screen, bar stays, app UI preserved (not fullscreen)
+# Maximize, keeps bar visible (maximize.sh)
 bindsym Mod4+Mod1+f exec --no-startup-id ~/.config/i3/scripts/utils/maximize.sh
 
 # change container layout (stacked, tabbed, toggle split)
+# Stack windows in container (i3 layout)
 bindsym Mod4+o layout stacking
+# Toggle horizontal/vertical split (i3 layout)
 bindsym Mod4+e layout toggle split
 
 # toggle tiling / floating
+# Toggle floating + center (float-toggle.sh)
 bindsym Mod4+t exec --no-startup-id $HOME/.config/i3/scripts/utils/float-toggle.sh
+# Toggle floating (i3 native)
 bindsym Mod4+Shift+space floating toggle
 
 # change focus between tiling / floating windows
 # bindsym Mod4+space focus mode_toggle
 
 # focus the parent container
+# Focus parent container (i3 focus)
 bindsym Mod4+a focus parent
 
 # focus the child container
 #bindsym Mod4+d focus child
 
 # move the currently focused window to the scratchpad
+# Send window to scratchpad (i3 scratchpad)
 bindsym Mod4+s move scratchpad
 
 # Show the next scratchpad window or hide the focused scratchpad window.
 # If there are multiple scratchpad windows, this command cycles through them.
+# Show/hide scratchpad, cycles entries (i3 scratchpad)
 bindsym Mod4+Mod1+s scratchpad show
 
 # Define names for default workspaces for which we configure key bindings later on.
@@ -241,67 +300,123 @@ set $ws9 "9"
 set $ws10 "10"
 
 # switch to workspace
+# Switch to workspace 1 (i3 workspace)
 bindsym Mod4+1 workspace number $ws1
+# Switch to workspace 2 (i3 workspace)
 bindsym Mod4+2 workspace number $ws2
+# Switch to workspace 3 (i3 workspace)
 bindsym Mod4+3 workspace number $ws3
+# Switch to workspace 4 (i3 workspace)
 bindsym Mod4+4 workspace number $ws4
+# Switch to workspace 5 (i3 workspace)
 bindsym Mod4+5 workspace number $ws5
+# Switch to workspace 6 (i3 workspace)
 bindsym Mod4+6 workspace number $ws6
+# Switch to workspace 7 (i3 workspace)
 bindsym Mod4+7 workspace number $ws7
+# Switch to workspace 8 (i3 workspace)
 bindsym Mod4+8 workspace number $ws8
+# Switch to workspace 9 (i3 workspace)
 bindsym Mod4+9 workspace number $ws9
+# Switch to workspace 10 (i3 workspace)
 bindsym Mod4+0 workspace number $ws10
+# Next workspace on this monitor (i3 workspace)
 bindsym Mod4+Next workspace next_on_output
+# Previous workspace on this monitor (i3 workspace)
 bindsym Mod4+Prior workspace prev_on_output
 
 # move focused container to workspace
+# Move window + follow to workspace 1
 bindsym Mod4+Shift+1 move container to workspace number $ws1; workspace number $ws1
+# Move window + follow to workspace 2
 bindsym Mod4+Shift+2 move container to workspace number $ws2; workspace number $ws2
+# Move window + follow to workspace 3
 bindsym Mod4+Shift+3 move container to workspace number $ws3; workspace number $ws3
+# Move window + follow to workspace 4
 bindsym Mod4+Shift+4 move container to workspace number $ws4; workspace number $ws4
+# Move window + follow to workspace 5
 bindsym Mod4+Shift+5 move container to workspace number $ws5; workspace number $ws5
+# Move window + follow to workspace 6
 bindsym Mod4+Shift+6 move container to workspace number $ws6; workspace number $ws6
+# Move window + follow to workspace 7
 bindsym Mod4+Shift+7 move container to workspace number $ws7; workspace number $ws7
+# Move window + follow to workspace 8
 bindsym Mod4+Shift+8 move container to workspace number $ws8; workspace number $ws8
+# Move window + follow to workspace 9
 bindsym Mod4+Shift+9 move container to workspace number $ws9; workspace number $ws9
+# Move window + follow to workspace 10
 bindsym Mod4+Shift+0 move container to workspace number $ws10; workspace number $ws10
 
 # restart i3 inplace (preserves your layout/session, can be used to upgrade i3)
+# Restart i3 in place, preserves layout (i3 restart)
 bindsym Mod4+Shift+r restart
+# Reload i3 config without restart (i3-msg)
 bindsym Mod4+Ctrl+r exec i3-msg reload
 # exit i3 (logs you out of your X session)
+# Lock screen (i3-lock)
 bindsym Mod4+x exec --no-startup-id i3-lock
+# Exit i3 with confirm prompt (rofi)
 bindsym Mod4+Shift+q exec "echo -e 'No\nYes'| rofi -dmenu -no-sort -i -theme ~/.config/rofi/dwm-keys.rasi -kb-row-up 'k,Up' -kb-row-down 'j,Down' -kb-cancel 'Escape,h,q' -p 'Exit i3?'| grep -q 'Yes' && i3-msg exit"
+# Wallpaper picker rofi list (wallpaper-pick.sh)
 bindsym Mod4+Ctrl+space exec --no-startup-id $HOME/.config/i3/scripts/wallpaper/wallpaper-pick.sh
+# Screenshot region/window to clipboard (i3-screenshot)
 bindsym Print exec --no-startup-id i3-screenshot
+# Toggle screen recording (i3-screenrecord)
 bindsym Mod4+Print exec --no-startup-id i3-screenrecord
+# OCR a screen region into clipboard (i3-ocr)
 bindsym Mod4+Ctrl+Print exec --no-startup-id i3-ocr
+# Keybindings help, auto-generated (i3-keys)
 bindsym Mod4+Ctrl+k exec --no-startup-id $HOME/.local/bin/i3-keys
-bindsym Mod4+Mod1+k exec --no-startup-id $HOME/.local/bin/i3-keys
+# Emoji picker via rofimoji (i3-emojipick)
 bindsym Mod4+Ctrl+e exec --no-startup-id $HOME/.local/bin/i3-emojipick
+# CPU frequency / power profile menu (i3-cpufreq)
 bindsym Mod4+Ctrl+b exec --no-startup-id $HOME/.local/bin/i3-cpufreq
+# Run i3-check in floating terminal (i3-check-popup)
 bindsym Mod4+Mod1+c exec --no-startup-id $HOME/.local/bin/i3-check-popup
+# Browse local cheatsheets / docs (i3-manuals)
 bindsym Mod4+Mod1+m exec --no-startup-id $HOME/.local/bin/i3-manuals
+# Browse local cheatsheets / docs (i3-manuals)
 bindsym Mod4+Mod1+space exec --no-startup-id $HOME/.local/bin/i3-manuals
+# Keyboard-driven browser (qutebrowser)
 bindsym Mod4+q exec --no-startup-id qutebrowser
+# Obsidian notes app (obsidian)
 bindsym Mod4+Shift+o exec --no-startup-id obsidian
+# Wallpaper/image manager with previews (i3-imgpicker)
 bindsym Mod4+Shift+i exec --no-startup-id i3-imgpicker
+# Telegram messenger (Telegram)
 bindsym Mod4+Mod1+t exec --no-startup-id Telegram -theme dark
+# WhatsApp Web as standalone app (i3-webapp)
 bindsym Mod4+Shift+w exec --no-startup-id i3-webapp "https://web.whatsapp.com/"
+# ChatGPT as standalone app (i3-webapp)
 bindsym Mod4+Shift+a exec --no-startup-id i3-webapp "https://chatgpt.com/"
+# X (Twitter) as standalone app (i3-webapp)
 bindsym Mod4+Shift+x exec --no-startup-id i3-webapp "https://x.com/"
+# Discord chat (discord)
 bindsym Mod4+Shift+d exec --no-startup-id discord
+# Pick a Gmail account / open inbox (i3-email-picker.sh)
 bindsym Mod4+Shift+e exec --no-startup-id $HOME/.config/i3/scripts/launchers/i3-email-picker.sh
+# Quick notes launcher (notes)
 bindsym Mod4+n exec --no-startup-id notes
+# Notification history popup (notifications.sh)
 bindsym Mod4+Ctrl+n exec --no-startup-id bash $HOME/.config/i3/scripts/notifications/notifications.sh
+# Neovim in a terminal (nvim)
 bindsym Mod4+Shift+n exec --no-startup-id kitty -e nvim
 # Clipboard history via rofi
+# Text clipboard history, rofi (i3-cliphist-pick)
 bindsym Mod4+v exec --no-startup-id i3-cliphist-pick
+# Image clipboard history with previews (i3-imgcliphist)
 bindsym Mod4+Shift+v exec --no-startup-id i3-imgcliphist
+# Clipboard history via fzf (test)
+# Text clipboard history, fzf with preview (i3-cliphist-fzf)
+bindsym Mod4+Ctrl+v exec --no-startup-id alacritty --class i3-cliphist-fzf -e i3-cliphist-fzf
+# System menu: lock/suspend/reboot (i3-sys)
 bindsym Mod4+Escape exec --no-startup-id i3-sys
+# Pick & kill a process via rofi (i3-kill)
 bindsym Mod4+Delete exec --no-startup-id i3-kill
 
+# Cycle focus through real windows (focus-next.sh)
 bindsym Mod1+Tab exec --no-startup-id $HOME/.config/i3/scripts/utils/focus-next.sh
+# Cycle focus backward (focus-next.sh)
 bindsym Mod1+Shift+Tab exec --no-startup-id $HOME/.config/i3/scripts/utils/focus-next.sh prev
 
 # resize window (you can also use the mouse for that)
@@ -329,6 +444,7 @@ mode "resize" {
         bindsym Mod4+r mode "default"
 }
 
+# Enter resize mode for windows (i3 mode)
 bindsym Mod4+r mode "resize"
 
 bar {
@@ -358,6 +474,7 @@ smart_borders on
 set $mode_gaps Gaps: (o) outer, (i) inner
 set $mode_gaps_outer Outer Gaps: +|-|0 (local), Shift + +|-|0 (global)
 set $mode_gaps_inner Inner Gaps: +|-|0 (local), Shift + +|-|0 (global)
+# Enter gaps adjustment mode (i3 mode)
 bindsym Mod4+Ctrl+g mode "$mode_gaps"
 
 mode "$mode_gaps" {

@@ -18,7 +18,7 @@
 
 window {
     location:         center;
-    width:            640px;
+    width:            560px;
     border:           1px;
     border-radius:    18px;
     border-color:     @border;
@@ -50,10 +50,10 @@ entry {
 }
 
 listview {
-    lines:        8;
-    columns:      1;
+    lines:        5;
+    columns:      2;
     fixed-height: true;
-    spacing:      7px;
+    spacing:      6px;
     border:       0;
 }
 

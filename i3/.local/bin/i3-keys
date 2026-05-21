@@ -1,144 +1,94 @@
 #!/usr/bin/env bash
+# Keybindings help, auto-generated from ~/.config/i3/config (description = comment line above each bindsym)
 
-ROFI_NAV='-kb-row-up "k,Up" -kb-row-down "j,Down" -kb-cancel "Escape,h,q"'
+CONFIG="$HOME/.config/i3/config"
 ROFI_THEME="$HOME/.config/rofi/i3-help.rasi"
+ROFI_NAV=(-kb-row-up "k,Up" -kb-row-down "j,Down" -kb-cancel "Escape,h,q")
 
 rofi_menu() {
-  eval rofi -dmenu -no-sort -i -theme "$ROFI_THEME" $ROFI_NAV -p "$1"
+    rofi -dmenu -no-sort -i -theme "$ROFI_THEME" "${ROFI_NAV[@]}" -p "$1"
 }
 
-window_keys() { cat <<'EOF'
-Super + Return       → Terminal (kitty)
-Super + w            → Close window
-Super + q            → qutebrowser
-Super + f            → True fullscreen (bar hides)
-Super + Alt + f      → Maximize (fills workspace, gaps + bar stay)
-Super + h            → Focus left
-Super + j            → Focus down
-Super + k            → Focus up
-Super + l            → Focus right
-Super + Ctrl + h     → Split horizontal
-Super + Ctrl + l     → Split vertical
-Super + o            → Layout stacking
-Super + e            → Toggle split layout
-Super + t            → Toggle floating
-Super + Shift + f    → Nautilus file manager
-Super + Shift + space → Toggle floating
-Super + a            → Focus parent
-Super + r            → Resize mode
-Super + Left/Down/Up/Right → Focus direction
-Super + Shift + h/j/k/l → Move window left/down/up/right
-EOF
+categorize() {
+    awk '
+        function subcat(key, cmd) {
+            if (key ~ /^XF86Audio/) return "Volume & Player"
+            if (key ~ /^XF86MonBrightness/) return "Brightness"
+            if (cmd ~ /playerctl|pactl|volume-osd/) return "Volume & Player"
+            if (cmd ~ /brightnessctl/) return "Brightness"
+            if (cmd ~ /dunstctl/) return "Notifications"
+            if (cmd ~ /cliphist/) return "Clipboard"
+            if (cmd ~ /screenshot|screenrecord|i3-ocr/) return "Screenshots"
+            if (cmd ~ /wallpaper|i3-imgpicker/) return "Wallpaper"
+            if (cmd ~ /i3-lock|i3-sys|i3-kill|^restart$|^reload$|i3-msg|Exit i3/) return "Session"
+            if (cmd ~ /^kill$|floating|fullscreen|maximize|float-toggle|^layout |split|^focus|^move|^a$/) return "Window control"
+            if (cmd ~ /^resize|^mark/) return "Window control"
+            if (cmd ~ /workspace/) return "Workspaces"
+            if (cmd ~ /scratchpad/) return "Scratchpad"
+            if (cmd ~ /^mode /) return "Modes"
+            return "Apps & Launchers"
+        }
+        function maincat(s) {
+            if (s == "Window control" || s == "Workspaces" || s == "Scratchpad" || s == "Modes") return "Desktop"
+            if (s == "Session" || s == "Notifications" || s == "Screenshots") return "System"
+            if (s == "Volume & Player" || s == "Brightness") return "Media"
+            return "Apps & Tools"
+        }
+
+        # Track the most recent comment line. Reset on blank lines so a comment
+        # one line above a bindsym always wins.
+        /^[[:space:]]*#/ {
+            line = $0
+            sub(/^[[:space:]]*#[[:space:]]*/, "", line)
+            last_comment = line
+            next
+        }
+        /^[[:space:]]*$/ { last_comment = ""; next }
+
+        /^bindsym / {
+            binding = $2
+            cmd = ""
+            for (i = 3; i <= NF; i++) cmd = cmd " " $i
+            sub(/^ /, "", cmd)
+
+            scat = subcat(binding, cmd)
+            mcat = maincat(scat)
+
+            desc = last_comment
+            if (desc == "") {
+                desc = cmd
+                sub(/^exec[[:space:]]+(--no-startup-id[[:space:]]+)?/, "", desc)
+                gsub(/\$HOME\/\.config\/i3\/scripts\/[^ ]+\//, "", desc)
+                gsub(/\$HOME\/\.local\/bin\//, "", desc)
+                gsub(/\$HOME\//, "~/", desc)
+                if (length(desc) > 60) desc = substr(desc, 1, 57) "..."
+            }
+
+            disp_key = binding
+            gsub(/Mod4/, "Super", disp_key)
+            gsub(/Mod1/, "Alt", disp_key)
+
+            printf "%s\t%s\t%-28s →  %s\n", mcat, scat, disp_key, desc
+            # Consume the comment so it does not apply to the next bindsym
+            last_comment = ""
+            next
+        }
+
+        # Any other non-comment line breaks the comment chain
+        { last_comment = "" }
+    ' "$CONFIG"
 }
 
-workspace_keys() { cat <<'EOF'
-Super + 1-0          → Switch to workspace
-Super + Shift + 1-0  → Move window to workspace
-Super + PageDown     → Next workspace (also touchpad 3-finger swipe left)
-Super + PageUp       → Previous workspace (also touchpad 3-finger swipe right)
-Super + Ctrl + g     → Gaps mode
-Alt + Tab            → Cycle focus
-Alt + Shift + Tab    → Cycle focus backward
-EOF
-}
-
-scratchpad_keys() { cat <<'EOF'
-Super + s            → Move window to scratchpad
-Super + Alt + s      → Show/hide scratchpad
-EOF
-}
-
-apps_keys() { cat <<'EOF'
-Super + Return       → Terminal (kitty)
-Super + Space        → App launcher (rofi)
-Super + q            → qutebrowser
-Super + Shift + b    → Brave
-Super + Shift + c    → Chromium
-Super + Shift + o    → Obsidian
-Super + Shift + t    → btop
-Super + Shift + m    → Timer
-Super + Shift + i    → Image picker
-Super + Alt + t      → Telegram
-Super + Shift + v    → Image clipboard history (Space select, Ctrl+d deletes selected)
-Super + Escape       → System menu
-Super + Shift + w    → WhatsApp
-Super + Shift + a    → ChatGPT
-Super + Shift + x    → Twitter / X
-Super + Shift + d    → Discord
-Super + Shift + e    → Email picker (Gmail app window)
-Super + Shift + n    → Neovim
-Super + v            → Clipboard manager (Walker, Ctrl+d deletes)
-Super + n            → Notes
-Super + Ctrl + k     → Keybindings help
-Super + Alt + k      → Keybindings help
-Super + Ctrl + e     → Emoji picker
-Super + Ctrl + b     → Battery CPU profile menu (auto-cpufreq)
-Super + Alt + c      → Run i3-check in a popup terminal
-Super + Alt + m      → Local manuals / Learn menu
-Super + Alt + Space  → Local manuals / Learn menu
-Super + Ctrl + x     → Dictation toggle (transcribed text auto-types at cursor)
-Super + Shift + g    → Google Drive TUI
-Super + Shift + r    → Restart i3
-Super + Ctrl + r     → Reload i3 config
-Super + x            → Lock screen (i3lock)
-Super + Shift + q    → Exit i3
-EOF
-}
-
-media_keys() { cat <<'EOF'
-XF86AudioRaiseVol    → Volume up (popup)
-XF86AudioLowerVol    → Volume down (popup)
-XF86AudioMute        → Mute/unmute (popup)
-XF86AudioMicMute     → Mute microphone
-XF86AudioPlay        → Spotify-only play-pause
-XF86AudioNext        → Spotify-only next track
-XF86AudioPrev        → Spotify-only previous track
-XF86AudioStop        → Spotify-only stop
-Super + Alt + p      → Spotify-only play-pause
-Super + Alt + n      → Spotify-only next track
-Super + Alt + b      → Spotify-only previous track
-Brightness Up/Down   → Brightness +/- (Fn keys)
-Print                → Screenshot → clipboard
-Super + Print        → Screen recording (start/stop)
-Super + Ctrl + Print → OCR screenshot → clipboard
-Super + Shift + s    → Spotify
-EOF
-}
-
-notification_keys() { cat <<'EOF'
-Super + ,            → Dismiss last notification
-Super + Shift + ,    → Dismiss all notifications
-Super + Ctrl + ,     → Toggle notifications
-EOF
-}
-
-wallpaper_keys() { cat <<'EOF'
-Super + Ctrl + Space → Wallpaper picker (rofi)
---- Inside image picker (Super+Shift+i) ---
-Alt + w              → Set as wallpaper (pywal)
-EOF
-}
+bindings=$(categorize)
 
 while true; do
-  CATEGORY=$(printf '%s\n' \
-      '  Windows & navigation' \
-      '  Workspaces' \
-      '  Scratchpad' \
-      '  Apps & launchers' \
-      '  Media & volume' \
-      '  Notifications' \
-      '  Wallpaper' \
-      | rofi_menu 'i3 Keybindings')
+    main=$(printf '%s\n' "$bindings" | cut -f1 | sort -u | rofi_menu "i3 Keys")
+    [ -z "$main" ] && break
 
-  [ -z "$CATEGORY" ] && break
+    while true; do
+        sub=$(printf '%s\n' "$bindings" | awk -F'\t' -v m="$main" '$1==m {print $2}' | sort -u | rofi_menu "$main")
+        [ -z "$sub" ] && break
 
-  case "$CATEGORY" in
-    *Windows*)   window_keys         | rofi_menu 'Windows' ;;
-    *Workspace*) workspace_keys      | rofi_menu 'Workspaces' ;;
-    *Scratch*)   scratchpad_keys     | rofi_menu 'Scratchpad' ;;
-    *Apps*)      apps_keys           | rofi_menu 'Apps' ;;
-    *Media*)     media_keys          | rofi_menu 'Media' ;;
-    *Notif*)     notification_keys   | rofi_menu 'Notifications' ;;
-    *Wallpaper*) wallpaper_keys       | rofi_menu 'Wallpaper' ;;
-  esac
+        printf '%s\n' "$bindings" | awk -F'\t' -v m="$main" -v s="$sub" '$1==m && $2==s {print $3}' | rofi_menu "$main › $sub" >/dev/null
+    done
 done
