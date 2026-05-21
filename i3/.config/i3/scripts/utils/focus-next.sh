@@ -38,14 +38,19 @@ if [[ ${#window_ids[@]} -le 1 ]]; then exit 0; fi
 
 current=$(xdotool getactivewindow 2>/dev/null)
 
-# Check if current focused window is maximized (floating + fills workspace)
+# Check if current focused window is the special full-workspace floating state
+# created by maximize.sh. Normal floating popups/manuals must not be resized by Alt+Tab.
 is_maximized=$(echo "$get_tree" | python3 -c "
 import json, sys
+data = json.load(sys.stdin)
 
-def all_nodes(node):
-    yield node
+def find_focused(node):
+    if node.get('focused'):
+        return node
     for child in node.get('nodes', []) + node.get('floating_nodes', []):
-        yield from all_nodes(child)
+        r = find_focused(child)
+        if r: return r
+    return None
 
 def find_focused_workspace(node):
     if node.get('type') == 'workspace':
@@ -56,26 +61,23 @@ def find_focused_workspace(node):
         if r: return r
     return None
 
-def find_focused(node):
-    if node.get('focused'):
-        return node
+def all_nodes(node):
+    yield node
     for child in node.get('nodes', []) + node.get('floating_nodes', []):
-        r = find_focused(child)
-        if r: return r
-    return None
+        yield from all_nodes(child)
 
-tree = json.load(sys.stdin)
-f = find_focused(tree)
-if not f or not f.get('floating', '').startswith('user_on'):
-    print('')
-else:
-    ws = find_focused_workspace(tree)
-    if ws:
-        wr = ws['rect']
-        fr = f.get('rect', {})
-        print('user_on' if fr.get('width', 0) >= wr['width'] - 10 else '')
-    else:
-        print('')
+f = find_focused(data)
+ws = find_focused_workspace(data)
+if not f or not ws or not str(f.get('floating', '')).startswith('user_on'):
+    print('no')
+    raise SystemExit
+
+fr = f.get('rect', {})
+wr = ws.get('rect', {})
+tolerance = 8
+same_size = abs(fr.get('width', 0) - wr.get('width', 0)) <= tolerance and abs(fr.get('height', 0) - wr.get('height', 0)) <= tolerance
+same_pos = abs(fr.get('x', 0) - wr.get('x', 0)) <= tolerance and abs(fr.get('y', 0) - wr.get('y', 0)) <= tolerance
+print('yes' if same_size and same_pos else 'no')
 ")
 
 for i in "${!window_ids[@]}"; do
@@ -87,7 +89,7 @@ for i in "${!window_ids[@]}"; do
         fi
         next_win="${window_ids[$next_idx]}"
 
-        if [[ "$is_maximized" == "user_on"* ]]; then
+        if [[ "$is_maximized" == "yes" ]]; then
             # Focus next → maximize next → un-maximize previous (now hidden behind)
             i3-msg "[id=$next_win] focus"
             ~/.config/i3/scripts/utils/maximize.sh

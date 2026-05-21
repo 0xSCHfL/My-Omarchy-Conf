@@ -8,10 +8,9 @@ My [i3](https://i3wm.org/) window manager configuration for Arch Linux.
 - **Picom** — compositor (transparency, shadows)
 - **Kitty** — primary terminal; **Alacritty** for popup TUIs (wifi, audio)
 - **Dunst** — notifications with pywal colors
-- **CopyQ** — clipboard manager (tray)
 - **cliphist** — text clipboard history daemon
 - **i3blocks** — status bar with custom scripts
-- **Polybar** — secondary bar launcher (starts nm-applet, copyq, flameshot)
+- **Polybar** — secondary bar launcher
 - **Pywal** — dynamic colorschemes synced to kitty, alacritty, dunst, SDDM, rofi
 - **SDDM i3-login theme** — custom login screen with pywal colors + wallpaper
 - **i3lock-color** — lock screen with blurred background and bar indicator
@@ -73,16 +72,21 @@ dotfiles/i3/
 | `Super+Delete` | Process killer |
 | `Super+x` | Lock screen |
 | `Super+Ctrl+k` | Keybinding cheatsheet |
+| `Super+Ctrl+b` | Battery CPU profile menu |
+| `Super+Alt+c` | Run i3-check in a popup terminal |
+| `Super+Alt+m` | Local manuals / Learn menu |
+| `Super+Alt+Space` | Local manuals / Learn menu |
 | `Super+Ctrl+Space` | Wallpaper picker |
 | `Super+Shift+i` | Image picker (fzfub) |
 | `Super+Shift+v` | Image clipboard history |
 | `Super+v` | Text clipboard history (cliphist) |
-| `Super+Ctrl+v` | CopyQ show |
 | `Super+n` | Notes |
 | `Super+Ctrl+n` | Notification history |
 | `Print` | Screenshot → clipboard (maim) |
 | `Alt+Print` | Screen recording (ffmpeg) |
 | `Super+Ctrl+Print` | OCR screenshot (tesseract) |
+| `XF86AudioPlay/Next/Prev/Stop` | Spotify-only playback controls |
+| `Super+Alt+p/n/b` | Spotify-only play-pause/next/previous |
 | `Alt+Tab` | Cycle focus |
 | `Super+Ctrl+w` | WiFi TUI (impala) |
 | `Super+Ctrl+a` | Audio TUI (wiremix) |
@@ -100,13 +104,16 @@ Web apps (`Super+Shift+w/g/x/d/e`): WhatsApp, ChatGPT, X, Discord, Email
 | `i3-ocr` | Area OCR → clipboard (maim + tesseract) |
 | `i3-lock` | Lock screen with blur (maim + magick + i3lock-color) |
 | `i3-sys` | System menu: suspend/reboot/shutdown |
+| `i3-check` | Validate i3 config, scripts, executable bits, dependencies, and docs drift |
 | `i3-kill` | Fuzzy process killer (rofi) |
 | `i3-keys` | Keybinding cheatsheet (rofi) |
 | `i3-webapp` | Launch Brave as webapp (`--app=<url>`) |
+| `i3-manuals` | Local Learn menu for repo-specific manuals |
 | `i3-imgpicker` | Image browser with ueberzugpp preview |
 | `i3-imgcliphist` | Image clipboard history viewer |
 | `i3-imgclipwatch` | Image clipboard watcher daemon |
 | `i3-cliphist` | Text clipboard history daemon (cliphist) |
+| `i3-cpufreq` | auto-cpufreq stats/monitor/profile menu |
 | `batmon` | Battery low alert daemon |
 | `fzfub` | fzf + ueberzugpp image browser |
 | `notes` | Notes manager (rofi) |
@@ -115,11 +122,20 @@ Web apps (`Super+Shift+w/g/x/d/e`): WhatsApp, ChatGPT, X, Discord, Email
 ## Wallpaper & Pywal
 
 `wallpaper-set.sh` is the central hub — it sets the wallpaper and propagates colors to:
-kitty, alacritty, dunst, rofi, SDDM login theme, flameshot, and X resources.
+kitty, alacritty, dunst, rofi, SDDM login theme, and X resources.
 
 ```bash
 wallpaper-set.sh [/path/to/image]   # Set wallpaper + run pywal
 wallpaper-set.sh --no-wal [path]    # Set wallpaper only, skip pywal
+```
+
+## Maintenance Checks
+
+```bash
+i3-check              # Validate config, scripts, permissions, dependencies, docs drift
+i3-check --fix-perms  # chmod +x shebang scripts that are missing executable bits
+i3-check --dedup      # Also run i3-dedup to heal duplicate/missing daemons
+i3-dedup              # Runtime daemon cleanup/restart only
 ```
 
 ## SDDM Login Theme

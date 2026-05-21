@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+terminal="${TERMINAL:-alacritty}"
+if ! command -v "$terminal" >/dev/null 2>&1; then
+    terminal="kitty"
+fi
+rofi_theme="$HOME/.config/rofi/battery-cpufreq.rasi"
+
+notify() {
+    command -v notify-send >/dev/null 2>&1 && notify-send "$@"
+}
+
+open_terminal() {
+    local title="$1"
+    local command="$2"
+
+    setsid -f "$terminal" --class i3cpufreq -e bash -lc "$command" >/dev/null 2>&1
+}
+
+run_sudo_action() {
+    local label="$1"
+    local command="$2"
+
+    open_terminal "i3cpufreq" "printf '%s\n\n' '$label'; $command; status=\$?; printf '\nPress Enter to close...'; read -r _; exit \$status"
+}
+
+if ! command -v auto-cpufreq >/dev/null 2>&1; then
+    notify "auto-cpufreq" "auto-cpufreq is not installed"
+    exit 1
+fi
+
+case "${1:-}" in
+    stats)
+        open_terminal "i3cpufreq" "auto-cpufreq --stats"
+        exit 0
+        ;;
+    monitor)
+        open_terminal "i3cpufreq" "auto-cpufreq --monitor"
+        exit 0
+        ;;
+    powersave)
+        run_sudo_action "Setting CPU profile to powersave" "sudo auto-cpufreq --force powersave"
+        exit 0
+        ;;
+    performance)
+        run_sudo_action "Setting CPU profile to performance" "sudo auto-cpufreq --force performance"
+        exit 0
+        ;;
+    reset|auto)
+        run_sudo_action "Resetting CPU profile to auto" "sudo auto-cpufreq --force reset"
+        exit 0
+        ;;
+esac
+
+options=$(
+    cat <<'EOF'
+󰔟  Stats
+󰍛  Monitor
+󰾅  Powersave
+󰓅  Performance
+󰑓  Auto / reset
+󰒓  Install daemon
+EOF
+)
+
+if command -v rofi >/dev/null 2>&1; then
+    choice="$(
+        printf '%s\n' "$options" |
+            rofi -dmenu -i -no-sort \
+                -theme "$rofi_theme" \
+                -p "󰁹 CPU" \
+                -mesg "auto-cpufreq profile"
+    )"
+else
+    choice="$(printf '%s\n' "$options" | dmenu -i -p "CPU profile:" 2>/dev/null || true)"
+fi
+
+case "${choice:-}" in
+    *Stats)
+        open_terminal "i3cpufreq" "auto-cpufreq --stats"
+        ;;
+    *Monitor)
+        open_terminal "i3cpufreq" "auto-cpufreq --monitor"
+        ;;
+    *Powersave)
+        run_sudo_action "Setting CPU profile to powersave" "sudo auto-cpufreq --force powersave"
+        notify "auto-cpufreq" "Requested powersave profile"
+        ;;
+    *Performance)
+        run_sudo_action "Setting CPU profile to performance" "sudo auto-cpufreq --force performance"
+        notify "auto-cpufreq" "Requested performance profile"
+        ;;
+    *"Auto / reset")
+        run_sudo_action "Resetting CPU profile to auto" "sudo auto-cpufreq --force reset"
+        notify "auto-cpufreq" "Requested auto profile"
+        ;;
+    *"Install daemon")
+        run_sudo_action "Installing/enabling auto-cpufreq daemon" "sudo auto-cpufreq --install"
+        ;;
+esac

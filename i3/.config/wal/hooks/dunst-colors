@@ -1,0 +1,3 @@
+#!/bin/bash
+# Update dunst colors when pywal changes wallpaper
+~/.config/dunst/generate-from-pywal.sh

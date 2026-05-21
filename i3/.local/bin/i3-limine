@@ -1,20 +1,98 @@
 #!/bin/bash
-# Refresh Limine bootloader config from i3 dotfiles
+# Refresh Limine bootloader config from i3 dotfiles, matching Omarchy's Plymouth unlock flow.
+
+set -euo pipefail
 
 DOTFILES="$HOME/Work/dotfiles"
+MACHINE_ID="$(cat /etc/machine-id)"
+STAMP="$(date +%Y%m%d-%H%M%S)"
+PLYMOUTH_THEME="0xSSfN"
+TMP_DEFAULT_LIMINE=""
 
-echo "Resetting Limine config..."
+backup_if_exists() {
+  local path="$1"
+  if [[ -e "$path" ]]; then
+    sudo cp -a "$path" "$path.bak.$STAMP"
+  fi
+}
+
+cleanup() {
+  [[ -n "$TMP_DEFAULT_LIMINE" && -f "$TMP_DEFAULT_LIMINE" ]] && rm -f "$TMP_DEFAULT_LIMINE"
+}
+
+trap cleanup EXIT
+
+if [[ -f /boot/EFI/Linux/omarchy_linux.efi && -f /boot/EFI/Linux/${MACHINE_ID}_linux.efi ]]; then
+  echo "Cleanup extra UKI"
+  sudo rm -f "/boot/EFI/Linux/${MACHINE_ID}_linux.efi"
+fi
+
+echo "Backing up current boot config..."
+backup_if_exists /boot/limine.conf
+backup_if_exists /etc/default/limine
+backup_if_exists /etc/mkinitcpio.conf.d/omarchy_hooks.conf
+
+echo "Resetting Limine, cmdline, and initramfs hook config..."
+if [[ ! -x "$DOTFILES/limine/generate-default-limine" ]]; then
+  echo "ERROR: missing executable: $DOTFILES/limine/generate-default-limine" >&2
+  exit 1
+fi
+
+TMP_DEFAULT_LIMINE="$(mktemp)"
+"$DOTFILES/limine/generate-default-limine" > "$TMP_DEFAULT_LIMINE"
 sudo cp "$DOTFILES/limine/limine.conf" /boot/limine.conf
-sudo cp "$DOTFILES/limine/default-limine" /etc/default/limine
-sudo rm -f /etc/mkinitcpio.conf.d/omarchy_hooks.conf /etc/mkinitcpio.conf.d/omarchy_resume.conf
-sudo cp "$DOTFILES/limine/i3_hooks.conf" /etc/mkinitcpio.conf.d/i3_hooks.conf
-sudo cp "$DOTFILES/limine/i3_resume.conf" /etc/mkinitcpio.conf.d/i3_resume.conf
+sudo cp "$TMP_DEFAULT_LIMINE" /etc/default/limine
+sudo mkdir -p /etc/mkinitcpio.conf.d
+sudo cp "$DOTFILES/limine/omarchy_hooks.conf" /etc/mkinitcpio.conf.d/omarchy_hooks.conf
 
-echo "Copying backdrop..."
-sudo cp "$DOTFILES/limine/backdrop.png" /boot/backdrop.png
+if [[ -f "$DOTFILES/limine/backdrop.png" ]]; then
+  sudo cp "$DOTFILES/limine/backdrop.png" /boot/backdrop.png
+fi
+
+if [[ -d "$DOTFILES/limine/plymouth" ]]; then
+  echo "Installing Plymouth theme ($PLYMOUTH_THEME)..."
+  sudo mkdir -p /usr/share/plymouth/themes/$PLYMOUTH_THEME
+  sudo cp -a "$DOTFILES/limine/plymouth/." /usr/share/plymouth/themes/$PLYMOUTH_THEME/
+  sudo plymouth-set-default-theme $PLYMOUTH_THEME
+fi
 
 echo "Running limine-update..."
 sudo limine-update
-sudo limine-snapper-sync 2>/dev/null || true
+sudo limine-snapper-sync
 
-echo "Done."
+echo
+echo "Verifying generated Plymouth unlock config:"
+cmdline="$(grep -E "^\s*cmdline:" /boot/limine.conf | head -1 || true)"
+if [[ -z "$cmdline" ]]; then
+  echo "  ERROR: no cmdline: line found in /boot/limine.conf" >&2
+  exit 1
+fi
+echo "  $cmdline"
+
+if [[ "$cmdline" != *"quiet"* || "$cmdline" != *"splash"* ]]; then
+  echo "  ERROR: generated cmdline is missing quiet splash." >&2
+  exit 1
+fi
+
+if [[ "$cmdline" == *"plymouth.enable=0"* ]]; then
+  echo "  ERROR: plymouth.enable=0 is still present, so graphical unlock is disabled." >&2
+  exit 1
+fi
+
+if ! grep -qE '^HOOKS=.*\bplymouth\b' "$DOTFILES/limine/omarchy_hooks.conf"; then
+  echo "  ERROR: repo hook config is missing plymouth." >&2
+  exit 1
+fi
+
+if ! grep -qE '^HOOKS=.*\bplymouth\b' /etc/mkinitcpio.conf.d/omarchy_hooks.conf; then
+  echo "  ERROR: live initramfs hook config is missing plymouth." >&2
+  exit 1
+fi
+
+if [[ "$(plymouth-set-default-theme 2>/dev/null || true)" != "$PLYMOUTH_THEME" ]]; then
+  echo "  ERROR: Plymouth default theme is not $PLYMOUTH_THEME." >&2
+  exit 1
+fi
+
+echo "  OK Plymouth graphical unlock is enabled"
+echo "Done. Run: sudo limine-mkinitcpio"

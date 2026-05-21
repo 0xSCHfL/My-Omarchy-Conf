@@ -1,11 +1,14 @@
 #!/bin/bash
 
-BAT=$(ls -d /sys/class/power_supply/BAT* 2>/dev/null | head -1)
+BAT=/sys/class/power_supply/BAT0
 
 icons=("󰁺" "󰁻" "󰁼" "󰁽" "󰁾" "󰁿" "󰂀" "󰂁" "󰂂" "󰁹")
 icon_charging="󰂄"
 
-[ ! -d "$BAT" ] && exit 0
+if [ ! -d "$BAT" ]; then
+    echo "| N/A"
+    exit 0
+fi
 
 CAPACITY=$(cat $BAT/capacity)
 STATUS=$(cat $BAT/status)
@@ -34,5 +37,7 @@ else
 fi
 
 case $BLOCK_BUTTON in
-    1) setsid -f alacritty --class i3cpufreq -e auto-cpufreq --stats ;;
+    1) setsid -f "$HOME/.local/bin/i3-cpufreq" ;;
+    2) setsid -f "$HOME/.local/bin/i3-cpufreq" monitor ;;
+    3) setsid -f "$HOME/.local/bin/i3-cpufreq" stats ;;
 esac

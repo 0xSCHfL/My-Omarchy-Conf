@@ -1,4 +1,5 @@
 #!/bin/sh
+# Wallpaper picker (rofi list of cached wallpapers)
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
 

@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+url="${1:-}"
+[[ -n "$url" ]] || exit 1
+
+brave --new-window --class=i3-peek-preview "$url" >/dev/null 2>&1 &
+
+(
+  sleep 0.3
+  "$HOME/.local/bin/i3-peek-preview-float" >/dev/null 2>&1 || true
+) &
+
+disown

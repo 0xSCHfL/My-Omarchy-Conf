@@ -3,10 +3,8 @@ live_config_reload = true
 working_directory = "None"
 
 # Themes --
-import = [ 
-  # "~/.config/alacritty/catppuccin-latte.toml",
-  # "~/.config/alacritty/nordic.toml",
-  "~/.config/alacritty/kitty-theme.toml",
+import = [
+  "~/.config/alacritty/alacritty-wal.toml",
   "~/.config/alacritty/keybinds.toml"
 ]
 
@@ -14,7 +12,7 @@ import = [
 title = "Alacritty"
 decorations = "none"
 blur = true
-opacity = 0.9
+# opacity = 0.7
 padding.x = 10
 padding.y = 10
 
@@ -27,25 +25,25 @@ shape= "Beam"
 blinking = "Never"
 
 [colors]
-#transparent_background_colors = true
-draw_bold_text_with_bright_colors = false
+transparent_background_colors = true
+draw_bold_text_with_bright_colors = true
 
 [env]
 TERM = "xterm-256color"
 
 [font]
 glyph_offset = { x = 1, y = 0 }
-normal.family = "Iosevka Nerd Font"
+normal.family = "Iosevka Term"
+size = 7.0
 normal.style = "Regular"
-size = 12.0
 
 [font.bold]
-family = "Iosevka Nerd Font"
-style = "Bold"
+family = "Iosevka"
+style = "auto"
 
 [font.italic]
-family = "Iosevka Nerd Font"
-style = "Italic"
+family = "Iosevka"
+style = "auto"
 
 [terminal]
 osc52 = "CopyPaste"

@@ -1,3 +1,10 @@
-current-wallpaper
-__pycache__
-.*\.pyc
+# Repo-only files/dirs: keep inside the dotfiles package, never link into $HOME.
+^AGENTS\.md$
+^CLAUDE\.md$
+^README\.md$
+^default$
+^manuals$
+^sddm-theme$
+^shell$
+^limine-login-plan\.md$
+^\.stow-local-ignore$

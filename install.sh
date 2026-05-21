@@ -64,6 +64,8 @@ if [[ "$PM" == "pacman" ]]; then
         python-pywal fzf jq libnotify
         # Shell tools (used in .zshrc / aliases)
         zoxide starship fastfetch
+        # Idle detection, screensaver, touchpad gestures
+        xidlehook python-terminaltexteffects touchegg
         # File manager & trash
         yazi trash-cli
         # Disk usage & search
@@ -88,8 +90,8 @@ if [[ "$PM" == "pacman" ]]; then
         sysstat wireless_tools imagemagick
         # Pager / syntax highlight
         bat
-        # Markdown preview (peek.nvim)
-        deno
+        # Markdown preview (peek.nvim + local terminal preview)
+        deno glow
     )
     DWM_PKGS=(
         base-devel imv mpv autocutsel ueberzugpp
@@ -136,13 +138,10 @@ install_all() {
         $PM_AUR -S --needed --noconfirm \
             hyprland waybar ghostty \
             i3lock-color \
-            impala wiremix \
+            impala wiremix auto-cpufreq \
             python-pywal xob \
-            limine-mkinitcpio-hook limine-snapper-sync \
             ttf-iosevka-nerd \
-            voxtype-bin ydotool \
-            xidlehook python-terminaltexteffects \
-            auto-cpufreq 2>/dev/null || true
+            voxtype-bin ydotool 2>/dev/null || true
     fi
 
     # voxtype: add user to input group + download small.en model
@@ -154,6 +153,12 @@ install_all() {
             voxtype setup model --set small.en 2>/dev/null || echo "  ! Could not set model — run: voxtype setup model"
         fi
         voxtype setup systemd 2>/dev/null && echo "  ✓ voxtype systemd service set up"
+    fi
+
+    if command -v touchegg &>/dev/null && command -v systemctl &>/dev/null; then
+        echo "  → Setting up touchpad gestures..."
+        sudo systemctl enable --now touchegg.service 2>/dev/null \
+            && echo "  ✓ Touchégg service enabled"
     fi
 }
 
@@ -256,6 +261,8 @@ stow_i3() {
     else
         echo "  ~ Default shell already zsh"
     fi
+
+    login_setup
 }
 
 stow_hyprland() {
@@ -285,44 +292,11 @@ stow_tmux() {
     _stow_pkg "$DOTFILES" tmux
 }
 
-stow_ai_agent() {
-    echo "Stowing ai-agent to $HOME..."
-
-    # .claude/settings.json — back up plain file then symlink
-    local settings_src="$DOTFILES/ai-agent/.claude/settings.json"
-    local settings_dst="$HOME/.claude/settings.json"
-    if [[ -f "$settings_src" ]]; then
-        _backup_if_plain_file "$settings_dst"
-        if [[ ! -L "$settings_dst" ]]; then
-            ln -sf "$settings_src" "$settings_dst"
-            echo "  ✓ ~/.claude/settings.json"
-        else
-            echo "  ~ ~/.claude/settings.json already linked"
-        fi
-    fi
-
-    # .claude/skills/ — symlink each skill that isn't already present
-    local skills_src="$DOTFILES/ai-agent/.claude/skills"
-    local skills_dst="$HOME/.claude/skills"
-    mkdir -p "$skills_dst"
-    local count=0
-    for skill in "$skills_src"/*/; do
-        local name
-        name=$(basename "$skill")
-        if [[ ! -e "$skills_dst/$name" ]]; then
-            ln -sf "$skill" "$skills_dst/$name"
-            ((count++)) || true
-        fi
-    done
-    [[ $count -gt 0 ]] && echo "  ✓ linked $count new skill(s)" || echo "  ~ all skills already linked"
-}
-
 stow_all() {
     stow_i3
     stow_tmux
     stow_hyprland
     stow_dwm
-    stow_ai_agent
     echo "Wallpapers are at $DOTFILES/wallpapers/"
 }
 
@@ -440,6 +414,22 @@ limine_plymouth() {
     fi
 }
 
+limine_generate_default() {
+    local tmp status
+    [[ -x "$DOTFILES/limine/generate-default-limine" ]] \
+        || { echo "Missing executable: $DOTFILES/limine/generate-default-limine" >&2; return 1; }
+
+    tmp="$(mktemp)"
+    if "$DOTFILES/limine/generate-default-limine" > "$tmp"; then
+        sudo cp "$tmp" /etc/default/limine
+        status=$?
+    else
+        status=$?
+    fi
+    rm -f "$tmp"
+    return "$status"
+}
+
 limine_install() {
     echo "Installing Limine config..."
 
@@ -451,25 +441,18 @@ limine_install() {
     fi
 
     if [[ ! -f /etc/default/limine ]]; then
-        sudo cp "$DOTFILES/limine/default-limine" /etc/default/limine
-        echo "  ✓ /etc/default/limine"
+        limine_generate_default
+        echo "  ✓ /etc/default/limine (auto-detected root profile)"
     else
         echo "  ~ /etc/default/limine already exists, skipping"
     fi
 
     sudo mkdir -p /etc/mkinitcpio.conf.d
-    sudo rm -f /etc/mkinitcpio.conf.d/omarchy_hooks.conf /etc/mkinitcpio.conf.d/omarchy_resume.conf
-    if [[ ! -f /etc/mkinitcpio.conf.d/i3_hooks.conf ]]; then
-        sudo cp "$DOTFILES/limine/i3_hooks.conf" /etc/mkinitcpio.conf.d/i3_hooks.conf
-        echo "  ✓ /etc/mkinitcpio.conf.d/i3_hooks.conf"
+    if [[ ! -f /etc/mkinitcpio.conf.d/omarchy_hooks.conf ]]; then
+        sudo cp "$DOTFILES/limine/omarchy_hooks.conf" /etc/mkinitcpio.conf.d/omarchy_hooks.conf
+        echo "  ✓ /etc/mkinitcpio.conf.d/omarchy_hooks.conf"
     else
-        echo "  ~ i3_hooks.conf already exists, skipping"
-    fi
-    if [[ ! -f /etc/mkinitcpio.conf.d/i3_resume.conf ]]; then
-        sudo cp "$DOTFILES/limine/i3_resume.conf" /etc/mkinitcpio.conf.d/i3_resume.conf
-        echo "  ✓ /etc/mkinitcpio.conf.d/i3_resume.conf"
-    else
-        echo "  ~ i3_resume.conf already exists, skipping"
+        echo "  ~ omarchy_hooks.conf already exists, skipping"
     fi
 
     if [[ -f "$DOTFILES/limine/backdrop.png" ]]; then
@@ -488,12 +471,9 @@ limine_install() {
 limine_force() {
     echo "Force-installing Limine config..."
     sudo cp "$DOTFILES/limine/limine.conf" /boot/limine.conf && echo "  ✓ /boot/limine.conf"
-    sudo cp "$DOTFILES/limine/default-limine" /etc/default/limine && echo "  ✓ /etc/default/limine"
+    limine_generate_default && echo "  ✓ /etc/default/limine (auto-detected root profile)"
     sudo mkdir -p /etc/mkinitcpio.conf.d
-    sudo rm -f /etc/mkinitcpio.conf.d/omarchy_hooks.conf
-    sudo cp "$DOTFILES/limine/i3_hooks.conf" /etc/mkinitcpio.conf.d/i3_hooks.conf && echo "  ✓ /etc/mkinitcpio.conf.d/i3_hooks.conf"
-    sudo rm -f /etc/mkinitcpio.conf.d/omarchy_resume.conf
-    sudo cp "$DOTFILES/limine/i3_resume.conf" /etc/mkinitcpio.conf.d/i3_resume.conf && echo "  ✓ /etc/mkinitcpio.conf.d/i3_resume.conf"
+    sudo cp "$DOTFILES/limine/omarchy_hooks.conf" /etc/mkinitcpio.conf.d/omarchy_hooks.conf && echo "  ✓ /etc/mkinitcpio.conf.d/omarchy_hooks.conf"
     if [[ -f "$DOTFILES/limine/backdrop.png" ]]; then
         sudo cp "$DOTFILES/limine/backdrop.png" /boot/backdrop.png && echo "  ✓ /boot/backdrop.png"
     fi
@@ -512,13 +492,12 @@ case "${1:-stow}" in
         ;;
     stow)
         case "${2:-all}" in
-            i3)              stow_i3 ;;
-            tmux)            stow_tmux ;;
-            hyprland)        stow_hyprland ;;
-            dwm)             stow_dwm ;;
-            ai|ai-agent)     stow_ai_agent ;;
-            all|"")          stow_all ;;
-            *) echo "Unknown stow target: $2. Use: i3, tmux, hyprland, dwm, ai-agent, or all."; exit 1 ;;
+            i3)        stow_i3 ;;
+            tmux)      stow_tmux ;;
+            hyprland)  stow_hyprland ;;
+            dwm)       stow_dwm ;;
+            all|"")    stow_all ;;
+            *) echo "Unknown stow target: $2. Use: i3, tmux, hyprland, dwm, or all."; exit 1 ;;
         esac
         ;;
     unstow)
@@ -538,32 +517,24 @@ case "${1:-stow}" in
         limine_install
         ;;
     limine)
-        limine_install
-        ;;
-    ai|ai-agent)
-        stow_ai_agent
-        ;;
-    pacman)
-        if [[ -f "$DOTFILES/pacman.conf" ]]; then
-            sudo cp "$DOTFILES/pacman.conf" /etc/pacman.conf && echo "  ✓ /etc/pacman.conf installed"
+        if [[ "${2:-}" == "--force" ]]; then
+            limine_force
         else
-            echo "  ! pacman.conf not found in dotfiles"
+            limine_install
         fi
         ;;
-    limine\ --force|limine-force)
+    limine-force)
         limine_force
         ;;
     *)
         echo "Usage: $0 [all|packages|stow [i3|tmux|hyprland|dwm]|unstow [i3|tmux|hyprland|dwm]|check|login|limine]"
         echo "  all               — install packages + stow all + limine"
         echo "  packages          — install required packages"
-        echo "  stow              — stow all dotfiles (default)"
-        echo "  stow i3           — stow only i3 package"
+        echo "  stow              — stow all dotfiles + SDDM login setup (default)"
+        echo "  stow i3           — stow only i3 package + SDDM login setup"
         echo "  stow tmux         — stow only tmux package"
         echo "  stow hyprland     — stow only hyprland package"
         echo "  stow dwm          — stow only dwm package"
-        echo "  stow ai-agent     — stow ai-agent + link claude skills (alias: ai)"
-        echo "  ai                — shortcut for stow ai-agent"
         echo "  unstow i3         — remove i3 symlinks from home"
         echo "  unstow tmux       — remove tmux symlinks from home"
         echo "  unstow hyprland   — remove hyprland symlinks from home"
@@ -571,7 +542,6 @@ case "${1:-stow}" in
         echo "  unstow all        — remove all symlinks from home"
         echo "  check             — dry-run stow and verify key symlinks"
         echo "  login             — configure SDDM login screen, fix PAM (standalone)"
-        echo "  pacman            — install pacman.conf to /etc/pacman.conf"
         echo "  limine            — install Limine + Plymouth + rebuild UKI (skips if exists)"
         echo "  limine --force    — force-overwrite all Limine/Plymouth config"
         exit 1

@@ -27,9 +27,9 @@ dotfiles/
 ├── tmux/            # Shared tmux config
 ├── limine/          # Limine bootloader + Plymouth theme (not stowed)
 │   ├── limine.conf          # Visuals only (Tokyo Night palette, backdrop)
-│   ├── default-limine       # Kernel cmdline (quiet splash, LUKS, etc.)
-│   ├── i3_hooks.conf        # mkinitcpio HOOKS with plymouth before encrypt
-│   ├── i3_resume.conf       # mkinitcpio resume hook drop-in
+│   ├── generate-default-limine # Auto-detect root layout and generate cmdline
+│   ├── default-limine       # Legacy/reference cmdline for this laptop
+│   ├── omarchy_hooks.conf   # mkinitcpio HOOKS with plymouth before encrypt
 │   ├── backdrop.png         # Boot backdrop image
 │   └── plymouth/            # Custom 0xSSfN Plymouth boot splash theme
 ├── wallpapers/      # Shared wallpapers (not stowed)
@@ -83,7 +83,7 @@ Colorized blocks with nerd font icons — each block has its own color matching 
 | `disks` | disk usage / free space | green | opens disk info |
 | `audio` | 󰕾/󰖀/󰕿/󰖁 volume % | pink | opens wiremix TUI |
 | `timer` | countdown timer | lavender | — |
-| `battery` | 󰁺→󰁹 capacity % | cyan / yellow / red / green | opens auto-cpufreq |
+| `battery` | 󰁺→󰁹 capacity % | cyan / yellow / red / green | left: CPU profile menu, middle: monitor, right: stats |
 | `time` | date + time | blue | — |
 
 > Restore pre-colorization bar: `cp ~/.config/i3blocks/config.bak ~/.config/i3blocks/config`
@@ -107,9 +107,11 @@ Colorized blocks with nerd font icons — each block has its own color matching 
 | `i3-cliphist` | Text clipboard history daemon (cliphist) |
 | `i3-btop` | Floating btop in kitty |
 | `i3-dedup` | Kill duplicate daemons and revive crashed ones |
-| `i3-gdrive` | Google Drive TUI (browse, download, upload, account switching) |
+| `i3-gdrive` | Google Drive TUI (browse, download, upload, account switching, per-account mounts under `~/GoogleDrive/`) |
+| `i3-cpufreq` | Rofi menu for auto-cpufreq stats, monitor, powersave, performance, reset |
+| `i3-manuals` | Local Learn menu for repo-specific manuals |
 | `notes` | Rofi notes launcher — browse/search Obsidian vaults, open in nvim |
-| `i3-limine` | Refresh Limine config from dotfiles |
+| `i3-limine` | Refresh Limine config from dotfiles (like omarchy-refresh-limine) |
 | `batmon` | Battery alert daemon (notify at ≤20%, no spam) |
 | `fzfub` | fzf + ueberzugpp image browser |
 | `xsession` | Switch between i3 / DWM / Hyprland |
@@ -134,6 +136,10 @@ Colorized blocks with nerd font icons — each block has its own color matching 
 | `Super+Print` | Screenshot → clipboard |
 | `Super+Ctrl+Print` | OCR screenshot → clipboard |
 | `Super+Ctrl+K` | Show all keybindings |
+| `Super+Alt+K` | Show all keybindings |
+| `Super+Ctrl+B` | Battery CPU profile menu (auto-cpufreq) |
+| `Super+Alt+M` | Local manuals / Learn menu |
+| `Super+Alt+Space` | Local manuals / Learn menu |
 | `Super+Ctrl+,` | Toggle notifications (dunst) |
 
 ### Boot / Login Flow
@@ -147,22 +153,45 @@ Limine (3s menu, Tokyo Night backdrop)
 
 ### Limine Bootloader
 
-Tokyo Night themed bootloader. Config split across three files, none stowed (lives on the FAT32 `/boot` partition):
+Tokyo Night themed bootloader. Visual config lives on the FAT32 `/boot` partition, while the kernel command line is generated per machine.
+
+**Root layout requirement:** do not copy a generated `/etc/default/limine` between machines. Root arguments are machine-specific. The helper below detects the currently booted root filesystem and writes the correct profile:
+
+```bash
+limine/generate-default-limine
+```
+
+Supported profiles:
+
+```text
+encrypted-btrfs: LUKS root -> /dev/mapper/<name>, Btrfs root, optional subvol
+encrypted:       LUKS root -> /dev/mapper/<name>, non-Btrfs root
+normal:          unencrypted root by UUID/PARTUUID, ext4/Btrfs/etc.
+```
+
+This exists because reusing the encrypted laptop config on a normal GPT/ext4 install makes the kernel search for a root device that does not exist:
+
+```text
+ERROR: Failed to mount '/dev/mapper/root' on real root
+```
+
+Run Limine setup from the target installed system, not from a live USB environment unless you are properly chrooted into the installed root. The detection is based on the current `/` mount.
 
 | File | Purpose |
 |------|---------|
 | `limine/limine.conf` | **Visuals only** — palette, backdrop, margins, timeout |
-| `limine/default-limine` | **Kernel cmdline** — `quiet splash`, LUKS args, UKI path |
-| `limine/i3_hooks.conf` | mkinitcpio HOOKS with `plymouth` before `keyboard`/`encrypt` |
+| `limine/generate-default-limine` | **Kernel cmdline generator** — auto-detects encrypted vs normal root |
+| `limine/default-limine` | Legacy/reference generated config for this laptop; do not copy blindly |
+| `limine/omarchy_hooks.conf` | mkinitcpio HOOKS with `plymouth` before `keyboard`/`encrypt` |
 
 Apply on a fresh install:
 
 ```bash
 ./install.sh limine          # skips if /boot/limine.conf exists
-./install.sh limine --force  # always overwrite
+./install.sh limine --force  # overwrite and regenerate /etc/default/limine
 ```
 
-`install.sh limine` also deploys the Plymouth theme and runs `limine-mkinitcpio` to bake the hooks into the UKI.
+`install.sh limine` also deploys the Plymouth theme and runs `limine-mkinitcpio` to bake the hooks into the UKI. If a machine already has a bad `/etc/default/limine` from another host, use `./install.sh limine --force` so the root cmdline is regenerated from that machine's real `/` mount.
 
 To refresh from dotfiles on the running system (updates config + verifies boot health):
 
@@ -178,14 +207,14 @@ Custom `0xSSfN` Plymouth theme (pixel-art logo, Tokyo Night progress bar, graphi
 
 Theme files live in `limine/plymouth/` and are deployed to `/usr/share/plymouth/themes/0xSSfN/` by `install.sh limine` and `i3-limine`.
 
-**Requirements:** `plymouth` hook must appear before `keyboard` and `encrypt` in mkinitcpio HOOKS (handled by `i3_hooks.conf`), and the kernel cmdline must contain `quiet splash` without `plymouth.enable=0`.
+**Requirements:** `plymouth` hook must appear before `keyboard` and `encrypt` in mkinitcpio HOOKS (handled by `omarchy_hooks.conf`), and the kernel cmdline must contain `quiet splash` without `plymouth.enable=0`.
 
 ### SDDM Login Screen
 
-Custom `i3-login` theme — copied from dotfiles, not stowed:
+Custom `i3-login` theme — symlinked from dotfiles, not stowed:
 
 ```
-~/Work/dotfiles/i3/sddm-theme/i3-login/ → /usr/share/sddm/themes/i3-login/
+/usr/share/sddm/themes/i3-login → ~/Work/dotfiles/i3/sddm-theme/i3-login/
 ```
 
 **No autologin** — the login screen is shown for security. SDDM runs in X11 mode (the Wayland override `10-wayland.conf` is removed since i3 is X11).
@@ -195,7 +224,7 @@ Colors auto-update via pywal when the wallpaper changes (`wallpaper-set.sh`).
 Apply on fresh install:
 
 ```bash
-./install.sh login
+./install.sh login    # or ./install.sh stow (runs login setup automatically)
 ```
 
 This writes `/etc/sddm.conf.d/autologin.conf` (Theme + X11 only, no `[Autologin]` block), removes `10-wayland.conf`, and strips `pam_gnome_keyring` from `/etc/pam.d/sddm`.

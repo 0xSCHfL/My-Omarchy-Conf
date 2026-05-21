@@ -3,13 +3,6 @@
 # Show a splash immediately while the slow textual import runs.
 import sys as _sys
 import shutil as _shutil
-import atexit as _atexit
-
-def _restore_terminal() -> None:
-    _sys.stdout.write("\033[0m\033[?25h")
-    _sys.stdout.flush()
-
-_atexit.register(_restore_terminal)
 
 _LOGO_LINES = [
     "█████████████▄  ███████████   ████       ████▄████     ████   █████████    ███  ███████████",
@@ -30,7 +23,7 @@ _pad = " " * _left
 _lines = [f"\033[{_top + i + 1};1H{_pad}{l}" for i, l in enumerate(_LOGO_LINES)]
 _sub_line = f"\033[{_top + len(_LOGO_LINES) + 2};1H{' ' * _sub_left}\033[38;5;245m{_SUBTITLE}\033[0m"
 
-_sys.stdout.write("\033[0m\033[?25l\033[2J\033[H\033[1;38;5;180m" + "".join(_lines) + "\033[0m" + _sub_line)
+_sys.stdout.write("\033[?25l\033[2J\033[1;38;5;180m" + "".join(_lines) + "\033[0m" + _sub_line)
 _sys.stdout.flush()
 
 import json
@@ -57,11 +50,23 @@ from textual.widgets import (
 )
 
 REMOTE = "gdrive"
-MOUNT_POINT = Path.home() / "GoogleDrive"
+MOUNT_ROOT = Path.home() / "GoogleDrive"
+# Backward-compatible alias for older single-mount logic/comments.
+MOUNT_POINT = MOUNT_ROOT
 RCLONE_CONF = Path.home() / ".config/rclone/rclone.conf"
 LOG_PATH = Path.home() / ".cache/i3-gdrive.log"
 EMAIL_CACHE = Path.home() / ".cache/i3-gdrive/emails.json"
 DEFAULT_REMOTE_FILE = Path.home() / ".cache/i3-gdrive/default.txt"
+
+BROWSER_CANDIDATES = [
+    ("Brave", "brave"),
+    ("Brave Browser", "brave-browser"),
+    ("Firefox", "firefox"),
+    ("Chromium", "chromium"),
+    ("Google Chrome", "google-chrome-stable"),
+    ("Zen Browser", "zen-browser"),
+    ("LibreWolf", "librewolf"),
+]
 
 
 # ── pywal colors ─────────────────────────────────────────────────────────────
@@ -332,6 +337,18 @@ def delete_remote(name: str) -> bool:
     return True
 
 
+def available_browsers() -> list[tuple[str, str | None]]:
+    browsers: list[tuple[str, str | None]] = []
+    seen: set[str] = set()
+    for label, command in BROWSER_CANDIDATES:
+        path = shutil.which(command)
+        if path and path not in seen:
+            browsers.append((label, path))
+            seen.add(path)
+    browsers.append(("System default", None))
+    return browsers
+
+
 def _userinfo_request(access_token: str) -> tuple[str | None, bool]:
     """Returns (email, expired). expired=True means token is invalid.
     Uses Drive's /about endpoint since rclone tokens only have drive scope."""
@@ -416,15 +433,58 @@ def get_remote_emails(remotes: list[str]) -> dict:
     return cache
 
 
-def is_mounted() -> bool:
+def mount_label(remote: str) -> str:
+    """Filesystem-friendly folder name for a Drive remote."""
+    label = re.sub(r"[^A-Za-z0-9._-]+", "", remote.strip())
+    return label or "Drive"
+
+
+def mount_point_for(remote: str) -> Path:
+    return MOUNT_ROOT / mount_label(remote)
+
+
+def unmount_path(path: Path) -> bool:
+    for cmd in ("fusermount3", "fusermount"):
+        if shutil.which(cmd):
+            result = subprocess.run([cmd, "-u", str(path)], capture_output=True, text=True)
+            if result.returncode == 0:
+                return True
+    return False
+
+
+def is_path_mounted(path: Path) -> bool:
     try:
         result = subprocess.run(
-            ["mountpoint", "-q", str(MOUNT_POINT)],
+            ["mountpoint", "-q", str(path)],
             capture_output=True
         )
         return result.returncode == 0
     except FileNotFoundError:
         return False
+
+
+def is_mounted(remote: str | None = None) -> bool:
+    return is_path_mounted(mount_point_for(remote)) if remote else is_path_mounted(MOUNT_ROOT)
+
+
+def mounted_drive_count(remotes: list[str] | None = None) -> tuple[int, int]:
+    remotes = remotes or drive_remotes()
+    return sum(1 for r in remotes if is_mounted(r)), len(remotes)
+
+
+def ensure_multi_mount_root() -> None:
+    """Prepare ~/GoogleDrive for per-account mounts.
+
+    Older versions mounted one remote directly on ~/GoogleDrive.  Multi-mount
+    mode needs ~/GoogleDrive to be a normal directory containing per-account
+    mountpoints, so unmount the legacy root mount first if it exists.
+    """
+    if is_path_mounted(MOUNT_ROOT):
+        logging.info("legacy root mount detected; unmounting mount_point=%s", MOUNT_ROOT)
+        unmount_path(MOUNT_ROOT)
+        if is_path_mounted(MOUNT_ROOT):
+            raise RuntimeError(f"Could not unmount legacy root mount: {MOUNT_ROOT}")
+    MOUNT_ROOT.mkdir(exist_ok=True)
 
 
 def fmt_size(n: int) -> str:
@@ -603,7 +663,8 @@ class HelpScreen(ModalScreen):
             ("Del",         "Delete"),
         ]),
         ("Drive", [
-            ("m",           "Toggle mount"),
+            ("m",           "Toggle selected account mount"),
+            ("M",           "Mount all accounts"),
             ("a",           "Account picker"),
         ]),
         ("Account picker", [
@@ -744,70 +805,38 @@ class AccountPickerScreen(ModalScreen):
 
 
 class BrowserPickerScreen(ModalScreen):
-    BROWSERS = {
-        "default": ("Default browser", None, None),
-        "brave": ("Brave", "brave", "Brave-browser"),
-        "firefox": ("Firefox", "firefox", "firefox"),
-        "chromium": ("Chromium", "chromium", "Chromium"),
-    }
-    DEFAULT_BROWSER_MAP = {
-        "brave-browser.desktop": ("Default browser (Brave)", "brave", "Brave-browser"),
-        "brave.desktop": ("Default browser (Brave)", "brave", "Brave-browser"),
-        "chromium.desktop": ("Default browser (Chromium)", "chromium", "Chromium"),
-        "firefox.desktop": ("Default browser (Firefox)", "firefox", "firefox"),
-    }
-
-    @classmethod
-    def default_browser(cls) -> tuple[str, str | None, str | None]:
-        for cmd in (
-            ["xdg-settings", "get", "default-web-browser"],
-            ["xdg-mime", "query", "default", "x-scheme-handler/https"],
-            ["xdg-mime", "query", "default", "x-scheme-handler/http"],
-        ):
-            try:
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=1)
-            except Exception:
-                continue
-            desktop = result.stdout.strip().lower()
-            if desktop in cls.DEFAULT_BROWSER_MAP:
-                return cls.DEFAULT_BROWSER_MAP[desktop]
-        return cls.BROWSERS["default"]
+    def __init__(self, browsers: list[tuple[str, str | None]], **kwargs):
+        super().__init__(**kwargs)
+        self.browsers = browsers
 
     def compose(self) -> ComposeResult:
         with Vertical(id="picker-dialog"):
-            yield Label("󰖟  Choose OAuth browser", id="picker-title")
+            yield Label("󰖟  Choose browser for Google OAuth", id="picker-title")
             table = DataTable(id="picker-table", cursor_type="row", show_header=False, zebra_stripes=False)
             table.add_column("browser", width=64)
-            for key, (name, command, _window_class) in self.BROWSERS.items():
-                if key == "default":
-                    name, command, _window_class = self.default_browser()
-                installed = "system default" if command is None else (shutil.which(command) or "not found")
-                table.add_row(f"  {name:<16}  {installed}", key=key)
+            for label, command in self.browsers:
+                detail = command if command else "xdg/system default"
+                table.add_row(f"  {label}  ─  {detail}", key=command or "__default__")
             yield table
-            yield Label(r"\[j/k] Move    \[Enter] Select    \[Esc] Cancel", id="picker-hint")
+            yield Label("[j/k] Move  [Enter] Open OAuth  [Esc] Cancel", id="picker-hint")
 
     def on_mount(self) -> None:
-        self.query_one("#picker-table", DataTable).focus()
-
-    def _cursor_key(self) -> str | None:
         table = self.query_one("#picker-table", DataTable)
-        if table.row_count == 0:
-            return None
-        return table.coordinate_to_cell_key(table.cursor_coordinate).row_key.value
+        if table.row_count:
+            table.move_cursor(row=0, animate=False)
+        table.focus()
 
     def _select_current(self) -> None:
-        key = self._cursor_key()
-        if key is None:
+        table = self.query_one("#picker-table", DataTable)
+        if table.row_count == 0:
             self.dismiss(None)
             return
-        if key == "default":
-            self.dismiss(self.default_browser())
-            return
-        self.dismiss(self.BROWSERS[key])
+        key = table.coordinate_to_cell_key(table.cursor_coordinate).row_key.value
+        self.dismiss(None if key == "__default__" else key)
 
     def on_key(self, event) -> None:
         if event.key == "escape":
-            self.dismiss(None)
+            self.dismiss(False)
             event.stop()
         elif event.key == "j":
             self.query_one("#picker-table", DataTable).action_cursor_down()
@@ -829,7 +858,7 @@ class SetupScreen(ModalScreen):
         with Vertical(id="setup-dialog"):
             yield Label(f"󰊫  Google Drive Setup ({self.remote_name})", id="setup-title")
             yield Label(
-                r"Press \[s] to connect via browser OAuth." + "\n"
+                r"Press \[s] to choose a browser and connect via OAuth." + "\n"
                 r"Press \[q] to quit.",
                 id="setup-msg"
             )
@@ -840,138 +869,37 @@ class SetupScreen(ModalScreen):
 
     def on_key(self, event) -> None:
         if event.key == "s":
-            self.app.push_screen(BrowserPickerScreen(), self._on_browser_chosen)
-            event.stop()
+            self._choose_browser()
         elif event.key == "q":
             self.app.exit()
-            event.stop()
 
-    def _on_browser_chosen(self, result: tuple[str, str | None, str | None] | None) -> None:
-        if result is None:
-            self._set_status("")
-            return
-        name, command, window_class = result
-        logging.info("setup oauth start remote=%s browser=%s", self.remote_name, command or "default")
-        self._set_status(f"Opening {name}… authorize in browser then wait here.")
-        self.run_worker(lambda: self._do_auth(command, window_class), thread=True)
+    def _choose_browser(self) -> None:
+        def selected(browser: str | None | bool) -> None:
+            if browser is False:
+                self._set_status("Browser selection cancelled — press S to retry.")
+                return
+            logging.info("setup oauth start remote=%s browser=%s",
+                         self.remote_name, browser or "system-default")
+            label = browser if browser else "system default"
+            self._set_status(f"Opening {label}… authorize in browser then wait here.")
+            self.run_worker(lambda: self._do_auth(browser if isinstance(browser, str) else None), thread=True)
 
-    def _get_window_ids(self, window_class: str) -> set[str]:
-        r = subprocess.run(["xdotool", "search", "--class", window_class], capture_output=True, text=True)
-        return set(r.stdout.strip().split()) if r.stdout.strip() else set()
+        self.app.push_screen(BrowserPickerScreen(available_browsers()), selected)
 
-    def _float_window_by_id(self, wid: str) -> None:
-        subprocess.run(
-            ["i3-msg", f"[id={wid}] floating enable, resize set 980 760, move position center, focus"],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+    def _do_auth(self, browser: str | None = None) -> bool:
+        env = os.environ.copy()
+        if browser:
+            env["BROWSER"] = browser
+        result = subprocess.run(
+            ["rclone", "authorize", "drive"],
+            capture_output=True, text=True, env=env
         )
-
-    def _float_auth_window(self, window_class: str, existing_ids: set[str]) -> None:
-        for _ in range(160):
-            _time.sleep(0.05)
-            # Custom class: new instance with --class flag
-            subprocess.run(
-                ["i3-msg", '[class="i3-gdrive-browser"] floating enable, resize set 980 760, move position center, focus'],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-            )
-            # Native class: reused instance detected by new window ID
-            new_ids = self._get_window_ids(window_class) - existing_ids
-            for wid in new_ids:
-                self._float_window_by_id(wid)
-
-    def _monitor_auth_browser(self, proc: subprocess.Popen, window_class: str, existing_ids: set[str]) -> None:
-        # Wait up to 15s for a new browser window to appear
-        for _ in range(30):
-            _time.sleep(0.5)
-            has_custom = subprocess.run(["xdotool", "search", "--class", "i3-gdrive-browser"],
-                                        capture_output=True).stdout.strip()
-            has_native = self._get_window_ids(window_class) - existing_ids
-            if has_custom or has_native:
-                break
-        else:
-            return
-        # Watch for all auth windows to close
-        while proc.poll() is None:
-            _time.sleep(1)
-            has_custom = subprocess.run(["xdotool", "search", "--class", "i3-gdrive-browser"],
-                                        capture_output=True).stdout.strip()
-            has_native = self._get_window_ids(window_class) - existing_ids
-            if not has_custom and not has_native:
-                proc.terminate()
-                self.app.call_from_thread(self._set_status, "Browser closed — press S to retry.")
-                break
-
-    def _open_auth_url(self, browser_cmd: str, window_class: str | None, url: str) -> bool:
-        browser = shutil.which(browser_cmd)
-        if not browser:
-            logging.warning("browser command not found: %s", browser_cmd)
+        if result.returncode != 0:
+            logging.warning("rclone authorize failed remote=%s browser=%s stderr=%s stdout=%s",
+                            self.remote_name, browser or "system-default", result.stderr, result.stdout)
             return False
-        existing_ids = self._get_window_ids(window_class) if window_class else set()
-        args = [browser, url]
-        if browser_cmd in {"brave", "chromium"}:
-            args = [browser, "--class=i3-gdrive-browser", "--new-window", url]
-        elif browser_cmd == "firefox":
-            args = [browser, "--class", "i3-gdrive-browser", "--new-window", url]
-        try:
-            subprocess.Popen(
-                args,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                start_new_session=True,
-            )
-            if window_class:
-                threading.Thread(target=self._float_auth_window, args=(window_class, existing_ids), daemon=True).start()
-            return True
-        except Exception:
-            logging.exception("failed to open browser=%s url=%s", browser_cmd, url)
-            return False
-
-    def _do_auth(self, browser_cmd: str | None = None, window_class: str | None = None) -> bool:
-        if browser_cmd is None:
-            result = subprocess.run(
-                ["rclone", "authorize", "drive"],
-                capture_output=True, text=True
-            )
-            stdout = result.stdout
-            if result.returncode != 0:
-                logging.warning("rclone authorize failed rc=%s stderr=%s", result.returncode, result.stderr)
-                return False
-        else:
-            proc = subprocess.Popen(
-                ["rclone", "authorize", "drive", "--auth-no-open-browser"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                bufsize=1,
-            )
-            output: list[str] = []
-            opened = False
-            url_re = re.compile(r"https?://\S+")
-            assert proc.stdout is not None
-            for line in proc.stdout:
-                output.append(line)
-                if opened:
-                    continue
-                match = url_re.search(line)
-                if match and "/auth?" in match.group(0):
-                    url = match.group(0).strip().strip('"').rstrip('".,)')
-                    existing_ids = self._get_window_ids(window_class) if window_class else set()
-                    opened = self._open_auth_url(browser_cmd, window_class, url)
-                    if opened and window_class:
-                        threading.Thread(
-                            target=self._monitor_auth_browser,
-                            args=(proc, window_class, existing_ids),
-                            daemon=True,
-                        ).start()
-            proc.wait()
-            stdout = "".join(output)
-            if proc.returncode != 0:
-                logging.warning("rclone authorize failed rc=%s output=%s", proc.returncode, stdout)
-                return False
-            if not opened:
-                logging.warning("rclone authorize did not expose auth url browser=%s", browser_cmd)
-                return False
-
         # Token JSON is in stdout between { and the last }
+        stdout = result.stdout
         start = stdout.find("{")
         end = stdout.rfind("}") + 1
         if start == -1 or end == 0:
@@ -1186,6 +1114,7 @@ class GDriveApp(App):
         Binding("n",         "mkdir",        "New dir",      show=True),
         Binding("delete",    "delete_entry", "Delete",       show=True),
         Binding("m",         "toggle_mount", "Mount",        show=True),
+        Binding("shift+m",   "mount_all",    "Mount all",    show=True),
         Binding("a",         "switch_account", "Account",    show=True),
         Binding("slash",     "search",       "Search",       show=True),
         Binding("question_mark", "help",     "Help",         show=True),
@@ -1223,6 +1152,19 @@ class GDriveApp(App):
         self._sync_active()
         if not has_remote(self.remote_name):
             self.push_screen(SetupScreen(self.remote_name), self._on_setup_done)
+        else:
+            # FilePane widgets mount before App.on_mount(), so the first remote
+            # listing can run with the fallback REMOTE value ("gdrive").  Refresh
+            # after selecting the real/default rclone remote so cloud files appear
+            # immediately on startup.
+            self.remote_pane.path = ""
+            self.remote_pane.refresh_listing()
+            self._refresh_status()
+            if len(remotes) > 1:
+                # Startup account picker: after the logo and main TUI appear,
+                # ask which Drive account to open. Esc keeps the preselected
+                # default/first account; Enter switches to the selected account.
+                self.call_later(self.action_switch_account)
         self.run_worker(self._wal_watcher, thread=True, exclusive=False)
 
     def _modal_active(self) -> bool:
@@ -1261,6 +1203,20 @@ class GDriveApp(App):
         # Don't hijack keys while a modal (like account input) is on top.
         if self._modal_active():
             return
+        # Textual/DataTable focus can swallow the Binding("q", "quit") path on
+        # some versions, so handle q explicitly at the app level when not in a
+        # modal or search prompt.
+        if event.key == "q" and not self.active_pane._searching:
+            logging.info("quit requested via q")
+            self.exit()
+            event.prevent_default()
+            event.stop()
+            return
+        if event.character == "M" and not self.active_pane._searching:
+            self.action_mount_all()
+            event.prevent_default()
+            event.stop()
+            return
         pane = self.active_pane
         if not pane._searching:
             return
@@ -1298,13 +1254,14 @@ class GDriveApp(App):
         if pane.side == "local":
             target = str(Path(pane.path) / entry["name"])
         else:
-            if not is_mounted():
+            remote_mount = mount_point_for(self.remote_name)
+            if not is_mounted(self.remote_name):
                 self.query_one("#status-bar", Static).update(
-                    " ✗ Mount Drive (press m) to open remote files"
+                    f" ✗ Mount {self.remote_name} first (press m) to open remote files"
                 )
                 return
             rel = (pane.path + "/" + entry["name"]).lstrip("/")
-            target = str(MOUNT_POINT / rel)
+            target = str(remote_mount / rel)
         try:
             subprocess.Popen(
                 ["xdg-open", target],
@@ -1540,8 +1497,10 @@ class GDriveApp(App):
         self.remote_pane.active = self.active_side == "remote"
 
     def _status_text(self) -> str:
-        mount = "● Mounted" if is_mounted() else "○ Unmounted"
-        return f" {mount}   acct:{self.remote_name}   Tab switch panes · a account · / search · q quit"
+        mounted, total = mounted_drive_count()
+        current = "●" if is_mounted(self.remote_name) else "○"
+        mount = f"{current} Mounted {mounted}/{total}" if total else "○ No accounts"
+        return f" {mount}   acct:{self.remote_name}   Tab switch panes · m mount · M all · a account · / search · q quit"
 
     def _refresh_status(self) -> None:
         self.query_one("#status-bar", Static).update(self._status_text())
@@ -1722,20 +1681,52 @@ class GDriveApp(App):
 
         self.push_screen(ConfirmScreen(msg), do_delete)
 
+    def _mount_remote(self, remote: str) -> Path:
+        ensure_multi_mount_root()
+        mount_point = mount_point_for(remote)
+        mount_point.mkdir(parents=True, exist_ok=True)
+        if is_mounted(remote):
+            logging.info("mount skipped already mounted remote=%s mount_point=%s", remote, mount_point)
+            return mount_point
+        logging.info("mount requested remote=%s mount_point=%s", remote, mount_point)
+        subprocess.Popen([
+            "rclone", "mount", f"{remote}:",
+            str(mount_point),
+            "--vfs-cache-mode", "full",
+            "--vfs-cache-max-size", "2G",
+            "--daemon",
+        ])
+        return mount_point
+
+    def action_mount_all(self) -> None:
+        remotes = drive_remotes()
+        if not remotes:
+            self.query_one("#status-bar", Static).update(" ✗ No Drive accounts configured")
+            return
+        for remote in remotes:
+            try:
+                self._mount_remote(remote)
+            except Exception as e:
+                logging.exception("mount all failed remote=%s", remote)
+                self.query_one("#status-bar", Static).update(f" ✗ Mount all failed: {e}")
+                return
+        self.query_one("#status-bar", Static).update(
+            f" ⏳ Mounting {len(remotes)} Drive accounts under {MOUNT_ROOT}…"
+        )
+        self.set_timer(1.5, self._refresh_status)
+
     def action_toggle_mount(self) -> None:
-        if is_mounted():
-            logging.info("unmount requested mount_point=%s", MOUNT_POINT)
-            subprocess.run(["fusermount", "-u", str(MOUNT_POINT)], capture_output=True)
+        mount_point = mount_point_for(self.remote_name)
+        if is_mounted(self.remote_name):
+            logging.info("unmount requested remote=%s mount_point=%s", self.remote_name, mount_point)
+            unmount_path(mount_point)
         else:
-            logging.info("mount requested remote=%s mount_point=%s", self.remote_name, MOUNT_POINT)
-            MOUNT_POINT.mkdir(exist_ok=True)
-            subprocess.Popen([
-                "rclone", "mount", f"{self.remote_name}:",
-                str(MOUNT_POINT),
-                "--vfs-cache-mode", "full",
-                "--vfs-cache-max-size", "2G",
-                "--daemon",
-            ])
+            try:
+                self._mount_remote(self.remote_name)
+            except Exception as e:
+                logging.exception("mount failed remote=%s", self.remote_name)
+                self.query_one("#status-bar", Static).update(f" ✗ Mount failed: {e}")
+                return
         self.set_timer(1.5, self._refresh_status)
 
 

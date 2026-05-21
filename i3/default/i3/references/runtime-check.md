@@ -8,7 +8,7 @@ Use when a keybinding, launcher, wallpaper, clipboard, notification, bar feature
 cat ~/.config/i3/config                          # Check keybinding exists
 readlink -f ~/.local/bin/<script>                # Confirm symlink target
 i3 -C -c ~/.config/i3/config                    # Validate i3 config syntax
-journalctl --user -b | grep -i "dunst\|i3\|copyq"  # Check daemon errors
+journalctl --user -b | grep -i "dunst\|i3"  # Check daemon errors
 ```
 
 ## Common Checks by Subsystem
@@ -35,7 +35,7 @@ journalctl --user -b | grep -i "dunst\|i3\|copyq"  # Check daemon errors
 pkill dunst && dunst &
 pkill picom && picom --daemon
 pkill i3blocks && i3blocks &
-~/.config/polybar/launch.sh          # Restarts polybar + nm-applet + copyq + flameshot
+~/.config/polybar/launch.sh          # Restarts polybar
 wallpaper-set.sh                     # Re-applies wallpaper + pywal + SDDM colors
 ```
 
@@ -60,5 +60,5 @@ i3-msg exit          # Exit i3
 - **i3lock-color** (AUR) is required — plain `i3lock` lacks `--bar-indicator`, `--clock`, `--time-str`
 - **impala** (AUR) — wifi TUI launched in alacritty via `i3-launch-wifi.sh`
 - **wiremix** (AUR) — audio TUI launched in alacritty via `i3-launch-audio.sh`
-- **maim** — screenshots (not flameshot — flameshot is a tray app started via polybar/launch.sh)
+- **maim** — screenshots
 - **Brave** keybinding pre-clears `~/.config/BraveSoftware/Brave-Browser/Singleton*` to handle crash locks

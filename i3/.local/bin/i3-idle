@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-SCREENSAVER_TIMEOUT="${SCREENSAVER_TIMEOUT:-150}"
+SCREENSAVER_TIMEOUT="${SCREENSAVER_TIMEOUT:-300}"
 LOCK_TIMEOUT="${LOCK_TIMEOUT:-30}"
 
 pkill -x xidlehook 2>/dev/null || true

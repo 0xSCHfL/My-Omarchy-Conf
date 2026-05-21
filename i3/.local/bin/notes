@@ -2,7 +2,7 @@
 # Notes launcher — rofi-based browser for Obsidian vaults
 
 VAULT_ROOT="$HOME/Dropbox/Notes/Obsidian Vault"
-ROFI_THEME="$HOME/.config/rofi/i3-launcher.rasi"
+ROFI_THEME="$HOME/.config/rofi/i3-notes.rasi"
 
 rofi_menu() {
   rofi -dmenu -i -no-sort \

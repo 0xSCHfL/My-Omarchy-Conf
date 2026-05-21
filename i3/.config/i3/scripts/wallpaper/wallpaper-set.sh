@@ -3,9 +3,9 @@
 set -o pipefail
 exec 2>> /tmp/wallpaper-set.log
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOTFILES_DIR="$(cd "$SCRIPT_DIR/../../../../" && pwd)"
-DEFAULT_WALLPAPER="$DOTFILES_DIR/wallpapers/0024.jpg"
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
+DOTFILES_DIR="$(cd "$SCRIPT_DIR/../../../../../" && pwd)"
+DEFAULT_WALLPAPER="$(ls "$DOTFILES_DIR/wallpapers/"*.{jpg,png} 2>/dev/null | head -1)"
 WAL_CACHE="$HOME/.cache/wal/wal"
 CURRENT_LINK="$HOME/.config/i3/current-wallpaper"
 

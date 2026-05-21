@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-theme="$HOME/.config/rofi/i3-launcher.rasi"
+theme="$HOME/.config/rofi/i3-system.rasi"
 
 choose() {
   rofi -dmenu -no-sort -i -theme "$theme" -p "$1"

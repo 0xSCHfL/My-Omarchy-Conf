@@ -1,0 +1,82 @@
+/* i3 keybinding help — simple readable sheet */
+@import "~/.cache/wal/colors-rofi-dwm.rasi"
+
+* {
+    bg:          @wal-bg;
+    fg:          @wal-fg;
+    fg-dim:      @wal-fg-dim;
+    accent:      @wal-accent;
+    prompt:      @wal-prompt;
+    border:      @wal-border;
+
+    background-color: transparent;
+    text-color:       @fg;
+    margin:  0;
+    padding: 0;
+    spacing: 0;
+}
+
+window {
+    location:         center;
+    width:            820px;
+    border:           1px;
+    border-radius:    10px;
+    border-color:     @border;
+    background-color: @bg;
+}
+
+mainbox {
+    padding: 14px 0;
+    spacing: 8px;
+}
+
+inputbar {
+    padding: 4px 18px 12px 18px;
+    spacing: 8px;
+    children: [ prompt, entry ];
+}
+
+prompt {
+    font:       "Iosevka Nerd Font Bold 13";
+    text-color: @prompt;
+}
+
+entry {
+    font:              "Iosevka Nerd Font 13";
+    placeholder:       "search keys...";
+    placeholder-color: @fg-dim;
+}
+
+listview {
+    lines:        12;
+    columns:      1;
+    fixed-height: false;
+    border:       1px 0 0 0;
+    border-color: @border;
+    padding:      6px 0 0 0;
+}
+
+element {
+    padding:      8px 18px;
+    border:       0 0 0 3px;
+    border-color: transparent;
+}
+
+element selected normal {
+    border-color:     @prompt;
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+element-text {
+    font:           "Iosevka Nerd Font 13";
+    text-color:     @fg;
+    vertical-align: 0.5;
+}
+
+element selected element-text {
+    text-color: @accent;
+}
+
+scrollbar {
+    width: 0;
+}

@@ -1,0 +1,85 @@
+/* Notes launcher — compact pywal card */
+@import "~/.cache/wal/colors-rofi-dwm.rasi"
+
+* {
+    bg:          @wal-bg;
+    fg:          @wal-fg;
+    fg-dim:      @wal-fg-dim;
+    accent:      @wal-accent;
+    prompt:      @wal-prompt;
+    border:      @wal-border;
+
+    background-color: transparent;
+    text-color:       @fg;
+    margin:  0;
+    padding: 0;
+    spacing: 0;
+}
+
+window {
+    location:         center;
+    width:            500px;
+    border:           1px;
+    border-radius:    16px;
+    border-color:     @border;
+    background-color: @bg;
+}
+
+mainbox {
+    padding: 14px;
+    spacing: 10px;
+}
+
+inputbar {
+    padding:       10px 12px;
+    spacing:       8px;
+    border-radius: 12px;
+    background-color: rgba(255, 255, 255, 0.04);
+    children:      [ prompt, entry ];
+}
+
+prompt {
+    font:       "Iosevka Nerd Font Bold 12";
+    text-color: @prompt;
+}
+
+entry {
+    font:              "Iosevka Nerd Font 12";
+    placeholder:       "search notes...";
+    placeholder-color: @fg-dim;
+}
+
+listview {
+    lines:        9;
+    columns:      1;
+    fixed-height: false;
+    spacing:      6px;
+    border:       0;
+}
+
+element {
+    padding:       8px 12px;
+    border:        1px;
+    border-radius: 10px;
+    border-color:  transparent;
+    background-color: transparent;
+}
+
+element selected normal {
+    border-color:     @prompt;
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+element-text {
+    font:           "Iosevka Nerd Font 12";
+    text-color:     @fg;
+    vertical-align: 0.5;
+}
+
+element selected element-text {
+    text-color: @accent;
+}
+
+scrollbar {
+    width: 0;
+}
