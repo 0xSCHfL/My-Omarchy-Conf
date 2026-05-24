@@ -56,17 +56,22 @@ else
 fi
 
 
+# Icons (encoded as bash escapes so the file stays ASCII-safe)
+# Why: Write/Edit tools strip Private-Use-Area chars; \U escapes survive.
+THERM_ICON=$'\U000F050F'  # mdi-thermometer
+MEM_ICON=$'\U000F061A'    # mdi-memory (RAM sticks — original icon)
+
 # Show warning icon if CPU or GPU temp are high
 case $CPU_TEMP in
-    "N/A") COLOR="#d8dee9" && CPU_ICON="󰍛 ?" ;;
-    [7-9][6-9]|[8-9][0-9]|100) COLOR="#bf616a" && CPU_ICON="" ;;  # Greater than 75
-    [6][6-9]|7[0-5]) COLOR="#ebcb8b" && CPU_ICON="󰍛" ;;            # Between 66 and 75
-    *) COLOR="#a3be8c" && CPU_ICON="󰍛" ;;                          # 65 or below
+    "N/A") COLOR="#d8dee9" && CPU_ICON="$THERM_ICON ?" ;;
+    [7-9][6-9]|[8-9][0-9]|100) COLOR="#bf616a" && CPU_ICON="$THERM_ICON" ;;  # > 75
+    [6][6-9]|7[0-5]) COLOR="#ebcb8b" && CPU_ICON="$THERM_ICON" ;;            # 66–75
+    *) COLOR="#a3be8c" && CPU_ICON="$THERM_ICON" ;;                          # ≤ 65
 esac
 
 case $GPU_TEMP in
     "N/A") GPU_ICON="󰢮 ?" ; GPU_DISPLAY="N/A" ;;
-    [7-9][1-9]|[8-9][0-9]|100) GPU_ICON="" ;;  # Greater than 71
+    [7-9][1-9]|[8-9][0-9]|100) GPU_ICON="" ;;  # Greater than 71
     [5][1-9]|70) GPU_ICON="󰢮" ;;                # Between 51 and 70
     *) GPU_ICON="󰢮" ;;                          # 50 or below
 esac
@@ -75,9 +80,7 @@ esac
 
 
 # Send to bar
-# GPU line commented out - Intel iGPU doesn't expose temperature data
-# echo "| $GPU_ICON $GPU_DISPLAY  |  $CPU_ICON $CPU_TEMP°C  |  󰘚 ${MEM_USE}g"
-echo "| $CPU_ICON $CPU_TEMP°C  |  󰘚 ${MEM_USE}g"
+echo "| $CPU_ICON $CPU_TEMP°C  |  $MEM_ICON ${MEM_USE}g"
 echo ""
 echo "$COLOR"
 

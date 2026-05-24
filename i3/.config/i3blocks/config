@@ -51,6 +51,12 @@ interval=2
 color=#e5c890
 separator=false
 
+[cpu]
+command=~/.config/i3blocks/scripts/cpu
+interval=2
+markup=pango
+separator=false
+
 [systemstats]
 command=~/.config/i3blocks/scripts/systemstats
 interval=2
@@ -61,6 +67,13 @@ command=~/.config/i3blocks/scripts/disks
 interval=30
 signal=3
 color=#a6d189
+separator=false
+
+[brightness]
+command=~/.config/i3blocks/scripts/brightness
+interval=5
+signal=12
+markup=pango
 separator=false
 
 [audio]

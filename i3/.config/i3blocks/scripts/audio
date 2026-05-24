@@ -19,4 +19,7 @@ echo "#ea999c"
 
 case $BLOCK_BUTTON in
     1) setsid -f "$TERMINAL_BIN" --class i3-audio -e bash -lc 'wiremix' ;;
+    2) pactl set-sink-mute @DEFAULT_SINK@ toggle && pkill -RTMIN+10 i3blocks ;;   # Middle-click: toggle mute
+    4) pactl set-sink-volume @DEFAULT_SINK@ +5% && pkill -RTMIN+10 i3blocks ;;    # Scroll up: +5%
+    5) pactl set-sink-volume @DEFAULT_SINK@ -5% && pkill -RTMIN+10 i3blocks ;;    # Scroll down: -5%
 esac

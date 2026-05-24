@@ -96,10 +96,10 @@ bindsym Mod4+Mod1+n exec --no-startup-id playerctl -p spotify next
 bindsym Mod4+Mod1+b exec --no-startup-id playerctl -p spotify previous
 
 # Brightness controls
-# Brightness up 5% (brightnessctl)
-bindsym XF86MonBrightnessUp exec --no-startup-id brightnessctl set +5%
-# Brightness down 5% (brightnessctl)
-bindsym XF86MonBrightnessDown exec --no-startup-id brightnessctl set 5%-
+# Brightness up 5% with floating OSD (brightness-osd.sh)
+bindsym XF86MonBrightnessUp exec --no-startup-id $HOME/.config/i3/scripts/media/brightness-osd.sh up
+# Brightness down 5% with floating OSD (brightness-osd.sh)
+bindsym XF86MonBrightnessDown exec --no-startup-id $HOME/.config/i3/scripts/media/brightness-osd.sh down
 
 # WiFi and Audio controls
 # WiFi TUI in floating terminal (i3-launch-wifi.sh)
@@ -140,6 +140,7 @@ for_window [class="Walker"] floating enable, resize set 644 300, move position c
 for_window [class="walker"] floating enable, resize set 644 300, move position center
 for_window [title="Walker"] floating enable, resize set 644 300, move position center
 for_window [title="volume-osd"] floating enable, resize set 360 100, move position center
+for_window [title="brightness-osd"] floating enable, resize set 360 100, move position center
 for_window [class="i3statspopup"] floating enable, resize set 900 650, move position center
 for_window [class="i3diskpopup"] floating enable, resize set 760 360, move position center
 for_window [class="i3timerpopup"] floating enable, resize set 520 220, move position center
