@@ -1,0 +1,5 @@
+- [Work Obsidian vault location](work_obsidian_vault.md) — AVA / vocallremote / ElevenLabs knowledge base at `~/Dropbox/Notes/Obsidian Vault/Work/`; consult for work-project context outside this repo.
+- [Work vault — put task work under Projects/, not Notes/](feedback_work_vault_layout.md) — task deliverables go in `Work/Projects/<Name>/` with a README + `source/` subfolder; `Notes/` is reference-only.
+- [Cross-PC sync setup (work + home)](reference_cross_pc_sync.md) — memory lives in `~/Dropbox/claude-shared/dotfiles/memory/`, symlinked from `~/.claude/projects/.../memory`; vault syncs via Dropbox.
+- [obsidian-wiki CLI tool](reference_obsidian_wiki.md) — `wiki ask/chat/moc/enrich` for RAG-grounded Q&A over the Work vault; prefer it over grep; setup commands included.
+- [Invoke `wiki ask` proactively — don't ask the user to run it](feedback_use_wiki_cli_proactively.md) — Claude runs `wiki ask` itself; never tells the user to run it; skips expensive `wiki moc`/`wiki enrich` unless asked.
