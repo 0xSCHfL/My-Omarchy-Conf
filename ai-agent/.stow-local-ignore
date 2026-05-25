@@ -1,0 +1,4 @@
+# Repo-only files/dirs: keep inside the dotfiles package, never link into $HOME.
+^memory$
+^snapshot-memory\.sh$
+^\.stow-local-ignore$

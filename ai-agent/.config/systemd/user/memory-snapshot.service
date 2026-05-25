@@ -1,0 +1,7 @@
+[Unit]
+Description=Snapshot Claude Code memory into dotfiles git history
+
+[Service]
+Type=oneshot
+ExecStart=%h/Work/dotfiles/ai-agent/snapshot-memory.sh
+Nice=10
