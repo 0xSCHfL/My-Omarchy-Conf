@@ -3,3 +3,4 @@
 - [Cross-PC sync setup (work + home)](reference_cross_pc_sync.md) — memory lives in `~/Dropbox/claude-shared/dotfiles/memory/`, symlinked from `~/.claude/projects/.../memory`; vault syncs via Dropbox.
 - [obsidian-wiki CLI tool](reference_obsidian_wiki.md) — `wiki ask/chat/moc/enrich` for RAG-grounded Q&A over the Work vault; prefer it over grep; setup commands included.
 - [Invoke `wiki ask` proactively — don't ask the user to run it](feedback_use_wiki_cli_proactively.md) — Claude runs `wiki ask` itself; never tells the user to run it; skips expensive `wiki moc`/`wiki enrich` unless asked.
+- [Work team — who assigns and reviews](project_work_team.md) — Jean assigns ClickUp tasks via Task Orchestrator PM; Jean + Majda are default reviewers on Operations/Daily tasks; user's ClickUp name is "Souhaib".

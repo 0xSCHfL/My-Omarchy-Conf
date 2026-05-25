@@ -11,5 +11,5 @@ When producing deliverables for a Work ClickUp task (or any project-shaped work)
 **How to apply:**
 - New ClickUp task or work project → `Work/Projects/<Name>/`.
 - Inside, mirror the existing project convention: a `README.md` (or `00 - Project Index.md`) with frontmatter (`type, created, status, tags`, plus ClickUp id / due / assigner when relevant), deliverable files at the project root, and a `source/` subfolder for raw inputs and build scripts.
-- Daily notes still live at the vault root (`Work/2026-05-25.md`).
+- Daily notes live at `Work/Notes/dailies/<YYYY>/<MM Month>/YYYY-MM-DD <Weekday>.md` (e.g. `Notes/dailies/2026/05 May/2026-05-25 Monday.md`). NOT at the vault root — a daily note created at the root gets moved into the dated folder structure (Obsidian periodic-notes plugin on the home PC) and a root-level duplicate creates clutter.
 - Reference material that isn't a task (server setup, infra runbooks) belongs in `Notes/`.

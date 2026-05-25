@@ -23,5 +23,6 @@ Caveats:
 - `Projects/AI Voice Agent 'Elevenlabs'/` folder exists but is empty/older.
 - Installed Obsidian plugins: `calendar`, `code-styler`, `obsidian-icon-folder`, `obsidian-style-settings` (mostly cosmetic — no LLM/RAG plugins).
 - The vault syncs between the user's work and home PCs via Dropbox — any `.md` change is automatically available on both machines.
+- **Daily notes path convention:** `Notes/dailies/<YYYY>/<MM Month>/YYYY-MM-DD <Weekday>.md`, e.g. `Notes/dailies/2026/05 May/2026-05-25 Monday.md`. Never create daily notes at the vault root.
 
 When consulting: read the specific note relevant to the question rather than scanning the whole vault. Paths contain spaces — quote them.
