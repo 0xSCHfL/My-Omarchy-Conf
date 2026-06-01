@@ -241,6 +241,13 @@ stow_i3() {
     _backup_if_plain_file "$HOME/.config/alacritty/alacritty.toml"
     _stow_pkg "$DOTFILES" i3 --ignore='^shell$' --ignore='^sddm-theme$' --ignore='^default$'
     _stow_pkg "$DOTFILES/i3" shell
+
+    # Deploy smartctl-safe to /usr/local/bin for sudo access
+    if [[ -f "$DOTFILES/i3/.local/bin/smartctl-safe" ]]; then
+        sudo cp "$DOTFILES/i3/.local/bin/smartctl-safe" /usr/local/bin/smartctl-safe
+        echo "  ✓ smartctl-safe deployed to /usr/local/bin"
+    fi
+
     if [[ ! -f "$HOME/.xinitrc" ]]; then
         ln -sf "Work/dotfiles/i3/.xinitrc.i3" "$HOME/.xinitrc"
         echo "  → Created ~/.xinitrc symlink (i3)"

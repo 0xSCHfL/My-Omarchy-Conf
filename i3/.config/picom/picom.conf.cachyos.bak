@@ -1,0 +1,7 @@
+# Disable animations for testing
+fading = false;
+animations = false;
+
+# Keep other performance settings
+backend = "glx";
+vsync = false;
