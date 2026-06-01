@@ -253,6 +253,8 @@ bindsym Mod4+f exec --no-startup-id ~/.config/i3/scripts/utils/fullscreen.sh
 # file manager
 # Open file manager (nautilus)
 bindsym Mod4+Shift+f exec --no-startup-id nautilus --new-window
+# Open Terminal file manager (yazi)
+bindsym Mod1+Shift+f exec --no-startup-id kitty -e yazi
 # maximize: fills screen, bar stays, app UI preserved (not fullscreen)
 # Maximize, keeps bar visible (maximize.sh)
 bindsym Mod4+Mod1+f exec --no-startup-id ~/.config/i3/scripts/utils/maximize.sh
