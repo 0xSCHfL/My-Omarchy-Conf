@@ -1,0 +1,20 @@
+#!/bin/sh
+
+SHARED_ENV="$HOME/Dropbox/claude-shared/obsidian-wiki/env"
+LOCAL_ENV="$HOME/.config/obsidian-wiki/env"
+WIKI_BIN="$HOME/.local/share/obsidian-wiki/venv/bin/wiki"
+
+for env_file in "$SHARED_ENV" "$LOCAL_ENV"; do
+  if [ -f "$env_file" ]; then
+    # shellcheck disable=SC1090
+    . "$env_file"
+  fi
+done
+
+if [ ! -x "$WIKI_BIN" ]; then
+  echo "wiki: missing $WIKI_BIN" >&2
+  echo "Run: cd $HOME/Dropbox/obsidian-wiki && UV_PROJECT_ENVIRONMENT=$HOME/.local/share/obsidian-wiki/venv uv sync" >&2
+  exit 1
+fi
+
+exec "$WIKI_BIN" "$@"
