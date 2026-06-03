@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+# CPU usage % — samples /proc/stat twice ~1s apart and computes delta
+STATE_FILE="/tmp/i3blocks_cpu_state"
+
+read -r _ u1 n1 s1 i1 io1 ir1 sir1 st1 _ < /proc/stat
+
+if [ -f "$STATE_FILE" ]; then
+    read -r u0 n0 s0 i0 io0 ir0 sir0 st0 < "$STATE_FILE"
+else
+    u0=0; n0=0; s0=0; i0=0; io0=0; ir0=0; sir0=0; st0=0
+fi
+
+echo "$u1 $n1 $s1 $i1 $io1 ir1 $sir1 $st1" > "$STATE_FILE"
+
+idle0=$((i0 + io0))
+idle1=$((i1 + io1))
+nidle0=$((u0 + n0 + s0 + ir0 + sir0 + st0))
+nidle1=$((u1 + n1 + s1 + ir1 + sir1 + st1))
+
+total0=$((idle0 + nidle0))
+total1=$((idle1 + nidle1))
+
+totald=$((total1 - total0))
+idled=$((idle1 - idle0))
+
+if [ "$totald" -le 0 ]; then
+    PCT=0
+else
+    PCT=$(( (1000 * (totald - idled) / totald + 5) / 10 ))
+fi
+
+# Color thresholds
+if   [ "$PCT" -ge 85 ]; then COLOR="#e78284"
+elif [ "$PCT" -ge 60 ]; then COLOR="#ef9f76"
+elif [ "$PCT" -ge 30 ]; then COLOR="#e5c890"
+else                         COLOR="#a6d189"
+fi
+
+case $BLOCK_BUTTON in
+    1) setsid -f alacritty --class i3statspopup -e bash -lc 'htop' ;;
+esac
+
+# Icon: mdi-memory/chip (U+F035B) — classic single-chip glyph
+ICON=$'\U000F035B'
+
+printf '| %s %s%%\n\n%s\n' "$ICON" "$PCT" "$COLOR"

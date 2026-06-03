@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+# Brightness % via brightnessctl
+
+PCT=$(brightnessctl -m 2>/dev/null | awk -F, '{gsub("%","",$4); print $4}')
+[ -z "$PCT" ] && PCT="?"
+
+# Icon: mdi-brightness-7 (sun) U+F00E0
+ICON=$'\U000F00E0'
+
+# Scroll / click controls
+case $BLOCK_BUTTON in
+    1) brightnessctl set 100% >/dev/null ;;       # Left click: full
+    3) brightnessctl set 10%  >/dev/null ;;       # Right click: dim
+    4) brightnessctl set +5%  >/dev/null ;;       # Scroll up: brighter
+    5) brightnessctl set 5%-  >/dev/null ;;       # Scroll down: dimmer
+esac
+
+printf '| %s %s%%\n\n#f4b8e4\n' "$ICON" "$PCT"

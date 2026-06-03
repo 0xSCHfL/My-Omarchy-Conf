@@ -2,10 +2,21 @@
 
 set -e
 
+GRN='\033[0;32m'
+RED='\033[0;31m'
+YLW='\033[1;33m'
+CYN='\033[0;36m'
+RST='\033[0m'
+
 DOTFILES="$(cd "$(dirname "$0")" && pwd)"
 
-if [[ ! -d "$DOTFILES/hyprland" || ! -d "$DOTFILES/i3" || ! -d "$DOTFILES/dwm" ]]; then
-    echo "Error: Run this script from the root of the dotfiles repository."
+if [[ ! -d "$DOTFILES/i3" ]]; then
+    echo "Error: i3 module directory not found at $DOTFILES/i3"
+    exit 1
+fi
+
+if [[ ! -d "$DOTFILES/dwm" ]]; then
+    echo "Error: dwm module directory not found at $DOTFILES/dwm"
     exit 1
 fi
 
@@ -77,15 +88,13 @@ if [[ "$PM" == "pacman" ]]; then
         # X11 / VM display support
         xorg-server xorg-xinit xf86-video-qxl spice-vdagent qemu-guest-agent
         # Terminals & apps
-        kitty alacritty btop neovim tmux copyq flameshot
+        kitty alacritty btop neovim tmux
         # Screenshot & OCR
         maim xclip tesseract
         # Clipboard & image preview
         cliphist ueberzugpp
         # Window/display utils
         xdotool xorg-xdpyinfo dex
-        # Audio/volume OSD
-        yad xob
         # System info (i3blocks scripts)
         sysstat wireless_tools imagemagick
         # Pager / syntax highlight
@@ -96,24 +105,18 @@ if [[ "$PM" == "pacman" ]]; then
     DWM_PKGS=(
         base-devel imv mpv autocutsel ueberzugpp
     )
-    HYPR_PKGS=(
-        hyprland waybar ghostty neovim tmux
-    )
 elif [[ "$PM" == "apt" ]]; then
     COMMON_PKGS=(stow feh picom dunst copyq network-manager-gnome policykit-1-gnome pipewire-pulse fonts-noto fonts-noto-color-emoji brightnessctl playerctl fzf jq libnotify-bin)
     I3_PKGS=(i3 i3blocks polybar rofi kitty alacritty btop neovim tmux maim xclip xdotool flameshot tesseract-ocr imagemagick x11-utils sysstat wireless-tools)
     DWM_PKGS=(build-essential imv mpv autocutsel)
-    HYPR_PKGS=(neovim tmux fastfetch starship)
 elif [[ "$PM" == "dnf" ]]; then
     COMMON_PKGS=(stow feh picom dunst network-manager-applet polkit-gnome pipewire-pulse jetbrains-mono-fonts noto-fonts-emoji brightnessctl playerctl fzf jq libnotify)
     I3_PKGS=(i3 i3blocks polybar rofi kitty alacritty btop neovim tmux maim xclip xdotool flameshot tesseract ImageMagick xdpyinfo sysstat)
     DWM_PKGS=(make gcc imv mpv libX11-devel libXft-devel libXinerama-devel)
-    HYPR_PKGS=(neovim tmux fastfetch starship)
 else
     COMMON_PKGS=()
     I3_PKGS=()
     DWM_PKGS=()
-    HYPR_PKGS=()
 fi
 
 install_pkgs() {
@@ -123,25 +126,22 @@ install_pkgs() {
     [[ ${#pkgs[@]} -eq 0 ]] && return
     echo "  → $label"
     $PM_UPDATE 2>/dev/null || true
-    $PM_INSTALL "${pkgs[@]}" 2>/dev/null || echo "  (some packages may not be available on this distro)"
+    $PM_INSTALL "${pkgs[@]}" || echo "  (some packages may not be available on this distro)"
 }
 
 install_all() {
     echo "Installing packages..."
     install_pkgs "common" "${COMMON_PKGS[@]}"
     install_pkgs "i3" "${I3_PKGS[@]}"
-    install_pkgs "hyprland" "${HYPR_PKGS[@]}"
     install_pkgs "dwm" "${DWM_PKGS[@]}"
 
     if [[ -n "$PM_AUR" ]]; then
         echo "  → AUR packages..."
         $PM_AUR -S --needed --noconfirm \
-            hyprland waybar ghostty \
-            i3lock-color \
             impala wiremix auto-cpufreq \
             python-pywal xob \
             ttf-iosevka-nerd \
-            voxtype-bin ydotool 2>/dev/null || true
+            voxtype-bin ydotool || true
     fi
 
     # voxtype: add user to input group + download small.en model
@@ -181,9 +181,6 @@ unstow() {
             unstow_pkg "$DOTFILES" i3 --ignore='^shell$' --ignore='^sddm-theme$' --ignore='^default$'
             unstow_pkg "$DOTFILES/i3" shell
             ;;
-        hyprland)
-            unstow_pkg "$DOTFILES" hyprland --ignore='^\.bashrc$'
-            ;;
         dwm)
             unstow_pkg "$DOTFILES" dwm \
                 --ignore='dunstrc$' --ignore='flameshot\.ini$' --ignore='picom\.conf$' \
@@ -197,10 +194,9 @@ unstow() {
         all)
             unstow i3
             unstow tmux
-            unstow hyprland
             unstow dwm
             ;;
-        *) echo "Usage: $0 unstow [i3|tmux|hyprland|dwm|all]"; exit 1 ;;
+        *) echo "Usage: $0 unstow [i3|tmux|dwm|all]"; exit 1 ;;
     esac
 }
 
@@ -245,6 +241,13 @@ stow_i3() {
     _backup_if_plain_file "$HOME/.config/alacritty/alacritty.toml"
     _stow_pkg "$DOTFILES" i3 --ignore='^shell$' --ignore='^sddm-theme$' --ignore='^default$'
     _stow_pkg "$DOTFILES/i3" shell
+
+    # Deploy smartctl-safe to /usr/local/bin for sudo access
+    if [[ -f "$DOTFILES/i3/.local/bin/smartctl-safe" ]]; then
+        sudo cp "$DOTFILES/i3/.local/bin/smartctl-safe" /usr/local/bin/smartctl-safe
+        echo "  ✓ smartctl-safe deployed to /usr/local/bin"
+    fi
+
     if [[ ! -f "$HOME/.xinitrc" ]]; then
         ln -sf "Work/dotfiles/i3/.xinitrc.i3" "$HOME/.xinitrc"
         echo "  → Created ~/.xinitrc symlink (i3)"
@@ -263,11 +266,6 @@ stow_i3() {
     fi
 
     login_setup
-}
-
-stow_hyprland() {
-    echo "Stowing hyprland to $HOME..."
-    _stow_pkg "$DOTFILES" hyprland --ignore='^\.bashrc$'
 }
 
 stow_dwm() {
@@ -295,13 +293,110 @@ stow_tmux() {
 stow_all() {
     stow_i3
     stow_tmux
-    stow_hyprland
     stow_dwm
     echo "Wallpapers are at $DOTFILES/wallpapers/"
 }
 
-# --- Stow check ---
+# --- Checks ---
+ok()   { echo -e "  ${GRN}✓${RST} $1"; }
+fail() { echo -e "  ${RED}✗${RST} $1"; }
+warn() { echo -e "  ${YLW}!${RST} $1"; }
+header() { echo -e "\n${CYN}══ $1 ══${RST}"; }
+
+detect_wm() {
+    if [[ -n "$I3_PID" ]] || pgrep -x i3 >/dev/null 2>&1; then
+        echo "i3"
+    elif [[ -n "$DWMDESKTOP" ]] || pgrep -x dwm >/dev/null 2>&1; then
+        echo "dwm"
+    elif [[ -n "$HYPRLAND_INSTANCE_SIGNATURE" ]] || pgrep -x Hyprland >/dev/null 2>&1; then
+        echo "hyprland"
+    else
+        echo "none"
+    fi
+}
+
+check_packages() {
+    local wm=$1
+    local missing=()
+    local optional=(xf86-video-qxl spice-vdagent qemu-guest-agent)
+
+    case "$wm" in
+        i3) pkgs=("${I3_PKGS[@]}") ;;
+        dwm) pkgs=("${DWM_PKGS[@]}") ;;
+        *)  pkgs=("${I3_PKGS[@]}" "${DWM_PKGS[@]}") ;;
+    esac
+
+    for pkg in "${pkgs[@]}"; do
+        if ! pacman -Qi "$pkg" &>/dev/null; then
+            missing+=("$pkg")
+        fi
+    done
+
+    local required=()
+    for pkg in "${missing[@]}"; do
+        if ! [[ " ${optional[*]} " == *" $pkg "* ]]; then
+            required+=("$pkg")
+        fi
+    done
+
+    if [[ ${#required[@]} -eq 0 ]]; then
+        ok "All $wm packages installed"
+        [[ ${#missing[@]} -gt 0 ]] && warn "Optional: ${missing[*]}" || true
+    else
+        warn "Missing: ${required[*]}"
+        return 1
+    fi
+}
+
+check_services() {
+    local services=(
+        NetworkManager.service
+        polkit.service
+        pipewire.service
+        pipewire-pulse.service
+        wireplumber.service
+    )
+    local failed=0
+
+    for svc in "${services[@]}"; do
+        if systemctl is-active --quiet "$svc" 2>/dev/null; then
+            ok "$svc"
+        elif systemctl --user is-active --quiet "$svc" 2>/dev/null; then
+            ok "$svc (user)"
+        else
+            fail "$svc not running"
+            failed=1
+        fi
+    done
+
+    return $failed
+}
+
+check_runtime() {
+    local wm=$1
+    case "$wm" in
+        i3)
+            if command -v i3 &>/dev/null && i3 -C -c ~/.config/i3/config &>/dev/null; then
+                ok "i3 config syntax valid"
+            else
+                fail "i3 config has errors"
+                return 1
+            fi
+            ;;
+        dwm)
+            if pgrep -x dwm >/dev/null 2>&1; then
+                ok "dwm running"
+            else
+                fail "dwm not running"
+                return 1
+            fi
+            ;;
+    esac
+}
+
 check_stow() {
+    local wm
+    wm=$(detect_wm)
     local ignore="--ignore=CLAUDE.md --ignore=AGENTS.md --ignore=README.md --ignore=wallpapers"
     local failed=0
 
@@ -314,50 +409,62 @@ check_stow() {
         out=$(stow -d "$dir" -t "$HOME" -n -v $ignore "${extra[@]}" "$pkg" 2>&1 || true)
         conflicts=$(echo "$out" | grep -E "existing target|cannot stow|source is an absolute symlink" || true)
         if [[ -n "$conflicts" ]]; then
-            echo "  ! $pkg conflicts:"
+            warn "$pkg conflicts:"
             echo "$conflicts" | sed 's/^/      /'
             failed=1
         else
-            echo "  ✓ $pkg"
+            ok "$pkg"
         fi
     }
 
-    echo "Checking stow targets for $HOME..."
+    echo -e "${CYN}Current WM: ${wm}${RST}"
+
+    header "Packages"
+    check_packages "$wm" || failed=1
+
+    header "Services"
+    check_services || failed=1
+
+    header "Runtime"
+    check_runtime "$wm" || failed=1
+
+    header "Stow targets ($HOME)"
     check_pkg "$DOTFILES" i3 --ignore='^shell$' --ignore='^sddm-theme$' --ignore='^default$'
     check_pkg "$DOTFILES/i3" shell
-    check_pkg "$DOTFILES" hyprland --ignore='^\.bashrc$'
-    check_pkg "$DOTFILES" dwm \
-        --ignore='dunstrc$' \
-        --ignore='flameshot\.ini$' \
-        --ignore='picom\.conf$' \
-        --ignore='colors-rofi-dwm\.rasi$' \
-        --ignore='fzfub$' \
-        --ignore='notes$' \
-        --ignore='qutebrowser' \
-        --ignore='quickmarks$' \
-        --ignore='urls$' \
-        --ignore='brightnessnotify$' \
-        --ignore='dwm-block-.*$'
 
-    echo ""
-    echo "Checking key links..."
+    if [[ "$wm" != "i3" ]]; then
+        check_pkg "$DOTFILES" dwm \
+            --ignore='dunstrc$' \
+            --ignore='flameshot\.ini$' \
+            --ignore='picom\.conf$' \
+            --ignore='colors-rofi-dwm\.rasi$' \
+            --ignore='fzfub$' \
+            --ignore='notes$' \
+            --ignore='qutebrowser' \
+            --ignore='quickmarks$' \
+            --ignore='urls$' \
+            --ignore='brightnessnotify$' \
+            --ignore='dwm-block-.*$'
+    fi
+
+    header "Key symlinks"
     for target in \
         "$HOME/.config/i3/config" \
         "$HOME/.config/i3blocks/config" \
         "$HOME/.local/bin/i3-gdrive" \
         "$HOME/.zshrc"; do
         if [[ -e "$target" && "$(readlink -f "$target")" == "$DOTFILES"* ]]; then
-            echo "  ✓ $target"
+            ok "$target"
         else
-            echo "  ! $target is not linked to $DOTFILES"
+            fail "$target not linked to dotfiles"
             failed=1
         fi
     done
 
     if [[ $failed -eq 0 ]]; then
-        echo "All stow checks passed."
+        echo -e "\n${GRN}All checks passed.${RST}"
     else
-        echo "Stow check found issues."
+        echo -e "\n${RED}Some checks failed.${RST}"
         return 1
     fi
 }
@@ -488,16 +595,27 @@ limine_force() {
 # --- CLI ---
 case "${1:-stow}" in
     packages|install)
-        install_all
+        case "${2:-all}" in
+            i3)
+                install_pkgs "i3" "${I3_PKGS[@]}"
+                if [[ -n "$PM_AUR" ]]; then
+                    echo "  → AUR packages..."
+                    $PM_AUR -S --needed --noconfirm \
+                        ttf-iosevka-nerd \
+                        xob || true
+                fi
+                ;;
+            all|"") install_all ;;
+            *) echo "Usage: $0 packages [i3|all]"; exit 1 ;;
+        esac
         ;;
     stow)
         case "${2:-all}" in
             i3)        stow_i3 ;;
             tmux)      stow_tmux ;;
-            hyprland)  stow_hyprland ;;
             dwm)       stow_dwm ;;
             all|"")    stow_all ;;
-            *) echo "Unknown stow target: $2. Use: i3, tmux, hyprland, dwm, or all."; exit 1 ;;
+            *) echo "Unknown stow target: $2. Use: i3, tmux, dwm, or all."; exit 1 ;;
         esac
         ;;
     unstow)
@@ -527,17 +645,16 @@ case "${1:-stow}" in
         limine_force
         ;;
     *)
-        echo "Usage: $0 [all|packages|stow [i3|tmux|hyprland|dwm]|unstow [i3|tmux|hyprland|dwm]|check|login|limine]"
+        echo "Usage: $0 [all|packages [i3|all]|stow [i3|tmux|dwm]|unstow [i3|tmux|dwm]|check|login|limine]"
         echo "  all               — install packages + stow all + limine"
-        echo "  packages          — install required packages"
+        echo "  packages          — install all required packages"
+        echo "  packages i3       — install only i3 packages"
         echo "  stow              — stow all dotfiles + SDDM login setup (default)"
         echo "  stow i3           — stow only i3 package + SDDM login setup"
         echo "  stow tmux         — stow only tmux package"
-        echo "  stow hyprland     — stow only hyprland package"
         echo "  stow dwm          — stow only dwm package"
         echo "  unstow i3         — remove i3 symlinks from home"
         echo "  unstow tmux       — remove tmux symlinks from home"
-        echo "  unstow hyprland   — remove hyprland symlinks from home"
         echo "  unstow dwm        — remove dwm symlinks from home"
         echo "  unstow all        — remove all symlinks from home"
         echo "  check             — dry-run stow and verify key symlinks"
