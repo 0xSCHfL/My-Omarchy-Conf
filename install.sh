@@ -77,8 +77,8 @@ if [[ "$PM" == "pacman" ]]; then
         zoxide starship fastfetch
         # Idle detection, screensaver, touchpad gestures
         xidlehook python-terminaltexteffects touchegg
-        # File manager & trash
-        yazi trash-cli
+        # File manager, trash & removable-drive automount
+        yazi trash-cli udiskie
         # Disk usage & search
         ncdu ripgrep fd
     )
@@ -191,12 +191,16 @@ unstow() {
         tmux)
             unstow_pkg "$DOTFILES" tmux
             ;;
+        ai-agent)
+            unstow_pkg "$DOTFILES/ai-agent" hermes
+            ;;
         all)
             unstow i3
             unstow tmux
             unstow dwm
+            unstow ai-agent
             ;;
-        *) echo "Usage: $0 unstow [i3|tmux|dwm|all]"; exit 1 ;;
+        *) echo "Usage: $0 unstow [i3|tmux|dwm|ai-agent|all]"; exit 1 ;;
     esac
 }
 
@@ -236,6 +240,7 @@ stow_i3() {
     echo "Stowing i3 to $HOME..."
     # Back up plain files that conflict with stow symlinks
     _backup_if_plain_file "$HOME/.zshrc"
+    _backup_if_plain_file "$HOME/.local/bin/wiki"
     _backup_if_plain_file "$HOME/.config/dunst/dunstrc"
     _backup_if_plain_file "$HOME/.config/picom/picom.conf"
     _backup_if_plain_file "$HOME/.config/alacritty/alacritty.toml"
@@ -290,10 +295,23 @@ stow_tmux() {
     _stow_pkg "$DOTFILES" tmux
 }
 
+stow_ai_agent() {
+    echo "Stowing ai-agent to $HOME..."
+    _backup_if_plain_file "$HOME/.hermes/config.yaml"
+    _backup_if_plain_file "$HOME/.hermes/.env"
+    _backup_if_plain_file "$HOME/.hermes/auth.json"
+    _backup_if_plain_file "$HOME/.hermes/active_profile"
+    _backup_if_plain_file "$HOME/.hermes/profiles/work-default/config.yaml"
+    _backup_if_plain_file "$HOME/.hermes/profiles/work-default/profile.yaml"
+    _backup_if_plain_file "$HOME/.hermes/profiles/work-default/.env"
+    _stow_pkg "$DOTFILES/ai-agent" hermes
+}
+
 stow_all() {
     stow_i3
     stow_tmux
     stow_dwm
+    stow_ai_agent
     echo "Wallpapers are at $DOTFILES/wallpapers/"
 }
 
@@ -431,6 +449,7 @@ check_stow() {
     header "Stow targets ($HOME)"
     check_pkg "$DOTFILES" i3 --ignore='^shell$' --ignore='^sddm-theme$' --ignore='^default$'
     check_pkg "$DOTFILES/i3" shell
+    check_pkg "$DOTFILES/ai-agent" hermes
 
     if [[ "$wm" != "i3" ]]; then
         check_pkg "$DOTFILES" dwm \
@@ -452,6 +471,9 @@ check_stow() {
         "$HOME/.config/i3/config" \
         "$HOME/.config/i3blocks/config" \
         "$HOME/.local/bin/i3-gdrive" \
+        "$HOME/.local/bin/wiki" \
+        "$HOME/.hermes/config.yaml" \
+        "$HOME/.hermes/profiles/work-default/config.yaml" \
         "$HOME/.zshrc"; do
         if [[ -e "$target" && "$(readlink -f "$target")" == "$DOTFILES"* ]]; then
             ok "$target"
@@ -614,8 +636,9 @@ case "${1:-stow}" in
             i3)        stow_i3 ;;
             tmux)      stow_tmux ;;
             dwm)       stow_dwm ;;
+            ai-agent)  stow_ai_agent ;;
             all|"")    stow_all ;;
-            *) echo "Unknown stow target: $2. Use: i3, tmux, dwm, or all."; exit 1 ;;
+            *) echo "Unknown stow target: $2. Use: i3, tmux, dwm, ai-agent, or all."; exit 1 ;;
         esac
         ;;
     unstow)
@@ -645,7 +668,7 @@ case "${1:-stow}" in
         limine_force
         ;;
     *)
-        echo "Usage: $0 [all|packages [i3|all]|stow [i3|tmux|dwm]|unstow [i3|tmux|dwm]|check|login|limine]"
+        echo "Usage: $0 [all|packages [i3|all]|stow [i3|tmux|dwm|ai-agent]|unstow [i3|tmux|dwm|ai-agent]|check|login|limine]"
         echo "  all               — install packages + stow all + limine"
         echo "  packages          — install all required packages"
         echo "  packages i3       — install only i3 packages"
@@ -653,9 +676,11 @@ case "${1:-stow}" in
         echo "  stow i3           — stow only i3 package + SDDM login setup"
         echo "  stow tmux         — stow only tmux package"
         echo "  stow dwm          — stow only dwm package"
+        echo "  stow ai-agent     — stow Claude/OpenCode/Hermes shared agent config"
         echo "  unstow i3         — remove i3 symlinks from home"
         echo "  unstow tmux       — remove tmux symlinks from home"
         echo "  unstow dwm        — remove dwm symlinks from home"
+        echo "  unstow ai-agent   — remove ai-agent symlinks from home"
         echo "  unstow all        — remove all symlinks from home"
         echo "  check             — dry-run stow and verify key symlinks"
         echo "  login             — configure SDDM login screen, fix PAM (standalone)"

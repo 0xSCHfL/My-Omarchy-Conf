@@ -51,7 +51,7 @@ dotfiles/i3/
 | `Super+Space` | App launcher (rofi) |
 | `Super+w` | Close window |
 | `Super+q` | Browser (qutebrowser) |
-| `Super+Shift+b` | Brave |
+| `Super+Shift+b` | Chromium |
 | `Super+Shift+c` | Chromium |
 | `Super+Shift+o` | Obsidian |
 | `Super+Alt+t` | Telegram |
@@ -88,12 +88,12 @@ dotfiles/i3/
 | `XF86AudioPlay/Next/Prev/Stop` | Spotify-only playback controls |
 | `Super+Alt+p/n/b` | Spotify-only play-pause/next/previous |
 | `Alt+Tab` | Cycle focus |
-| `Super+Ctrl+w` | WiFi TUI (impala) |
-| `Super+Ctrl+a` | Audio TUI (wiremix) |
+| `Super+Ctrl+w` / `Super+Alt+w` | WiFi TUI (impala) |
+| `Super+Ctrl+a` / `Super+Alt+a` | Audio TUI (wiremix) |
 | `Super+comma` | Close notification |
 | `Super+Ctrl+comma` | Toggle pause notifications |
 
-Web apps (`Super+Shift+w/g/x/d/e`): WhatsApp, ChatGPT, X, Discord, Email
+Web apps (`Super+Shift+w/a/x/d/e`): WhatsApp, ChatGPT, X, Discord, Email
 
 ## Custom Scripts (`~/.local/bin/`)
 
@@ -107,7 +107,7 @@ Web apps (`Super+Shift+w/g/x/d/e`): WhatsApp, ChatGPT, X, Discord, Email
 | `i3-check` | Validate i3 config, scripts, executable bits, dependencies, and docs drift |
 | `i3-kill` | Fuzzy process killer (rofi) |
 | `i3-keys` | Keybinding cheatsheet (rofi) |
-| `i3-webapp` | Launch Brave as webapp (`--app=<url>`) |
+| `i3-webapp` | Launch Chromium as webapp (`--app=<url>`) |
 | `i3-manuals` | Local Learn menu for repo-specific manuals |
 | `i3-imgpicker` | Image browser with ueberzugpp preview |
 | `i3-imgcliphist` | Image clipboard history viewer |
