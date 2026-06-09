@@ -1,3 +1,5 @@
 tmux/.tmux/plugins/
 __pycache__/
 *.pyc
+*.cachyos.bak
+news/

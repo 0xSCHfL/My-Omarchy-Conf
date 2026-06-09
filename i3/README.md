@@ -90,6 +90,7 @@ dotfiles/i3/
 | `Alt+Tab` | Cycle focus |
 | `Super+Ctrl+w` / `Super+Alt+w` | WiFi TUI (impala) |
 | `Super+Ctrl+a` / `Super+Alt+a` | Audio TUI (wiremix) |
+| `Super+Alt+v` | VPN TUI (vortix) |
 | `Super+comma` | Close notification |
 | `Super+Ctrl+comma` | Toggle pause notifications |
 

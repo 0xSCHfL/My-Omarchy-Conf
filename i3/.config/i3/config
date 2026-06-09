@@ -106,6 +106,8 @@ bindsym XF86MonBrightnessDown exec --no-startup-id $HOME/.config/i3/scripts/medi
 bindsym Mod4+Ctrl+w exec --no-startup-id $HOME/.config/i3/scripts/media/i3-launch-wifi.sh
 # Audio TUI in floating terminal (i3-launch-audio.sh)
 bindsym Mod4+Ctrl+a exec --no-startup-id $HOME/.config/i3/scripts/media/i3-launch-audio.sh
+# VPN TUI in floating terminal (vortix)
+bindsym Mod4+Mod1+v exec --no-startup-id $HOME/.config/i3/scripts/media/i3-launch-vpn.sh
 # Google Drive TUI (i3-gdrive)
 bindsym Mod4+Shift+g exec --no-startup-id alacritty --class i3-gdrive -e i3-gdrive
 
@@ -147,6 +149,7 @@ for_window [class="i3timerpopup"] floating enable, resize set 520 220, move posi
 for_window [class="i3cpufreq"] floating enable, resize set 900 600, move position center
 for_window [class="i3-wifi"] floating enable, resize set 800 600, move position center
 for_window [class="i3-audio"] floating enable, resize set 800 600, move position center
+for_window [class="i3-vpn"] floating enable, resize set 900 650, move position center
 for_window [class="i3-bluetooth"] floating enable, resize set 800 600, move position center
 for_window [class="i3-gdrive"] floating enable, resize set 1100 680, move position center
 for_window [class="i3-gdrive-setup"] floating enable, resize set 800 500, move position center

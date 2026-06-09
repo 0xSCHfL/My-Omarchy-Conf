@@ -1,0 +1,25 @@
+[global]
+font = Iosevka 12
+width = 400
+height = (0, 120)
+offset = (10, 10)
+gap_size = 15
+padding = 10
+horizontal_padding = 15
+frame_width = 2
+frame_color = "#A79676"
+background = "#1c1c11"
+foreground = "#c9c5b9"
+
+[urgency_low]
+background = "#1c1c11"
+foreground = "#c9c5b9"
+
+[urgency_normal]
+background = "#1c1c11"
+foreground = "#c9c5b9"
+
+[urgency_critical]
+background = "#7D8251"
+foreground = "#c9c5b9"
+timeout = 30

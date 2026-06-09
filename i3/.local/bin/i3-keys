@@ -16,6 +16,7 @@ categorize() {
             if (key ~ /^XF86MonBrightness/) return "Brightness"
             if (cmd ~ /playerctl|pactl|volume-osd/) return "Volume & Player"
             if (cmd ~ /brightnessctl/) return "Brightness"
+            if (cmd ~ /i3-launch-wifi|i3-launch-vpn|vortix|impala/) return "Network"
             if (cmd ~ /dunstctl/) return "Notifications"
             if (cmd ~ /cliphist/) return "Clipboard"
             if (cmd ~ /screenshot|screenrecord|i3-ocr/) return "Screenshots"
@@ -31,6 +32,7 @@ categorize() {
         function maincat(s) {
             if (s == "Window control" || s == "Workspaces" || s == "Scratchpad" || s == "Modes") return "Desktop"
             if (s == "Session" || s == "Notifications" || s == "Screenshots") return "System"
+            if (s == "Network") return "System"
             if (s == "Volume & Player" || s == "Brightness") return "Media"
             return "Apps & Tools"
         }

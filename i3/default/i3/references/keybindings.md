@@ -75,6 +75,7 @@ Mod = Super (Windows key)
 | `Mod+Alt+c` | Run i3-check in a popup terminal |
 | `Mod+Alt+m` | Local manuals / Learn menu (i3-manuals) |
 | `Mod+Alt+Space` | Local manuals / Learn menu (i3-manuals) |
+| `Mod+Alt+v` | WireGuard/OpenVPN VPN TUI (vortix) |
 
 ## Media & Volume
 

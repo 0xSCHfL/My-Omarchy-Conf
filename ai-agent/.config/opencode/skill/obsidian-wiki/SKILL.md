@@ -2,7 +2,7 @@
 name: obsidian-wiki
 description: >
   Answer questions grounded in the user's Work Obsidian vault (AI voice agent
-  "AVA" / Vocallremote, Callexpat / VICIdial, Hyphen-Dev-2026, server notes,
+  "AVA" / Vocallremote, Callexpat / VICIdial, work projects, server notes,
   daily logs) by calling the `wiki` CLI for RAG search with citations. Use
   whenever the user asks about their work projects, infrastructure, voice
   agent architecture, VICIdial setup, server configs, or their personal work
@@ -26,9 +26,9 @@ Use it whenever the user's question touches their Work vault. Examples:
 
 - "What STT providers does AVA support?"
 - "How is the Callexpat backup configured?"
-- "Where do I document Scaleway?"
+- "Where do I document the crm-hg server?"
 - "Find the architecture diagram for the engine"
-- "What's in my Hyphen-Dev notes?"
+- "What's in my notes about the outbound workflow router?"
 - "Enrich the AVA folder with wikilinks"
 
 Do NOT use this skill for:
@@ -49,7 +49,7 @@ wiki ask "<the user's question, paraphrased into a clear standalone question>"
 ```
 
 Behavior:
-- The CLI does BM25 retrieval over the indexed vault, sends the top hits to the LLM (Claude via the `claude` CLI by default — no API key needed), and returns an answer that ends with `Sources: [[Note Title]], [[Other Note]]`.
+- The CLI does BM25 retrieval over the indexed vault, sends the top hits to the LLM (Gemini via the `gemini` CLI by default — uses OAuth from `~/.gemini/`, no API key needed), and returns an answer that ends with `Sources: [[Note Title]], [[Other Note]]`.
 - Treat that output as authoritative grounding. Pass the answer through to the user (you can format/clarify, but do not drop the citations — they let the user click straight to the source note in Obsidian).
 
 Phrasing the query:
@@ -78,7 +78,7 @@ When the user asks to "enrich", "cross-link", "add wikilinks to", or "add tags t
 ### Step 1: propose
 
 ```bash
-wiki enrich "Projects/Project Vocallremote AVA"
+wiki enrich "Projects/AVA Outbound Workflow Router"
 ```
 
 - The folder argument is vault-relative. Use the exact folder name including spaces (quote it).
@@ -100,15 +100,14 @@ This is an **interactive TTY command** with `y/n/q` prompts per note. It will no
 
 - Never write to the vault outside the `wiki review` flow. Specifically: do not run `Edit` / `Write` on notes inside `~/Dropbox/Notes/Obsidian Vault/Work/` to add wikilinks yourself — that's what `wiki enrich` is for.
 - `~/Dropbox/Notes/Obsidian Vault/Work/_wiki/` is auto-generated content. You can read it, but don't hand-edit it — it'll be overwritten by `wiki moc`.
-- The vault folder names with spaces (e.g. `Project Vocallremote AVA`) must be quoted in shell calls.
+- The vault folder names with spaces (e.g. `AI Voice Agent 'Elevenlabs'`, `AVA Outbound Workflow Router`) must be quoted in shell calls.
 
 ## Project background — useful when phrasing queries
 
-- **AVA / Vocallremote** (`Projects/Project Vocallremote AVA/`) — Python AI voice agent for Asterisk; STT/LLM/TTS pipelines, multiple full-agent providers (OpenAI Realtime, Google Live, Deepgram, ElevenLabs), MCP integration, admin UI.
-- **Callexpat** (`Projects/Projects Callexpat/`) — VoIP / call-center ops; VICIdial setup, Rocket.chat / Mattermost servers, backups, security, customization.
-- **Hyphen-Dev-2026** (`Projects/Hyphen-Dev-2026/`) — Scaleway cloud workstations, Guacamole, team onboarding.
-- **Notes/servers/** — infra notes (vocallremote, crm-hg).
-- **Notes/dailies/YYYY/MM/** — daily work logs.
+- **AVA** (`Projects/AI Voice Agent 'Elevenlabs'/` and/or `Projects/AVA Outbound Workflow Router/`) — Python AI voice agent for Asterisk; STT/LLM/TTS pipelines, multiple full-agent providers (OpenAI Realtime, Google Live, Deepgram, ElevenLabs), MCP integration, admin UI.
+- **Callexpat** (`Projects/Callexpat/`) — VoIP / call-center ops; VICIdial setup, Rocket.chat / Mattermost servers, backups, security, customization.
+- **Notes/servers/** — infra notes (`ai/`, `crm-hg/`, `vocallremote/`).
+- **Notes/dailies/YYYY/** — daily work logs.
 
 Knowing the folder hierarchy helps you target `wiki enrich <folder>` precisely and rewrite vague user questions into concrete ones.
 
@@ -116,5 +115,5 @@ Knowing the folder hierarchy helps you target `wiki enrich <folder>` precisely a
 
 - CLI source: `~/Dropbox/obsidian-wiki/` (also see its `README.md` for internals).
 - Launcher: `~/.local/bin/wiki` → `~/.local/share/obsidian-wiki/venv/bin/wiki`.
-- LLM backend: defaults to the `claude` CLI (subscription auth, no API key). Configurable via `WIKI_BACKEND` env var.
+- LLM backend: defaults to the `gemini` CLI (OAuth from `~/.gemini/`, no API key). Configurable via `WIKI_BACKEND=claude` or `WIKI_BACKEND=cli` env var. `GEMINI_MODEL` overrides the default model (`gemini-2.5-flash`).
 - Index location: `~/.local/share/obsidian-wiki/index/` (machine-local, not synced).

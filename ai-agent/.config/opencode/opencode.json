@@ -14,5 +14,13 @@
         }
       }
     }
+  },
+  "mcp": {
+    "clickup": {
+      "type": "remote",
+      "url": "https://mcp.clickup.com/mcp",
+      "oauth": {},
+      "enabled": true
+    }
   }
 }
