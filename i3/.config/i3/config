@@ -35,6 +35,20 @@ client.focused_inactive $wal_bg $wal_bg $wal_dim $wal_bg $wal_bg
 default_floating_border none
 for_window [class=".*"] border none
 
+# Linphone — class is "linphone" (lowercase) on popup windows and
+# "linphone.AppImage" on the main window. Match both with a regex.
+#
+# Main app window: 900x600 floating centered.
+# Call popup (small): pinned to bottom-right corner above i3bar.
+# sticky = appears on all workspaces (so the call stays visible
+# even when you switch to a different i3 workspace).
+#
+#   Screen: 1920x1080, i3bar ~26px, popup 360x220
+#   x = 1920 - 360 - 16 = 1544   (16px right margin)
+#   y = 1080 - 220 - 36 = 824    (36px = bar_h + 10px gap)
+for_window [class="^linphone\.AppImage$"] floating enable, resize set 900 600, move position center
+for_window [class="^linphone$"] floating enable, sticky enable, resize set 360 220, move absolute position 1544 824
+
 # This font is widely installed, provides lots of unicode glyphs, right-to-left
 # text rendering and scalability on retina/hidpi displays (thanks to pango).
 #font pango:DejaVu Sans Mono 8

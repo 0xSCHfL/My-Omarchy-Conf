@@ -1,25 +1,47 @@
 [global]
-font = Iosevka 12
-width = 400
-height = (0, 120)
-offset = (10, 10)
-gap_size = 15
-padding = 10
-horizontal_padding = 15
-frame_width = 2
-frame_color = "#A79676"
-background = "#1c1c11"
-foreground = "#c9c5b9"
+    font = Iosevka 12
+    width = 400
+    height = (0, 120)
+    offset = (10, 10)
+    gap_size = 15
+    padding = 10
+    horizontal_padding = 15
+    frame_width = 2
+    frame_color = "#A5A37A"
+    background = "#1d1f25"
+    foreground = "#d7d6c1"
+    sort = yes
+    stack_duplicates = false
+    show_indicators = yes
+    word_wrap = yes
+    ignore_newline = no
 
 [urgency_low]
-background = "#1c1c11"
-foreground = "#c9c5b9"
+    background = "#1d1f25"
+    foreground = "#d7d6c1"
+    timeout = 5
 
 [urgency_normal]
-background = "#1c1c11"
-foreground = "#c9c5b9"
+    background = "#1d1f21"
+    foreground = "#d7d6c1"
+    timeout = 10
 
 [urgency_critical]
-background = "#7D8251"
-foreground = "#c9c5b9"
-timeout = 30
+    background = "#3a1f1f"
+    foreground = "#ffd4d4"
+    frame_color = "#E2596A"
+    timeout = 0
+
+# Force Linphone notifications to critical urgency regardless of
+# what the app sends. Critical ones persist until you act on them.
+[linphone-call]
+    appname = "linphone"
+    summary = "*"
+    urgency = critical
+    timeout = 0
+
+[linphone-call-desktop]
+    appname = "Linphone-Desktop"
+    summary = "*"
+    urgency = critical
+    timeout = 0
