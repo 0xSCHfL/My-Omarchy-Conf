@@ -10,6 +10,7 @@
       "WebSearch"
     ]
   },
+  "model": "opus",
   "hooks": {
     "Stop": [
       {
@@ -30,7 +31,12 @@
     "skill-creator@claude-plugins-official": true,
     "playwright@claude-plugins-official": true,
     "clangd-lsp@claude-plugins-official": true,
-    "superpowers@superpowers-marketplace": true
+    "superpowers@superpowers-marketplace": true,
+    "claude-md-management@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true,
+    "frontend-design@claude-code-plugins": true,
+    "code-review@claude-plugins-official": true,
+    "claude-mem@thedotmack": true
   },
   "extraKnownMarketplaces": {
     "claude-code-plugins": {
@@ -56,9 +62,14 @@
         "source": "github",
         "repo": "obra/superpowers-marketplace"
       }
+    },
+    "thedotmack": {
+      "source": {
+        "source": "github",
+        "repo": "thedotmack/claude-mem"
+      }
     }
   },
   "effortLevel": "high",
-  "skipDangerousModePermissionPrompt": true,
-  "model": "opus"
+  "skipDangerousModePermissionPrompt": true
 }
