@@ -3,3 +3,7 @@ __pycache__/
 *.pyc
 *.cachyos.bak
 news/
+
+# Pywal-generated (regenerated on every wallpaper change)
+i3/.config/alacritty/alacritty-wal.toml
+i3/.config/dunst/dunstrc
