@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# linphone-popup-watcher.sh — Watches for new Linphone popup
+# windows. When one appears, waits 3 seconds (grace period at the
+# popup's natural size), then re-pins it via linphone-popup.sh.
+#
+# Started automatically by i3 config (exec_always). Exits if Linphone
+# is not running; will be restarted by i3-dedup or by the next i3
+# restart. Polls every 0.5s — cheap, no event library needed.
+
+POPUP_SCRIPT="$HOME/.config/i3/scripts/linphone-popup.sh"
+GRACE_SECONDS=3
+POLL_INTERVAL=0.5
+
+if [[ ! -x "$POPUP_SCRIPT" ]]; then
+    echo "Watcher: $POPUP_SCRIPT not executable, exiting." >&2
+    exit 1
+fi
+
+# Track which window IDs we've already handled (avoid retriggering
+# on every poll).
+declare -A handled
+
+while true; do
+    # Find all windows whose WM_CLASS class is "linphone" but whose
+    # instance is NOT "linphone.AppImage" (that's the main app).
+    while read -r wid; do
+        [[ -z "$wid" ]] && continue
+        [[ -n "${handled[$wid]:-}" ]] && continue
+
+        # Verify it's actually a popup, not main app or tray.
+        cls=$(xprop -id "$wid" WM_CLASS 2>/dev/null | head -1)
+        case "$cls" in
+            *\"linphone\.AppImage\"*)
+                # Main app — skip
+                continue
+                ;;
+            *\"snixembed\"*)
+                # Tray — skip
+                continue
+                ;;
+            *\"linphone\"*)
+                # Could be popup — check name
+                name=$(xdotool getwindowname "$wid" 2>/dev/null)
+                # Tray windows often have empty names
+                [[ -z "$name" || "$name" == "snixembed" ]] && continue
+
+                handled[$wid]=1
+                (
+                    sleep "$GRACE_SECONDS"
+                    "$POPUP_SCRIPT" 2>&1 | logger -t linphone-popup
+                ) &
+                ;;
+        esac
+    done < <(xdotool search --classname '^linphone$' 2>/dev/null)
+
+    sleep "$POLL_INTERVAL"
+done
