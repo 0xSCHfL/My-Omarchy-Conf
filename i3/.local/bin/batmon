@@ -1,8 +1,10 @@
 #!/bin/bash
 
 THRESHOLD=20
+SUSPEND_THRESHOLD=5
 FLAG_LOW="/tmp/batmon_low"
 FLAG_FULL="/tmp/batmon_full"
+FLAG_SUSPENDED="/tmp/batmon_suspended"
 
 while true; do
     for bat in /sys/class/power_supply/BAT*; do
@@ -27,6 +29,23 @@ while true; do
             fi
         else
             rm -f "$FLAG_FULL"
+        fi
+
+        # Critical suspend: when discharging and at/below the
+        # suspend threshold, fire systemctl suspend exactly once.
+        # xss-lock will lock the screen first; on resume the charger
+        # must be present or you'll boot straight into a fresh
+        # shutdown. Re-arm on charge so a future discharge can trigger
+        # again.
+        if [[ "$status" == "Discharging" && "$level" -le "$SUSPEND_THRESHOLD" ]]; then
+            if [ ! -f "$FLAG_SUSPENDED" ]; then
+                notify-send -u critical -t 15000 "🔌 Suspending" "Battery at ${level}% — going to sleep now."
+                touch "$FLAG_SUSPENDED"
+                sleep 2
+                systemctl suspend
+            fi
+        elif [[ "$status" == "Charging" || "$status" == "Full" ]]; then
+            rm -f "$FLAG_SUSPENDED"
         fi
     done
     sleep 30
