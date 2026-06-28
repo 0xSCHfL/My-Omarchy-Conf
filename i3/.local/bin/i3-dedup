@@ -25,6 +25,7 @@ SCRIPT_SINGLETONS=(
     "\.local/bin/batmon"
     "xidlehook"
     "xss-lock --transfer-sleep-lock"
+    "linphone-popup-watcher"
 )
 
 # Daemons to ensure are running: "pgrep_f_pattern|start_command"
@@ -38,6 +39,7 @@ ENSURE_RUNNING=(
     "voxtype|setsid -f voxtype daemon"
     "xidlehook|setsid -f $HOME/.local/bin/i3-idle"
     "xss-lock --transfer-sleep-lock|i3-msg 'exec --no-startup-id xss-lock --transfer-sleep-lock -- $HOME/.local/bin/i3-lock'"
+    "linphone-popup-watcher|setsid -f $HOME/.local/bin/linphone-popup-watcher"
 )
 
 killed_any=false
