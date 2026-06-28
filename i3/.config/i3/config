@@ -35,19 +35,12 @@ client.focused_inactive $wal_bg $wal_bg $wal_dim $wal_bg $wal_bg
 default_floating_border none
 for_window [class=".*"] border none
 
-# Linphone — class is "linphone" (lowercase) on popup windows and
-# "linphone.AppImage" on the main window. Match both with a regex.
-#
-# Main app window: 900x600 floating centered.
-# Call popup (small): pinned to bottom-right corner above i3bar.
-# sticky = appears on all workspaces (so the call stays visible
-# even when you switch to a different i3 workspace).
-#
-#   Screen: 1920x1080, i3bar ~26px, popup 360x220
-#   x = 1920 - 360 - 16 = 1544   (16px right margin)
-#   y = 1080 - 220 - 36 = 824    (36px = bar_h + 10px gap)
+# Linphone — class is "linphone.AppImage" on the main window.
+# Incoming calls are handled by dunst critical-urgency notifications
+# (see dunstrc [linphone-call] / [linphone-call-desktop]). When you
+# answer from the notification, Linphone opens its main window here
+# at 900x600 floating centered.
 for_window [class="^linphone\.AppImage$"] floating enable, resize set 900 600, move position center
-for_window [class="^linphone$"] floating enable, sticky enable, resize set 360 220, move absolute position 1544 824
 
 # This font is widely installed, provides lots of unicode glyphs, right-to-left
 # text rendering and scalability on retina/hidpi displays (thanks to pango).
@@ -77,6 +70,8 @@ exec --no-startup-id dunst
 exec --no-startup-id snixembed --fork
 exec --no-startup-id /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
 exec --no-startup-id $HOME/.config/i3/scripts/wallpaper/wallpaper-set.sh
+# Watch for Linphone popup windows; re-pin them after a 3s grace.
+exec_always --no-startup-id $HOME/.local/bin/linphone-popup-watcher
 exec_always --no-startup-id bash -c 'pkill -f "\.local/bin/i3-cliphist$" 2>/dev/null; sleep 0.1; exec $HOME/.local/bin/i3-cliphist'
 exec_always --no-startup-id bash -c 'pkill -f "\.local/bin/i3-imgclipwatch$" 2>/dev/null; sleep 0.1; exec $HOME/.local/bin/i3-imgclipwatch'
 exec_always --no-startup-id bash -c 'pkill -f "\.local/bin/batmon$" 2>/dev/null; sleep 0.1; exec $HOME/.local/bin/batmon'
@@ -285,6 +280,8 @@ bindsym Mod4+e layout toggle split
 # toggle tiling / floating
 # Toggle floating + center (float-toggle.sh)
 bindsym Mod4+t exec --no-startup-id $HOME/.config/i3/scripts/utils/float-toggle.sh
+# Pin focused window: floating + sticky + centered (pin-window.sh)
+bindsym Mod4+Shift+p exec --no-startup-id $HOME/.config/i3/scripts/pin-window.sh
 # Toggle floating (i3 native)
 bindsym Mod4+Shift+space floating toggle
 
