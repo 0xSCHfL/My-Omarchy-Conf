@@ -2,8 +2,9 @@
 
 set -euo pipefail
 
-SCREENSAVER_TIMEOUT="${SCREENSAVER_TIMEOUT:-300}"
-LOCK_TIMEOUT="${LOCK_TIMEOUT:-30}"
+SCREENSAVER_TIMEOUT="${SCREENSAVER_TIMEOUT:-600}"
+LOCK_TIMEOUT="${LOCK_TIMEOUT:-120}"
+SLEEP_TIMEOUT="${SLEEP_TIMEOUT:-120}"
 
 pkill -x xidlehook 2>/dev/null || true
 
@@ -16,4 +17,7 @@ exec xidlehook \
         "$HOME/.local/bin/i3-stop-screensaver" \
     --timer "$LOCK_TIMEOUT" \
         "$HOME/.local/bin/i3-lock-after-screensaver" \
+        "" \
+    --timer "$SLEEP_TIMEOUT" \
+        "systemctl suspend" \
         ""

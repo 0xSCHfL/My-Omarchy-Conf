@@ -24,6 +24,7 @@ SCRIPT_SINGLETONS=(
     "i3-imgclipwatch"
     "\.local/bin/batmon"
     "xidlehook"
+    "xss-lock --transfer-sleep-lock"
 )
 
 # Daemons to ensure are running: "pgrep_f_pattern|start_command"
@@ -36,6 +37,7 @@ ENSURE_RUNNING=(
     "i3blocks|setsid -f i3blocks"
     "voxtype|setsid -f voxtype daemon"
     "xidlehook|setsid -f $HOME/.local/bin/i3-idle"
+    "xss-lock --transfer-sleep-lock|i3-msg 'exec --no-startup-id xss-lock --transfer-sleep-lock -- $HOME/.local/bin/i3-lock'"
 )
 
 killed_any=false
