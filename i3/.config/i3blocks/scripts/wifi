@@ -2,9 +2,14 @@
 
 TERMINAL_BIN="alacritty"
 
-# Hide when any ethernet interface has an IP (ethernet takes priority)
-eth_ip=$(ip addr | awk '/^[0-9]+: e/{iface=1} iface && /inet /{split($2,a,"/"); print a[1]; iface=0}' | head -1)
-[ -n "$eth_ip" ] && exit 0
+# Hide when the default route is over a wired (non-wireless) interface.
+# The previous awk regex matched any interface whose name started with "e"
+# and then attributed the next "inet" line to it, which incorrectly hid
+# the wifi block whenever wlan0 had an IP.
+iface=$(ip route get 1.1.1.1 2>/dev/null | awk '{for (i=1; i<=NF; i++) if ($i == "dev") {print $(i+1); exit}}')
+if [ -n "$iface" ] && ! iw dev "$iface" info >/dev/null 2>&1; then
+    exit 0
+fi
 
 ESSID=$(iwgetid -r 2>/dev/null)
 

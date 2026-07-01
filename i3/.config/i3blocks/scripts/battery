@@ -1,11 +1,13 @@
 #!/bin/bash
 
-BAT=/sys/class/power_supply/BAT0
+# Auto-detect BAT* power supply (BAT0, BAT1, ...).
+# Falls back to N/A on desktops / VMs with no battery.
+BAT=$(ls -d /sys/class/power_supply/BAT* 2>/dev/null | head -1)
 
 icons=("󰁺" "󰁻" "󰁼" "󰁽" "󰁾" "󰁿" "󰂀" "󰂁" "󰂂" "󰁹")
 icon_charging="󰂄"
 
-if [ ! -d "$BAT" ]; then
+if [ -z "$BAT" ] || [ ! -d "$BAT" ]; then
     echo "| N/A"
     exit 0
 fi
