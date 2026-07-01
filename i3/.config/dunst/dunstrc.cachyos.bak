@@ -1,25 +1,28 @@
 [global]
 font = Iosevka 12
+monitor = 0
+follow = keyboard
 width = 400
 height = (0, 120)
+origin = top-right
 offset = (10, 10)
 gap_size = 15
 padding = 10
 horizontal_padding = 15
 frame_width = 2
-frame_color = "#778482"
-background = "#090c09"
-foreground = "#e4e6e1"
+frame_color = "#A5A37A"
+background = "#1d1f25"
+foreground = "#d7d6c1"
 
 [urgency_low]
-background = "#090c09"
-foreground = "#e4e6e1"
+background = "#1d1f25"
+foreground = "#d7d6c1"
 
 [urgency_normal]
-background = "#090c09"
-foreground = "#e4e6e1"
+background = "#1d1f25"
+foreground = "#d7d6c1"
 
 [urgency_critical]
-background = "#897652"
-foreground = "#e4e6e1"
+background = "#817E63"
+foreground = "#d7d6c1"
 timeout = 30

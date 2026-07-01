@@ -8,8 +8,11 @@ source ~/.cache/wal/colors.sh
 cat > ~/.config/dunst/dunstrc <<EOF
 [global]
 font = Iosevka 12
+monitor = 0
+follow = mouse
 width = 400
 height = (0, 120)
+origin = top-right
 offset = (10, 10)
 gap_size = 15
 padding = 10
