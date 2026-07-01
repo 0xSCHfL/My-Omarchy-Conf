@@ -43,6 +43,9 @@ for_window [class=".*"] border none
 # https://wiki.archlinux.org/index.php/XDG_Autostart
 exec --no-startup-id dex --autostart --environment i3
 exec --no-startup-id systemctl --user start pipewire pipewire-pulse wireplumber
+# Start tmux server so the session picker (super+shift+Return) always has
+# something to attach to. `start-server` is a no-op if the server's already up.
+exec --no-startup-id tmux start-server
 exec_always --no-startup-id xinput set-prop "SYNA308F:00 06CB:CD77 Touchpad" "libinput Tapping Enabled" 1
 exec_always --no-startup-id xinput set-prop "SYNA308F:00 06CB:CD77 Touchpad" "libinput Natural Scrolling Enabled" 1
 exec_always --no-startup-id xset s off -dpms
@@ -62,6 +65,7 @@ exec --no-startup-id picom --daemon
 exec --no-startup-id dunst
 exec --no-startup-id snixembed --fork
 exec --no-startup-id /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
+exec_always --no-startup-id $HOME/.local/bin/i3-automount
 exec --no-startup-id $HOME/.config/i3/scripts/wallpaper/wallpaper-set.sh
 exec_always --no-startup-id bash -c 'pkill -f "\.local/bin/i3-cliphist$" 2>/dev/null; sleep 0.1; exec $HOME/.local/bin/i3-cliphist'
 exec_always --no-startup-id bash -c 'pkill -f "\.local/bin/i3-imgclipwatch$" 2>/dev/null; sleep 0.1; exec $HOME/.local/bin/i3-imgclipwatch'
@@ -104,10 +108,14 @@ bindsym XF86MonBrightnessDown exec --no-startup-id $HOME/.config/i3/scripts/medi
 # WiFi and Audio controls
 # WiFi TUI in floating terminal (i3-launch-wifi.sh)
 bindsym Mod4+Ctrl+w exec --no-startup-id $HOME/.config/i3/scripts/media/i3-launch-wifi.sh
+# WiFi TUI in floating terminal (i3-launch-wifi.sh)
+bindsym Mod4+Mod1+w exec --no-startup-id $HOME/.config/i3/scripts/media/i3-launch-wifi.sh
 # Audio TUI in floating terminal (i3-launch-audio.sh)
 bindsym Mod4+Ctrl+a exec --no-startup-id $HOME/.config/i3/scripts/media/i3-launch-audio.sh
+# Audio TUI in floating terminal (i3-launch-audio.sh)
+bindsym Mod4+Mod1+a exec --no-startup-id $HOME/.config/i3/scripts/media/i3-launch-audio.sh
 # Google Drive TUI (i3-gdrive)
-bindsym Mod4+Shift+g exec --no-startup-id alacritty --class i3-gdrive -e i3-gdrive
+bindsym Mod4+Shift+g exec --no-startup-id $HOME/.config/i3/scripts/media/i3-launch-gdrive.sh
 
 # Dictation (voxtype) — toggle: Super+Ctrl+X to record, press again to stop & auto-type
 # Dictation toggle, auto-types result (voxtype-toggle-paste.sh)
@@ -148,6 +156,7 @@ for_window [class="i3cpufreq"] floating enable, resize set 900 600, move positio
 for_window [class="i3-wifi"] floating enable, resize set 800 600, move position center
 for_window [class="i3-audio"] floating enable, resize set 800 600, move position center
 for_window [class="i3-bluetooth"] floating enable, resize set 800 600, move position center
+for_window [class="i3-tmux-picker"] floating enable, resize set 360 140, move position center
 for_window [class="i3-gdrive"] floating enable, resize set 1100 680, move position center
 for_window [class="i3-gdrive-setup"] floating enable, resize set 800 500, move position center
 for_window [class="i3-check"] floating enable, resize set 630 700, move position center
@@ -171,17 +180,19 @@ tiling_drag modifier titlebar
 # start a terminal
 # Open a terminal (kitty)
 bindsym Mod4+Return exec kitty
-# Open Brave browser (i3-brave)
-bindsym Mod4+Shift+b exec --no-startup-id i3-brave
+# Open Chromium browser (i3-chromium)
+bindsym Mod4+Shift+b exec --no-startup-id i3-chromium
 # Launch Spotify (flatpak)
 bindsym Mod4+Shift+s exec bash -c 'rm -f ~/.var/app/com.spotify.Client/cache/spotify/Singleton* && flatpak run com.spotify.Client'
-# Brave in incognito mode (i3-brave)
-bindsym Mod4+Shift+Mod1+b exec --no-startup-id i3-brave --incognito
+# Chromium in incognito mode (i3-chromium)
+bindsym Mod4+Shift+Mod1+b exec --no-startup-id i3-chromium --incognito
 # Open Chromium (X11) (chromium)
-bindsym Mod4+Shift+c exec bash -c 'rm -f ~/.config/chromium/Singleton* && chromium --ozone-platform=x11'
+bindsym Mod4+Shift+c exec --no-startup-id i3-chromium
 # Super+Shift+v merged into Super+v (combined text+image picker)
 # System monitor in terminal (btop)
 bindsym Mod4+Shift+t exec --no-startup-id kitty -e btop
+# Tmux session picker (kitty + fzf)
+bindsym Mod4+Shift+Return exec --no-startup-id $HOME/.local/bin/i3-tmux-picker
 # Pomodoro/timer menu (timer)
 bindsym Mod4+Shift+m exec --no-startup-id ~/.config/i3blocks/scripts/timer menu
 
@@ -392,7 +403,7 @@ bindsym Mod4+Mod1+t exec --no-startup-id Telegram -theme dark
 # WhatsApp Web as standalone app (i3-webapp)
 bindsym Mod4+Shift+w exec --no-startup-id i3-webapp "https://web.whatsapp.com/"
 # ChatGPT as standalone app (i3-webapp)
-bindsym Mod4+Shift+a exec --no-startup-id i3-webapp "https://chatgpt.com/"
+bindsym Mod4+Shift+a exec --no-startup-id i3-webapp "https://chatgpt.com/" "Default"
 # X (Twitter) as standalone app (i3-webapp)
 bindsym Mod4+Shift+x exec --no-startup-id i3-webapp "https://x.com/"
 # Discord chat (discord)

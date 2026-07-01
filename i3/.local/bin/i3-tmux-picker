@@ -1,0 +1,52 @@
+#!/bin/bash
+# i3:summary=Pick a tmux session, then open a clean kitty attached to it
+
+# i3 launches us with stdin attached to its own pipe (not a tty), which makes
+# fzf error out with "inappropriate ioctl for device". The fix: open a
+# floating picker kitty that owns a real tty, run fzf in it, and on
+# selection close the picker and open a *second*, clean kitty that
+# attaches to the chosen session. Cancelling just closes the picker.
+
+PICKER_CLASS=i3-tmux-picker   # small floating popup
+TARGET_CLASS=i3-tmux          # the clean attach window (no popup rules)
+DEFAULT_SESSION=Work
+
+# Launch the target kitty FIRST, then close the picker. If we closed the
+# picker first, the bash running inside it (which is about to exec the
+# target kitty) could be killed mid-flight. Doing it in this order means
+# the target kitty is already running by the time the picker goes away.
+#
+# 'setsid' detaches the target kitty from the picker's process group, so
+# killing the picker doesn't take the target down with it.
+open_target() {
+    setsid kitty --class "$TARGET_CLASS" -e tmux attach -t "$1" >/dev/null 2>&1 &
+    disown
+}
+
+# Detect whether a tmux server is already running. We do NOT auto-start one
+# here — i3's `exec --no-startup-id tmux start-server` handles that.
+if ! tmux has-session 2>/dev/null; then
+    exec kitty --class "$PICKER_CLASS" -e bash -c "
+        choice=\$(printf 'no tmux session running\ncreate \"$DEFAULT_SESSION\"\nquit' | \
+            fzf --prompt='tmux> ' --reverse --height=8 --tac)
+        if [[ \"\$choice\" == *create* ]]; then
+            setsid kitty --class '$TARGET_CLASS' -e tmux new -s $DEFAULT_SESSION >/dev/null 2>&1 &
+            disown
+        fi
+        i3-msg '[class=\"$PICKER_CLASS\"] kill' >/dev/null 2>&1
+        exit 0
+    "
+fi
+
+# Server is up — pick a session, then close the picker and open a clean
+# attach window.
+exec kitty --class "$PICKER_CLASS" -e bash -c "
+    session=\$(tmux list-sessions -F '#S' 2>/dev/null | \
+        fzf --prompt='tmux session> ' --reverse)
+    if [ -n \"\$session\" ]; then
+        setsid kitty --class '$TARGET_CLASS' -e tmux attach -t \"\$session\" >/dev/null 2>&1 &
+        disown
+    fi
+    i3-msg '[class=\"$PICKER_CLASS\"] kill' >/dev/null 2>&1
+    exit 0
+"
