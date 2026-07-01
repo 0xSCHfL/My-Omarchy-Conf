@@ -107,3 +107,12 @@ if command -v i3-msg >/dev/null 2>&1; then
   i3-msg reload >/dev/null 2>&1 || true
 fi
 
+# Reload running kitty windows so they pick up the new colors-kitty.conf
+# that pywal just wrote. Uses the unix socket defined by `listen_on` in
+# kitty.conf. New kitties opened after wallpaper change don't need this
+# (they read the latest colors-kitty.conf at launch), but already-running
+# ones do — their in-memory config is frozen at startup.
+if command -v kitty >/dev/null 2>&1 && [ -S /tmp/kitty ]; then
+  kitty @ --to unix:/tmp/kitty load-config ~/.config/kitty/kitty.conf >/dev/null 2>&1 || true
+fi
+
