@@ -44,6 +44,7 @@ if [[ "$NO_WAL" == "0" ]] && command -v wal >/dev/null 2>&1; then
     source "$HOME/.cache/wal/colors.sh"
     FLAMESHOT_CONF="$HOME/.config/flameshot/flameshot.ini"
     [[ -f "$FLAMESHOT_CONF" ]] && sed -i "s/^drawColor=.*/drawColor=${color15}/" "$FLAMESHOT_CONF" 2>/dev/null
+    [[ -f "$FLAMESHOT_CONF" ]] && sed -i "s/^uiColor=.*/uiColor=${color4}/" "$FLAMESHOT_CONF" 2>/dev/null
   fi
 
   # Update alacritty colors with pywal

@@ -9,8 +9,8 @@ Mod = Super (Windows key)
 | `Mod+Return` | Terminal (kitty) |
 | `Mod+Space` | App launcher (rofi drun) |
 | `Mod+q` | Browser (qutebrowser) |
-| `Mod+Shift+b` | Brave (clears Singleton lock first) |
-| `Mod+Shift+Alt+b` | Brave incognito |
+| `Mod+Shift+b` | Chromium |
+| `Mod+Shift+Alt+b` | Chromium incognito |
 | `Mod+Shift+c` | Chromium |
 | `Mod+Shift+o` | Obsidian |
 | `Mod+Alt+t` | Telegram |
@@ -18,12 +18,12 @@ Mod = Super (Windows key)
 | `Mod+n` | Notes manager |
 | `Mod+Shift+f` | File manager (nautilus) |
 
-## Web Apps (i3-webapp → Brave --app)
+## Web Apps (i3-webapp -> Chromium --app)
 
 | Key | URL |
 |-----|-----|
 | `Mod+Shift+w` | WhatsApp |
-| `Mod+Shift+g` | ChatGPT |
+| `Mod+Shift+a` | ChatGPT (personal Chromium profile) |
 | `Mod+Shift+x` | X (Twitter) |
 | `Mod+Shift+d` | Discord |
 | `Mod+Shift+e` | Email picker |
@@ -93,8 +93,8 @@ Mod = Super (Windows key)
 | `Mod+Alt+b` | Spotify-only previous track |
 | `XF86MonBrightnessUp` | Brightness +5% (brightnessctl) |
 | `XF86MonBrightnessDown` | Brightness -5% |
-| `Mod+Ctrl+w` | WiFi TUI (impala in alacritty) |
-| `Mod+Ctrl+a` | Audio mixer TUI (wiremix in alacritty) |
+| `Mod+Ctrl+w` / `Mod+Alt+w` | WiFi TUI (impala in alacritty) |
+| `Mod+Ctrl+a` / `Mod+Alt+a` | Audio mixer TUI (wiremix in alacritty) |
 | `Mod+Ctrl+b` | Battery CPU profile menu (auto-cpufreq) |
 | `Mod+Shift+t` | btop (kitty) |
 

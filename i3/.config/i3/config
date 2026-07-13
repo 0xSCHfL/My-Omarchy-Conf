@@ -373,9 +373,13 @@ bindsym Mod4+x exec --no-startup-id i3-lock
 # Exit i3 with confirm prompt (rofi)
 bindsym Mod4+Shift+q exec "echo -e 'No\nYes'| rofi -dmenu -no-sort -i -theme ~/.config/rofi/dwm-keys.rasi -kb-row-up 'k,Up' -kb-row-down 'j,Down' -kb-cancel 'Escape,h,q' -p 'Exit i3?'| grep -q 'Yes' && i3-msg exit"
 # Wallpaper picker rofi list (wallpaper-pick.sh)
-bindsym Mod4+Ctrl+space exec --no-startup-id $HOME/.config/i3/scripts/wallpaper/wallpaper-pick.sh
-# Screenshot region/window to clipboard (i3-screenshot)
-bindsym Print exec --no-startup-id i3-screenshot
+# (binding removed — super+shift+i / i3-imgpicker is the default.
+#  Re-enable here if you want a keyboard-only fallback.)
+# bindsym Mod4+Ctrl+space exec --no-startup-id $HOME/.config/i3/scripts/wallpaper/wallpaper-pick.sh
+# Omarchy menu (rofi)
+bindsym Mod4+Ctrl+space exec --no-startup-id $HOME/.local/bin/i3-omarchy-menu
+# Screenshot region/window to clipboard (i3-flameshot, captures open menus)
+bindsym Print exec --no-startup-id i3-flameshot
 # Toggle screen recording (i3-screenrecord)
 bindsym Mod4+Print exec --no-startup-id i3-screenrecord
 # OCR a screen region into clipboard (i3-ocr)

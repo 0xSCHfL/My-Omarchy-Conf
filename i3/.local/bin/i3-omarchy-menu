@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# Omarchy menu via rofi
+
+SCRIPTS_DIR="$HOME/.local/bin/omarchy_scripts"
+
+options=(
+    "  Apps"
+    "  Keybindings"
+    "  Theme"
+    "  Install"
+    "  Remove"
+    "  Update"
+    "  System"
+    "  About"
+)
+
+selected=$(printf '%s\n' "${options[@]}" | rofi -dmenu -theme ~/.config/rofi/omarchy-menu.rasi -lines ${#options[@]})
+
+case "$selected" in
+    *Apps*) rofi -show drun -theme ~/.config/rofi/i3-launcher.rasi ;;
+    *Keybindings*) $HOME/.local/bin/i3-keys ;;
+    *Theme*) "$SCRIPTS_DIR/omarchy-theme-switcher" && "$SCRIPTS_DIR/omarchy-theme-set" ;;
+    *Install*) "$SCRIPTS_DIR/omarchy-pkg-install" ;;
+    *Remove*) "$SCRIPTS_DIR/omarchy-pkg-remove" ;;
+    *Update*) kitty -e "$SCRIPTS_DIR/omarchy-update" ;;
+    *System*)
+        system_opt=$(printf '  Lock\n  Suspend\n  Logout\n  Restart\n  Shutdown' | rofi -dmenu -theme ~/.config/rofi/omarchy-menu.rasi -p "System")
+        case "$system_opt" in
+            *Lock*) "$SCRIPTS_DIR/omarchy-system-lock" ;;
+            *Suspend*) systemctl suspend ;;
+            *Logout*) "$SCRIPTS_DIR/omarchy-system-logout" ;;
+            *Restart*) "$SCRIPTS_DIR/omarchy-system-reboot" ;;
+            *Shutdown*) "$SCRIPTS_DIR/omarchy-system-shutdown" ;;
+        esac
+        ;;
+    *About*) "$SCRIPTS_DIR/omarchy-launch-about" ;;
+esac

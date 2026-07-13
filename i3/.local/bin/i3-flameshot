@@ -1,0 +1,19 @@
+#!/bin/bash
+# Region screenshot via flameshot -> clipboard.
+# flameshot snapshots the desktop at launch, so open menus (browser
+# dropdowns, context menus) are captured before the selection phase.
+dunstctl close-all
+
+# Kill the background flameshot daemon (startupLaunch=true) to avoid
+# "Flameshot Error" from launching gui against an already-running instance.
+pkill -x flameshot 2>/dev/null
+sleep 0.2
+
+TMPFILE=$(mktemp /tmp/screenshot-XXXXXX.png)
+trap "rm -f '$TMPFILE'" EXIT
+
+if flameshot gui --clipboard --path "$TMPFILE"; then
+  dunstify -u low -t 2000 "Screenshot" "Copied to clipboard"
+else
+  dunstify -u low -t 2000 "Screenshot" "Cancelled"
+fi

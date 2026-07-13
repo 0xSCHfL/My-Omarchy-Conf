@@ -1,0 +1,91 @@
+#!/bin/bash
+# i3:summary=Launch rofi instead of walker for the omarchy menu
+#
+# This is a rofi shim for omarchy-launch-walker. It translates the walker
+# flag subset the omarchy menu actually uses into rofi's dmenu flags.
+#
+# Walker args handled:
+#   --dmenu           → -dmenu   (read options from stdin)
+#   --inputonly       → text input field (no list)
+#   --width <px>      → -theme-str 'window { width: <px>px; }'
+#   --minheight N     → ignored (rofi grows to content)
+#   --maxheight N     → -lines <N>
+#   -p <prompt>       → -p <prompt>
+#   -c <N>            → -selected-row <N>
+#   -m <provider>     → not supported; emits a single notice line
+#
+# Anything not recognized is passed through to rofi so walker-specific
+# flags don't blow up with "unknown option" errors.
+
+set -euo pipefail
+
+ROFI_THEME="${ROFI_THEME:-$HOME/.config/rofi/i3-system.rasi}"
+
+declare -a rofi_args=(-dmenu -no-config -i -theme "$ROFI_THEME")
+width=""
+maxheight=""
+selected_row=""
+provider=""
+
+# Translate walker flags to rofi flags. Walker uses --flag, rofi uses -flag.
+while (( $# > 0 )); do
+    case "$1" in
+        --dmenu)
+            shift ;;
+        --inputonly)
+            # Rofi dmenu with no listbox-empties-mode is closest to walker's
+            # --inputonly. -lines 0 forces zero list rows.
+            rofi_args+=(-lines 0)
+            shift ;;
+        --width)
+            width="$2"
+            shift 2 ;;
+        --minheight)
+            shift 2 ;;   # ignored (rofi grows to content)
+        --maxheight)
+            maxheight="$2"
+            shift 2 ;;
+        -p)
+            rofi_args+=(-p "$2")
+            shift 2 ;;
+        -c)
+            selected_row="$2"
+            shift 2 ;;
+        -m)
+            # Walker providers (menus:foo, etc.) have no rofi equivalent.
+            # Show a single placeholder so the omarchy menu still navigates
+            # via its *) case arm instead of crashing.
+            provider="$2"
+            shift 2 ;;
+        --)
+            shift
+            rofi_args+=("$@")
+            break ;;
+        *)
+            # Pass through; rofi will error on truly unknown options.
+            rofi_args+=("$1")
+            shift ;;
+    esac
+done
+
+# If a walker-only provider was requested, emit a single line and exit
+# cleanly. omarchy-menu treats the printed value as a selection, then
+# routes back to its main menu.
+if [[ -n "$provider" ]]; then
+    printf 'walker-only provider (%s) — install walker/elephant to use\n' "$provider"
+    exit 0
+fi
+
+# Apply per-invocation overrides. -theme-str appends a fragment onto the
+# active theme, so we don't need to write a temp file.
+if [[ -n "$width" ]]; then
+    rofi_args+=(-theme-str "window { width: ${width}px; }")
+fi
+if [[ -n "$maxheight" && "$maxheight" -gt 0 ]]; then
+    rofi_args+=(-lines "$maxheight")
+fi
+if [[ -n "$selected_row" ]]; then
+    rofi_args+=(-selected-row "$selected_row")
+fi
+
+exec rofi "${rofi_args[@]}"

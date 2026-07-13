@@ -18,8 +18,32 @@ padding.y = 10
 
 [window.dimensions]
 columns = 160
-lines = 24
+lines = 80
+
+[cursor.style]
+shape= "Beam"
+blinking = "Never"
+
+[colors]
+transparent_background_colors = true
+draw_bold_text_with_bright_colors = true
+
+[env]
+TERM = "xterm-256color"
 
 [font]
-normal = { family = "Iosevka" }
-size = 8.0
+glyph_offset = { x = 1, y = 0 }
+normal.family = "Iosevka Term"
+size = 10.0
+normal.style = "Regular"
+
+[font.bold]
+family = "Iosevka"
+style = "auto"
+
+[font.italic]
+family = "Iosevka"
+style = "auto"
+
+[terminal]
+osc52 = "CopyPaste"

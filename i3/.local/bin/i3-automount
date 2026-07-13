@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if pgrep -xu "$USER" -f 'udiskie .*--automount' >/dev/null 2>&1; then
+  exit 0
+fi
+
+if command -v udiskie >/dev/null 2>&1; then
+  exec udiskie --automount --notify
+fi
+
+if command -v notify-send >/dev/null 2>&1; then
+  notify-send "i3 automount" "Install udiskie to auto-mount USB disks in i3."
+fi
+
+exit 0

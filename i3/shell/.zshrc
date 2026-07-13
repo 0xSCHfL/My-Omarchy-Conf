@@ -59,6 +59,9 @@ fi
 # Starship prompt
 eval "$(starship init zsh)"
 
+# mise (node, python, etc. version manager)
+eval "$(mise activate --quiet zsh)"
+
 # zoxide
 eval "$(zoxide init --cmd cd zsh)"
 
@@ -131,7 +134,8 @@ yayd() {
 
 yayc() {
   echo "Cleaning yay cache..."
-  yay -Scc
+  # yay -Scc
+  sudo yay -Scc
 }
 
 pacc() {
@@ -379,3 +383,9 @@ hb() {
     echo "Failed to upload the document."
   fi
 }
+
+# >>> grok installer >>>
+export PATH="$HOME/.grok/bin:$PATH"
+fpath=(~/.grok/completions/zsh $fpath)
+autoload -Uz compinit && compinit -C
+# <<< grok installer <<<

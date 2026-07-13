@@ -99,7 +99,7 @@ Colorized blocks with nerd font icons — each block has its own color matching 
 | `i3-sys` | System menu: suspend / reboot / shutdown (rofi) |
 | `i3-kill` | Kill a process via rofi picker |
 | `i3-keys` | Show all keybindings (rofi) |
-| `i3-webapp` | Launch Brave as a webapp (`--app=<url>`) |
+| `i3-webapp` | Launch Chromium as a webapp (`--app=<url>`) |
 | `i3-emojipick` | Emoji picker (rofimoji) |
 | `i3-imgpicker` | Image browser with ueberzugpp preview |
 | `i3-imgcliphist` | Image clipboard history viewer |
@@ -130,8 +130,8 @@ Colorized blocks with nerd font icons — each block has its own color matching 
 | `Super+Ctrl+V` | Clipboard manager (copyq) |
 | `Super+V` | Clipboard history (cliphist) |
 | `Super+Shift+V` | Image clipboard history |
-| `Super+Ctrl+W` | Wifi TUI (impala) |
-| `Super+Ctrl+A` | Audio TUI (wiremix) |
+| `Super+Ctrl+W` / `Super+Alt+W` | Wifi TUI (impala) |
+| `Super+Ctrl+A` / `Super+Alt+A` | Audio TUI (wiremix) |
 | `Super+N` | Notes launcher (rofi vault picker → nvim) |
 | `Super+Print` | Screenshot → clipboard |
 | `Super+Ctrl+Print` | OCR screenshot → clipboard |

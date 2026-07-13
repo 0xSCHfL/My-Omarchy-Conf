@@ -42,7 +42,7 @@ signal=11
 separator=false
 
 [ethernet]
-command=ip=$(ip addr | awk '/^[0-9]+: e/{iface=1} iface && /inet /{split($2,a,"/"); print a[1]; iface=0}' | head -1); [ -n "$ip" ] && printf "| 󰈀 %s\n\n#ea999c\n" "$ip"
+command=iface=$(ip route get 1.1.1.1 2>/dev/null | awk '{for (i=1; i<=NF; i++) if ($i == "dev") {print $(i+1); exit}}'); if [ -n "$iface" ] && ! iw dev "$iface" info >/dev/null 2>&1; then ip=$(ip -4 -o addr show dev "$iface" 2>/dev/null | awk '{split($4,a,"/"); print a[1]; exit}'); [ -n "$ip" ] && printf "| 󰈀 %s\n\n#ea999c\n" "$ip"; fi
 interval=10
 separator=false
 

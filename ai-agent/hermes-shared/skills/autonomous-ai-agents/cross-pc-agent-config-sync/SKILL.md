@@ -78,7 +78,16 @@ Preferred pattern when Hermes lives alongside other agent configs in dotfiles:
 - Use a short README that documents exactly what syncs and what stays local.
 - Back up any pre-existing live ~/.hermes files before replacing them with symlinks.
 - If the user wants “run hermes normally and it already works”, make the preferred Hermes profile the sticky default on each PC.
+- Verify the sticky default explicitly after setup: `hermes profile list` should mark the intended profile as active, and `cat ~/.hermes/active_profile` should show that profile name.
+- Fresh `hermes` launches use that sticky active profile. A `/new` inside an already-running session only resets the conversation; it does not switch profiles.
+- After syncing a lean profile, verify MCP state separately from built-in toolsets. `hermes tools list` only shows the built-in toolsets for the platform; enabled MCP servers are a separate layer and can still trigger startup auth prompts or failures.
+- To confirm an MCP-backed integration really works on the synced profile, use `hermes -p <profile> mcp list` for configured status and `hermes -p <profile> mcp test <server>` for an actual connectivity/auth check.
 - Reuse the same pattern across Claude, Codex, OpenCode, and Hermes so the mental model stays consistent.
+- Prefer sharing custom Hermes skills through a repo-owned path exposed by `skills.external_dirs` instead of syncing `~/.hermes/skills/` directly when the live skills tree may contain runtime-written metadata or mixed provenance.
+- If the user is syncing via a private branch rather than main, preserve unrelated workstation noise by selectively staging only the shared-config files before committing and pushing.
+- When one machine has newer repo changes, pull or merge those before pushing the new shared-agent changes so the second machine can fast-forward cleanly.
+
+See also `references/git-sync-workflow.md` for a safe update/push sequence when local dotfiles edits and remote branch updates both exist.
 
 ## Pitfalls
 
@@ -87,6 +96,7 @@ Preferred pattern when Hermes lives alongside other agent configs in dotfiles:
 - Do not mix shared configuration changes with unrelated repo noise; prepare narrow diffs.
 - Do not assume secrets must stay out of a repo if the user explicitly says the repo is private; instead, confirm their comfort level and focus on conflict-prone files.
 - Do not stow a broad parent package if it also contains unrelated agent files that already exist live; split Hermes into a narrower sub-package first to avoid symlink conflicts.
+- If you need to bring in upstream or another branch before pushing, expect stash-pop conflicts in high-churn files like `install.sh`; resolve only the target feature additions and avoid accidentally committing unrelated workstation customizations.
 
 ## User-specific workflow preference
 

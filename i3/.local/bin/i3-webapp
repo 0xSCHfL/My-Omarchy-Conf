@@ -1,2 +1,11 @@
 #!/bin/bash
-WAYLAND_DISPLAY= GDK_BACKEND=x11 brave --ozone-platform=x11 --app="$1"
+url="${1:?usage: i3-webapp URL [profile-directory]}"
+profile_dir="${2:-}"
+
+args=(--ozone-platform=x11)
+if [[ -n "$profile_dir" ]]; then
+  args+=(--profile-directory="$profile_dir")
+fi
+args+=(--app="$url")
+
+WAYLAND_DISPLAY= GDK_BACKEND=x11 chromium "${args[@]}"

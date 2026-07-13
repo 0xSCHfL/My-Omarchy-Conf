@@ -10,6 +10,7 @@
       "WebSearch"
     ]
   },
+  "model": "opus",
   "hooks": {
     "Stop": [
       {
@@ -60,5 +61,5 @@
   },
   "effortLevel": "high",
   "skipDangerousModePermissionPrompt": true,
-  "model": "opus"
+  "theme": "dark"
 }

@@ -1,0 +1,28 @@
+[global]
+font = Iosevka 12
+monitor = 0
+follow = mouse
+width = 400
+height = (0, 120)
+origin = top-right
+offset = (10, 10)
+gap_size = 15
+padding = 10
+horizontal_padding = 15
+frame_width = 2
+frame_color = "#943C0C"
+background = "#1b120d"
+foreground = "#dbc1aa"
+
+[urgency_low]
+background = "#1b120d"
+foreground = "#dbc1aa"
+
+[urgency_normal]
+background = "#1b120d"
+foreground = "#dbc1aa"
+
+[urgency_critical]
+background = "#543D41"
+foreground = "#dbc1aa"
+timeout = 30

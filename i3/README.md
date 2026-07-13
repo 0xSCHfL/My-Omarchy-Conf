@@ -82,7 +82,7 @@ dotfiles/i3/
 | `Super+v` | Text clipboard history (cliphist) |
 | `Super+n` | Notes |
 | `Super+Ctrl+n` | Notification history |
-| `Print` | Screenshot → clipboard (maim) |
+| `Print` | Screenshot → clipboard (flameshot) |
 | `Alt+Print` | Screen recording (ffmpeg) |
 | `Super+Ctrl+Print` | OCR screenshot (tesseract) |
 | `XF86AudioPlay/Next/Prev/Stop` | Spotify-only playback controls |
@@ -99,7 +99,7 @@ Web apps (`Super+Shift+w/a/x/d/e`): WhatsApp, ChatGPT, X, Discord, Email
 
 | Script | Purpose |
 |--------|---------|
-| `i3-screenshot` | Area screenshot → clipboard (maim + xclip) |
+| `i3-flameshot` | Area screenshot → clipboard (flameshot, captures open menus) |
 | `i3-screenrecord` | Screen recording (ffmpeg) |
 | `i3-ocr` | Area OCR → clipboard (maim + tesseract) |
 | `i3-lock` | Lock screen with blur (maim + magick + i3lock-color) |
