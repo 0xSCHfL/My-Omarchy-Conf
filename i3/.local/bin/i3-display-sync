@@ -26,6 +26,19 @@ while read -r output; do
   xrandr --output "$output" --off 2>/dev/null || true
 done < <(xrandr 2>/dev/null | awk '/disconnected/ && /[[:digit:]]+x[[:digit:]]+/ { print $1 }')
 
+# Enable connected outputs that are currently off (e.g. just plugged in) and
+# lay them out to the right of the primary. Without this, a freshly connected
+# monitor stays detected-but-disabled (no mode) and nothing shows up.
+primary_out="$(xrandr 2>/dev/null | awk '/ connected/ && /primary/ {print $1; exit}')"
+[[ -z "$primary_out" ]] && primary_out="$(xrandr 2>/dev/null | awk '/ connected/ {print $1; exit}')"
+prev="$primary_out"
+while read -r output; do
+  [[ -n "$output" ]] || continue
+  log "xrandr --output $output --auto --right-of $prev"
+  xrandr --output "$output" --auto --right-of "$prev" 2>/dev/null || true
+  prev="$output"
+done < <(xrandr 2>/dev/null | awk -v p="$primary_out" '$0 ~ / connected/ && $1 != p {print $1}')
+
 # Move orphaned / inactive-output workspaces onto the primary (or first active) output.
 moved="$(
   python3 - <<'PY'
