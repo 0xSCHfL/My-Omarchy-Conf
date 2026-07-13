@@ -26,18 +26,36 @@ while read -r output; do
   xrandr --output "$output" --off 2>/dev/null || true
 done < <(xrandr 2>/dev/null | awk '/disconnected/ && /[[:digit:]]+x[[:digit:]]+/ { print $1 }')
 
-# Enable connected outputs that are currently off (e.g. just plugged in) and
-# lay them out to the right of the primary. Without this, a freshly connected
-# monitor stays detected-but-disabled (no mode) and nothing shows up.
-primary_out="$(xrandr 2>/dev/null | awk '/ connected/ && /primary/ {print $1; exit}')"
-[[ -z "$primary_out" ]] && primary_out="$(xrandr 2>/dev/null | awk '/ connected/ {print $1; exit}')"
-prev="$primary_out"
-while read -r output; do
-  [[ -n "$output" ]] || continue
-  log "xrandr --output $output --auto --right-of $prev"
-  xrandr --output "$output" --auto --right-of "$prev" 2>/dev/null || true
-  prev="$output"
-done < <(xrandr 2>/dev/null | awk -v p="$primary_out" '$0 ~ / connected/ && $1 != p {print $1}')
+# Layout policy:
+#   - The external (non-embedded) monitor is the MAIN/primary display.
+#   - The laptop (embedded eDP/LVDS) sits to its LEFT and keeps workspace 1.
+# Without enabling connected outputs, a freshly plugged monitor stays
+# detected-but-disabled (no mode) and nothing shows up.
+laptop="$(xrandr 2>/dev/null | awk '$0 ~ / connected/ && $1 ~ /^(eDP|LVDS)/ {print $1; exit}')"
+[[ -z "$laptop" ]] && laptop="$(xrandr 2>/dev/null | awk '/ connected/ {print $1; exit}')"
+ext="$(xrandr 2>/dev/null | awk -v lap="$laptop" '$0 ~ / connected/ && $1 != lap {print $1; exit}')"
+
+if [[ -n "$ext" ]]; then
+  log "layout: external=$ext primary, laptop=$laptop left-of"
+  xrandr --output "$ext" --primary --auto 2>/dev/null || true
+  xrandr --output "$laptop" --auto --left-of "$ext" 2>/dev/null || true
+  # Chain any further externals to the right of the primary external.
+  prev="$ext"
+  while read -r o; do
+    [[ -n "$o" && "$o" != "$ext" && "$o" != "$laptop" ]] || continue
+    xrandr --output "$o" --auto --right-of "$prev" 2>/dev/null || true
+    prev="$o"
+  done < <(xrandr 2>/dev/null | awk -v lap="$laptop" '$0 ~ / connected/ {print $1}')
+  # Workspace 1 lives on the laptop; everything else goes to the main external.
+  i3-msg '[workspace="1"]' move workspace to output "$laptop" 2>/dev/null || true
+  for w in $(i3-msg -t get_workspaces 2>/dev/null | python3 -c \
+      "import json,sys; print(' '.join(str(x['num']) for x in json.load(sys.stdin) if x.get('num') is not None and x['num']!=1))"); do
+    i3-msg "[workspace=\"$w\"]" move workspace to output "$ext" 2>/dev/null || true
+  done
+else
+  log "layout: laptop only (primary)"
+  xrandr --output "$laptop" --primary --auto 2>/dev/null || true
+fi
 
 # Move orphaned / inactive-output workspaces onto the primary (or first active) output.
 moved="$(
