@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+# Rescue i3 workspaces after external monitor plug/unplug.
+#
+# When HDMI/DP is disconnected, workspaces that lived on that output can stay
+# assigned to a dead screen — the bar then only shows the laptop workspace(s).
+# This script:
+#   1. Turns off any xrandr outputs that are disconnected but still configured
+#   2. Moves every workspace on an inactive i3 output onto the primary display
+#   3. Refreshes the wallpaper to match the new layout
+#
+# Safe to run repeatedly (manual keybind or from i3-display-watch).
+
+set -euo pipefail
+
+LOG="${XDG_CACHE_HOME:-$HOME/.cache}/i3-display-sync.log"
+mkdir -p "$(dirname "$LOG")"
+
+log() {
+  printf '%s %s\n' "$(date '+%F %T')" "$*" >>"$LOG"
+}
+
+# Drop modes on outputs that are physically gone (common after unplug).
+while read -r output; do
+  [[ -n "$output" ]] || continue
+  log "xrandr --output $output --off"
+  xrandr --output "$output" --off 2>/dev/null || true
+done < <(xrandr 2>/dev/null | awk '/disconnected/ && /[[:digit:]]+x[[:digit:]]+/ { print $1 }')
+
+# Move orphaned / inactive-output workspaces onto the primary (or first active) output.
+moved="$(
+  python3 - <<'PY'
+import json
+import subprocess
+import sys
+
+def i3_get(cmd: str):
+    out = subprocess.check_output(["i3-msg", "-t", cmd], text=True)
+    return json.loads(out)
+
+def i3_run(cmd: str) -> None:
+    subprocess.run(["i3-msg", cmd], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+outputs = i3_get("get_outputs")
+active = [
+    o for o in outputs
+    if o.get("active") and o.get("name") not in (None, "xroot-0")
+]
+if not active:
+    print("0", end="")
+    sys.exit(0)
+
+primary = next((o["name"] for o in active if o.get("primary")), active[0]["name"])
+active_names = {o["name"] for o in active}
+
+workspaces = i3_get("get_workspaces")
+moved = 0
+# Prefer lowest workspace number first so focus order stays predictable.
+for ws in sorted(workspaces, key=lambda w: (w.get("num") is None, w.get("num") or 0, w.get("name") or "")):
+    out = ws.get("output")
+    name = ws.get("name")
+    if not name or out in active_names:
+        continue
+    # Quote workspace name safely for i3 criteria.
+    safe = name.replace("\\", "\\\\").replace('"', '\\"')
+    i3_run(f'[workspace="{safe}"] move workspace to output "{primary}"')
+    moved += 1
+    print(f"move {name!r} {out!r} -> {primary!r}", file=sys.stderr)
+
+print(str(moved), end="")
+PY
+)"
+
+log "primary rescue moved=${moved:-0}"
+
+# Re-apply wallpaper so feh covers the remaining screen only.
+if [[ -x "$HOME/.config/i3/scripts/wallpaper/wallpaper-set.sh" ]]; then
+  # Prefer reusing last wallpaper without forcing a full pywal regen if possible.
+  if [[ -f "$HOME/.cache/wal/wal" ]]; then
+    last="$(cat "$HOME/.cache/wal/wal" 2>/dev/null || true)"
+    if [[ -n "$last" && -f "$last" ]]; then
+      "$HOME/.config/i3/scripts/wallpaper/wallpaper-set.sh" --no-wal "$last" >/dev/null 2>&1 || true
+    else
+      "$HOME/.config/i3/scripts/wallpaper/wallpaper-set.sh" --no-wal >/dev/null 2>&1 || true
+    fi
+  else
+    feh --bg-fill "$(cat "$HOME/.cache/wal/wal" 2>/dev/null)" 2>/dev/null \
+      || feh --bg-fill "$HOME/Work/dotfiles/wallpapers/"* 2>/dev/null \
+      || true
+  fi
+fi
+
+exit 0
