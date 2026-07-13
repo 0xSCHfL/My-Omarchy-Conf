@@ -1,3 +1,5 @@
 tmux/.tmux/plugins/
+**/tmux/plugins/
+nvim.log.bak
 __pycache__/
 *.pyc
