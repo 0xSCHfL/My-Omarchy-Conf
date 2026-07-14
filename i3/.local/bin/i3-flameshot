@@ -1,10 +1,19 @@
 #!/bin/bash
-# Region screenshot via flameshot.
-# Works on dropdowns/menus that close when focus shifts to a selection overlay
-# because flameshot freezes the screen at the moment of the hotkey, so the
-# menu is captured before it can be torn down.
+# Region screenshot via flameshot -> clipboard.
+# flameshot snapshots the desktop at launch, so open menus (browser
+# dropdowns, context menus) are captured before the selection phase.
 dunstctl close-all
 
-# -g GUI mode: freezes screen, lets user draw a region with the mouse,
-#              auto-copies to clipboard when released
-flameshot gui -c -p ~/Downloads
+# Kill the background flameshot daemon (startupLaunch=true) to avoid
+# "Flameshot Error" from launching gui against an already-running instance.
+pkill -x flameshot 2>/dev/null
+sleep 0.2
+
+TMPFILE=$(mktemp /tmp/screenshot-XXXXXX.png)
+trap "rm -f '$TMPFILE'" EXIT
+
+if flameshot gui --clipboard --path "$TMPFILE"; then
+  dunstify -u low -t 2000 "Screenshot" "Copied to clipboard"
+else
+  dunstify -u low -t 2000 "Screenshot" "Cancelled"
+fi
