@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Watch i3 RandR/output events and rescue workspaces after monitor changes.
+# Started from i3 config via exec_always.
+
+set -euo pipefail
+
+SYNC="${HOME}/.local/bin/i3-display-sync"
+LOG="${XDG_CACHE_HOME:-$HOME/.cache}/i3-display-sync.log"
+LOCK="${XDG_RUNTIME_DIR:-/tmp}/i3-display-watch.lock"
+mkdir -p "$(dirname "$LOG")"
+
+log() {
+  printf '%s %s\n' "$(date '+%F %T')" "$*" >>"$LOG"
+}
+
+# Single instance (exec_always may restart us).
+exec 9>"$LOCK"
+if ! flock -n 9; then
+  exit 0
+fi
+
+if [[ -x "$SYNC" ]]; then
+  "$SYNC" || true
+fi
+
+log "display-watch started pid=$$"
+# Stream output events; each line is one connect/disconnect/mode change.
+i3-msg -t subscribe -m '["output"]' | while IFS= read -r _; do
+  # Debounce flurries of RandR events from one unplug.
+  sleep 0.5
+  if [[ -x "$SYNC" ]]; then
+    log "output event -> sync"
+    "$SYNC" || true
+  fi
+done
