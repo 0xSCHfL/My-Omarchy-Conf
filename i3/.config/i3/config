@@ -42,7 +42,7 @@ for_window [class=".*"] border none
 # at 900x600 floating centered.
 for_window [class="^linphone$"] floating enable, resize set 900 600, move position center
 for_window [class="^linphone\.AppImage$"] floating enable, resize set 900 600, move position center
-for_window [class="^i3-tmux-picker$"] floating enable, resize set 360 140, move position center
+for_window [class="^i3-tmux-picker$"] floating enable, resize set 500 250, move position center
 
 # This font is widely installed, provides lots of unicode glyphs, right-to-left
 # text rendering and scalability on retina/hidpi displays (thanks to pango).
