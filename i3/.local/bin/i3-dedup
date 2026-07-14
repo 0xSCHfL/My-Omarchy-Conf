@@ -27,6 +27,7 @@ SCRIPT_SINGLETONS=(
     "i3-video-idle-reset"
     "xss-lock --transfer-sleep-lock"
     "linphone-popup-watcher"
+    "i3-display-watch"
 )
 
 # Daemons to ensure are running: "pgrep_f_pattern|start_command"
