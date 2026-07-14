@@ -44,6 +44,7 @@ if [[ "$NO_WAL" == "0" ]] && command -v wal >/dev/null 2>&1; then
     source "$HOME/.cache/wal/colors.sh"
     FLAMESHOT_CONF="$HOME/.config/flameshot/flameshot.ini"
     [[ -f "$FLAMESHOT_CONF" ]] && sed -i "s/^drawColor=.*/drawColor=${color15}/" "$FLAMESHOT_CONF" 2>/dev/null
+    [[ -f "$FLAMESHOT_CONF" ]] && sed -i "s/^uiColor=.*/uiColor=${color4}/" "$FLAMESHOT_CONF" 2>/dev/null
   fi
 
   # Update alacritty colors with pywal
@@ -105,5 +106,14 @@ fi
 # Reload i3 so set_from_resource colors (bar/workspaces) refresh with new wal palette.
 if command -v i3-msg >/dev/null 2>&1; then
   i3-msg reload >/dev/null 2>&1 || true
+fi
+
+# Reload running kitty windows so they pick up the new colors-kitty.conf
+# that pywal just wrote. Uses the unix socket defined by `listen_on` in
+# kitty.conf. New kitties opened after wallpaper change don't need this
+# (they read the latest colors-kitty.conf at launch), but already-running
+# ones do — their in-memory config is frozen at startup.
+if command -v kitty >/dev/null 2>&1 && [ -S /tmp/kitty ]; then
+  kitty @ --to unix:/tmp/kitty load-config ~/.config/kitty/kitty.conf >/dev/null 2>&1 || true
 fi
 
