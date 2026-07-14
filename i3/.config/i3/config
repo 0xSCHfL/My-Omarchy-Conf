@@ -42,7 +42,7 @@ for_window [class=".*"] border none
 # at 900x600 floating centered.
 for_window [class="^linphone$"] floating enable, resize set 900 600, move position center
 for_window [class="^linphone\.AppImage$"] floating enable, resize set 900 600, move position center
-for_window [class="^i3-tmux-chooser$"] floating enable, resize set 600 400, move position center
+for_window [class="^i3-tmux-picker$"] floating enable, resize set 360 140, move position center
 
 # This font is widely installed, provides lots of unicode glyphs, right-to-left
 # text rendering and scalability on retina/hidpi displays (thanks to pango).
@@ -72,8 +72,9 @@ exec --no-startup-id dunst
 exec --no-startup-id snixembed --fork
 exec --no-startup-id /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
 exec --no-startup-id $HOME/.config/i3/scripts/wallpaper/wallpaper-set.sh
-# Start a detached tmux session so the tmux server is ready after i3 starts.
-exec --no-startup-id bash -lc 'tmux has-session -t main 2>/dev/null || tmux new-session -d -s main -c "$HOME"'
+# Start tmux server so the session picker (super+shift+Return) always has
+# something to attach to. `start-server` is a no-op if the server's already up.
+exec --no-startup-id tmux start-server
 # Watch for Linphone popup windows; re-pin them after a 3s grace.
 exec_always --no-startup-id $HOME/.local/bin/linphone-popup-watcher
 exec_always --no-startup-id bash -c 'pkill -f "\.local/bin/i3-cliphist$" 2>/dev/null; sleep 0.1; exec $HOME/.local/bin/i3-cliphist'
@@ -207,8 +208,8 @@ bindsym Mod4+Shift+c exec bash -c 'rm -f ~/.config/chromium/Singleton* && chromi
 bindsym Mod4+Shift+t exec --no-startup-id kitty -e btop
 # Pomodoro/timer menu (timer)
 bindsym Mod4+Shift+m exec --no-startup-id ~/.config/i3blocks/scripts/timer menu
-# Tmux session/window chooser (tmux-menu)
-bindsym Mod4+Shift+Return exec --no-startup-id kitty --class i3-tmux-chooser -e ~/.config/i3/scripts/utils/tmux-chooser.sh
+# Tmux session picker (kitty + fzf)
+bindsym Mod4+Shift+Return exec --no-startup-id $HOME/.local/bin/i3-tmux-picker
 
 # kill focused window
 # Close focused window (i3 kill)
@@ -391,7 +392,7 @@ bindsym Mod4+Shift+q exec "echo -e 'No\nYes'| rofi -dmenu -no-sort -i -theme ~/.
 # Wallpaper picker rofi list (wallpaper-pick.sh)
 bindsym Mod4+Ctrl+space exec --no-startup-id $HOME/.local/bin/i3-menu
 # Screenshot region to clipboard via flameshot (freezes screen — works on dropdowns/menus)
-bindsym Print exec --no-startup-id i3-screenshot
+bindsym Print exec --no-startup-id i3-flameshot
 # Legacy maim screenshot (Shift+Print) — use for full-screen or when flameshot acts up
 bindsym Shift+Print exec --no-startup-id i3-screenshot
 # Toggle screen recording (i3-screenrecord)
