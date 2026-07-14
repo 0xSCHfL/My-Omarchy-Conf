@@ -19,7 +19,8 @@ DEFAULT_SESSION=Work
 # 'setsid' detaches the target kitty from the picker's process group, so
 # killing the picker doesn't take the target down with it.
 open_target() {
-    setsid kitty --class "$TARGET_CLASS" -e tmux attach -t "$1" >/dev/null 2>&1 &
+    setsid env DISPLAY="$DISPLAY" XAUTHORITY="$XAUTHORITY" \
+        kitty --class "$TARGET_CLASS" -e tmux attach -t "$1" >/dev/null 2>&1 &
     disown
 }
 
@@ -30,7 +31,8 @@ if ! tmux has-session 2>/dev/null; then
         choice=\$(printf 'no tmux session running\ncreate \"$DEFAULT_SESSION\"\nquit' | \
             fzf --prompt='tmux> ' --reverse --height=8 --tac)
         if [[ \"\$choice\" == *create* ]]; then
-            setsid kitty --class '$TARGET_CLASS' -e tmux new -s $DEFAULT_SESSION >/dev/null 2>&1 &
+            setsid env DISPLAY=\"\$DISPLAY\" XAUTHORITY=\"\$XAUTHORITY\" \
+                kitty --class '$TARGET_CLASS' -e tmux new -s $DEFAULT_SESSION >/dev/null 2>&1 &
             disown
         fi
         i3-msg '[class=\"$PICKER_CLASS\"] kill' >/dev/null 2>&1
@@ -44,7 +46,8 @@ exec kitty --class "$PICKER_CLASS" -e bash -c "
     session=\$(tmux list-sessions -F '#S' 2>/dev/null | \
         fzf --prompt='tmux session> ' --reverse)
     if [ -n \"\$session\" ]; then
-        setsid kitty --class '$TARGET_CLASS' -e tmux attach -t \"\$session\" >/dev/null 2>&1 &
+        setsid env DISPLAY=\"\$DISPLAY\" XAUTHORITY=\"\$XAUTHORITY\" \
+            kitty --class '$TARGET_CLASS' -e tmux attach -t \"\$session\" >/dev/null 2>&1 &
         disown
     fi
     i3-msg '[class=\"$PICKER_CLASS\"] kill' >/dev/null 2>&1
