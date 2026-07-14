@@ -131,6 +131,7 @@ yayd() {
 
 yayc() {
   echo "Cleaning yay cache..."
+  sudo rm -rf /var/cache/pacman/pkg/download-*
   yay -Scc
 }
 
@@ -386,3 +387,6 @@ hb() {
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
+
+# NPM global bin (added by Qwen Code installer)
+export PATH="$HOME/.npm-global/bin:$PATH"

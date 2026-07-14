@@ -33,7 +33,7 @@ mainbox {
 inputbar {
     padding: 4px 18px 12px 18px;
     spacing: 8px;
-    children: [ prompt, entry ];
+    children: [ prompt ];
 }
 
 prompt {

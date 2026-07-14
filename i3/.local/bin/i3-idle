@@ -13,11 +13,11 @@ export XAUTHORITY="${XAUTHORITY:-$HOME/.Xauthority}"
 
 exec xidlehook \
     --timer "$SCREENSAVER_TIMEOUT" \
-        "$HOME/.local/bin/i3-launch-screensaver" \
+        "$HOME/.local/bin/i3-idle-screensaver" \
         "$HOME/.local/bin/i3-stop-screensaver" \
     --timer "$LOCK_TIMEOUT" \
-        "$HOME/.local/bin/i3-lock-after-screensaver" \
+        "$HOME/.local/bin/i3-idle-lock" \
         "" \
     --timer "$SLEEP_TIMEOUT" \
-        "systemctl suspend" \
+        "$HOME/.local/bin/i3-idle-sleep" \
         ""

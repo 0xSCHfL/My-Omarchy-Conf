@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+# Reset xidlehook idle timer when media playback stops
+WAS_PLAYING=false
+
+while true; do
+    if playerctl status 2>/dev/null | grep -q "^Playing$"; then
+        WAS_PLAYING=true
+    elif [[ "$WAS_PLAYING" == true ]]; then
+        # Playback just stopped — reset idle timer
+        xdotool key --clearmodifiers super 2>/dev/null || true
+        WAS_PLAYING=false
+    fi
+
+    sleep 5
+done

@@ -3,14 +3,18 @@
 theme="$HOME/.config/rofi/i3-system.rasi"
 
 choose() {
-  rofi -dmenu -no-sort -i -theme "$theme" -p "$1"
+  rofi -dmenu -no-sort -i -theme "$theme" -p "$1" \
+    -font "Iosevka Nerd Font 14" \
+    -kb-row-up 'k,Up' -kb-row-down 'j,Down' -kb-cancel 'Escape,h,q'
 }
 
-case "$(printf "󰌾  Lock\n󰍃  Logout\n󰒲  Suspend\n󰜉  Reboot\n󰐥  Shutdown" | choose "System:")" in
-    *Lock)     i3-lock ;;
-    *Logout)   i3-msg exit ;;
-    *Suspend)  systemctl suspend ;;
-    *Reboot)   systemctl reboot ;;
-    *Shutdown) shutdown now ;;
+case "$(printf "\U000F05AE  Screensaver\n\U000F033E  Lock\n\U000F0343  Logout\n\U000F04B2  Suspend\n\U000F063C  Hibernate\n\U000F0709  Reboot\n\U000F0425  Shutdown" | choose "System:")" in
+    *Screensaver) i3-launch-screensaver ;;
+    *Lock)        i3-lock ;;
+    *Logout)      i3-msg exit ;;
+    *Suspend)     systemctl suspend ;;
+    *Hibernate)   systemctl hibernate ;;
+    *Reboot)      systemctl reboot ;;
+    *Shutdown)    shutdown now ;;
     *) exit 1 ;;
 esac

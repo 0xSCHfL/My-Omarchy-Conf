@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Exit 0 (true) if video/media is currently playing.
+# Used by i3-idle to skip screensaver/lock/sleep while watching videos.
+
+set -euo pipefail
+
+# 1) Check each MPRIS player individually — only count it if its own status is "Playing"
+while IFS= read -r player; do
+    [[ -z "$player" ]] && continue
+    if playerctl -p "$player" status 2>/dev/null | grep -qxi 'playing'; then
+        exit 0
+    fi
+done < <(playerctl -l 2>/dev/null)
+
+# 2) Fallback: active window is fullscreen (often a video player or browser)
+if ACTIVE_WIN=$(xdotool getactivewindow 2>/dev/null); then
+    if xprop -id "$ACTIVE_WIN" _NET_WM_STATE 2>/dev/null | grep -q '_NET_WM_STATE_FULLSCREEN'; then
+        exit 0
+    fi
+fi
+
+exit 1

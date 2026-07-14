@@ -1,11 +1,14 @@
 #!/bin/bash
-# Close all notifications before capture so they don't appear in the screenshot
+# Maim-based screenshot (legacy, replaced by i3-flameshot)
+# Issue: maim + slurp require focus/pointer grab, which closes browser dropdowns
+# before the selection overlay can appear.
+# Kept as a fallback for full-screen captures if flameshot misbehaves.
 dunstctl close-all
 
 TMPFILE=$(mktemp "/tmp/screenshot-XXXXXX.png")
 trap "rm -f '$TMPFILE'" EXIT
 
-if maim -s "$TMPFILE" 2>/dev/null; then
+if maim -s -d 0.5 -B "$TMPFILE" 2>/dev/null; then
   if [ -f "$TMPFILE" ] && [ -s "$TMPFILE" ]; then
     xclip -selection clipboard -t image/png -loops 0 < "$TMPFILE" &
     dunstify -u low -t 2000 "Screenshot" "Copied to clipboard"

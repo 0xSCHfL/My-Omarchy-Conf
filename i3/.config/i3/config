@@ -40,7 +40,9 @@ for_window [class=".*"] border none
 # (see dunstrc [linphone-call] / [linphone-call-desktop]). When you
 # answer from the notification, Linphone opens its main window here
 # at 900x600 floating centered.
+for_window [class="^linphone$"] floating enable, resize set 900 600, move position center
 for_window [class="^linphone\.AppImage$"] floating enable, resize set 900 600, move position center
+for_window [class="^i3-tmux-chooser$"] floating enable, resize set 600 400, move position center
 
 # This font is widely installed, provides lots of unicode glyphs, right-to-left
 # text rendering and scalability on retina/hidpi displays (thanks to pango).
@@ -70,6 +72,8 @@ exec --no-startup-id dunst
 exec --no-startup-id snixembed --fork
 exec --no-startup-id /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
 exec --no-startup-id $HOME/.config/i3/scripts/wallpaper/wallpaper-set.sh
+# Start a detached tmux session so the tmux server is ready after i3 starts.
+exec --no-startup-id bash -lc 'tmux has-session -t main 2>/dev/null || tmux new-session -d -s main -c "$HOME"'
 # Watch for Linphone popup windows; re-pin them after a 3s grace.
 exec_always --no-startup-id $HOME/.local/bin/linphone-popup-watcher
 exec_always --no-startup-id bash -c 'pkill -f "\.local/bin/i3-cliphist$" 2>/dev/null; sleep 0.1; exec $HOME/.local/bin/i3-cliphist'
@@ -165,6 +169,11 @@ for_window [class="i3-gdrive-setup"] floating enable, resize set 800 500, move p
 for_window [class="i3-check"] floating enable, resize set 630 700, move position center
 for_window [class="i3-manuals"] floating enable, resize set 1150 760, move position center
 for_window [class="notes-nvim"] floating enable, resize set 1200 800, move position center
+for_window [class="^localsend$"] floating enable, resize set 1000 700, move position center
+for_window [class="^LocalSend$"] floating enable, resize set 1000 700, move position center
+for_window [title="^LocalSend$"] floating enable, resize set 1000 700, move position center
+for_window [class="^org\\.gnome\\.Calculator$"] floating enable, resize set 420 560, move position center
+for_window [title="^Calculator$"] floating enable, resize set 420 560, move position center
 for_window [class="^i3-peek-preview$"] floating enable, resize set 920 680, move position center
 for_window [title="^Peek preview.*"] floating enable, resize set 920 680, move position center
 
@@ -174,7 +183,9 @@ for_window [class="^imv-folder$"] floating enable, resize set 1200 750, move pos
 for_window [class="^feh$"] floating enable, resize set 1200 750, move position center
 for_window [class="^mpv$"] floating enable, resize set 1200 700, move position center
 for_window [class="^Evince$"] floating enable, resize set 1100 800, move position center
+for_window [class="^evince$"] floating enable, resize set 1100 800, move position center
 for_window [class="^Zathura$"] floating enable, resize set 1100 800, move position center
+for_window [class="^opensnitch-ui$"] floating enable, resize set 900 600, move position center
 
 # move tiling windows via drag & drop by left-clicking into the title bar,
 # or left-clicking anywhere into the window while holding the floating modifier.
@@ -196,6 +207,8 @@ bindsym Mod4+Shift+c exec bash -c 'rm -f ~/.config/chromium/Singleton* && chromi
 bindsym Mod4+Shift+t exec --no-startup-id kitty -e btop
 # Pomodoro/timer menu (timer)
 bindsym Mod4+Shift+m exec --no-startup-id ~/.config/i3blocks/scripts/timer menu
+# Tmux session/window chooser (tmux-menu)
+bindsym Mod4+Shift+Return exec --no-startup-id kitty --class i3-tmux-chooser -e ~/.config/i3/scripts/utils/tmux-chooser.sh
 
 # kill focused window
 # Close focused window (i3 kill)
@@ -376,9 +389,11 @@ bindsym Mod4+x exec --no-startup-id i3-lock
 # Exit i3 with confirm prompt (rofi)
 bindsym Mod4+Shift+q exec "echo -e 'No\nYes'| rofi -dmenu -no-sort -i -theme ~/.config/rofi/dwm-keys.rasi -kb-row-up 'k,Up' -kb-row-down 'j,Down' -kb-cancel 'Escape,h,q' -p 'Exit i3?'| grep -q 'Yes' && i3-msg exit"
 # Wallpaper picker rofi list (wallpaper-pick.sh)
-bindsym Mod4+Ctrl+space exec --no-startup-id $HOME/.config/i3/scripts/wallpaper/wallpaper-pick.sh
-# Screenshot region/window to clipboard (i3-screenshot)
+bindsym Mod4+Ctrl+space exec --no-startup-id $HOME/.local/bin/i3-menu
+# Screenshot region to clipboard via flameshot (freezes screen — works on dropdowns/menus)
 bindsym Print exec --no-startup-id i3-screenshot
+# Legacy maim screenshot (Shift+Print) — use for full-screen or when flameshot acts up
+bindsym Shift+Print exec --no-startup-id i3-screenshot
 # Toggle screen recording (i3-screenrecord)
 bindsym Mod4+Print exec --no-startup-id i3-screenrecord
 # OCR a screen region into clipboard (i3-ocr)

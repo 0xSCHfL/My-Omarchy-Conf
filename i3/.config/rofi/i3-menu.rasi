@@ -1,5 +1,9 @@
-/* Super+Escape system menu — compact pywal card */
+/* i3-menu — hierarchical rofi dmenu, pywal card */
 @import "~/.cache/wal/colors-rofi-dwm.rasi"
+
+configuration {
+    font: "Iosevka Nerd Font 14";
+}
 
 * {
     bg:          @wal-bg;
@@ -18,7 +22,7 @@
 
 window {
     location:         center;
-    width:            380px;
+    width:            340px;
     border:           1px;
     border-radius:    16px;
     border-color:     @border;
@@ -38,12 +42,11 @@ inputbar {
 }
 
 prompt {
-    font:       "Iosevka Nerd Font Mono Bold 14";
     text-color: @prompt;
 }
 
 listview {
-    lines:        5;
+    lines:        7;
     columns:      1;
     fixed-height: true;
     spacing:      6px;

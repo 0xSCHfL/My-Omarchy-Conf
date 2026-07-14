@@ -85,11 +85,11 @@ bindings=$(categorize)
 
 while true; do
     main=$(printf '%s\n' "$bindings" | cut -f1 | sort -u | rofi_menu "i3 Keys")
-    [ -z "$main" ] && break
+    [ -z "$main" ] && exit 0
 
     while true; do
         sub=$(printf '%s\n' "$bindings" | awk -F'\t' -v m="$main" '$1==m {print $2}' | sort -u | rofi_menu "$main")
-        [ -z "$sub" ] && break
+        [ -z "$sub" ] && exit 0
 
         printf '%s\n' "$bindings" | awk -F'\t' -v m="$main" -v s="$sub" '$1==m && $2==s {print $3}' | rofi_menu "$main › $sub" >/dev/null
     done

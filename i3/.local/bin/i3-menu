@@ -1,0 +1,178 @@
+#!/usr/bin/env bash
+# i3-menu — hierarchical rofi menu for i3
+
+set -euo pipefail
+
+THEME="$HOME/.config/rofi/i3-menu.rasi"
+
+menu() {
+  echo -e "$2" | rofi -dmenu -no-sort -i -theme "$THEME" -p "$1" \
+    -font "Iosevka Nerd Font 14" \
+    -kb-row-up 'k,Up' -kb-row-down 'j,Down' -kb-cancel 'Escape,h,q' 2>/dev/null
+}
+
+has() { command -v "$1" &>/dev/null; }
+desktop_exists() {
+  [[ -f ~/.local/share/applications/$1 || -f /usr/share/applications/$1 ]]
+}
+
+show_apps() {
+  rofi -show drun -theme "$HOME/.config/rofi/i3-launcher.rasi"
+  show_main
+}
+
+show_learn() {
+  case "$(menu "Learn" "󰄜  Keybindings\n󱣅  i3 Userguide\n󰌅  Arch Wiki\n󰍯  Neovim\n󰒉  Tmux\n󰀰  Bash")" in
+    *Keybindings*)  i3-keys ;;
+    *"i3"*)         xdg-open "https://i3wm.org/docs/userguide.html" ;;
+    *"Arch"*)       xdg-open "https://wiki.archlinux.org/title/Main_page" ;;
+    *Neovim*)       xdg-open "https://www.lazyvim.org/keymaps" ;;
+    *Tmux*)         xdg-open "https://tmuxcheatsheet.com" ;;
+    *Bash*)         xdg-open "https://devhints.io/bash" ;;
+    *)              show_main ;;
+  esac
+}
+
+show_capture() {
+  case "$(menu "Capture" "󰀰  Screenshot\n󰀽  Screen Record\n󰁜  OCR\n󰃇  Image Clip")" in
+    *Screenshot*)   i3-screenshot ;;
+    *"Screen"*)     i3-screenrecord ;;
+    *OCR*)          i3-ocr ;;
+    *"Image"*)      i3-imgcliphist ;;
+    *)              show_main ;;
+  esac
+}
+
+show_toggle() {
+  case "$(menu "Toggle" "󰀗  Gaps On/Off\n󰀗  Bar On/Off\n  Floating\n  Notifications")" in
+    *"Gaps"*)     i3-msg gaps toggle ;;
+    *"Bar"*)      i3-msg bar toggle ;;
+    *"Floating"*) i3-msg floating toggle ;;
+    *"Notifications"*) dunstctl set-paused toggle ;;
+    *)            show_main ;;
+  esac
+}
+
+show_setup_browser() {
+  local opts="" current=""
+  desktop_exists firefox.desktop        && opts="${opts:+$opts\n}󰈹  Firefox"
+  desktop_exists brave-browser.desktop  && opts="${opts:+$opts\n}󰖟  Brave"
+  desktop_exists chromium.desktop       && opts="${opts:+$opts\n}  Chromium"
+  desktop_exists google-chrome.desktop  && opts="${opts:+$opts\n}󰊯  Chrome"
+  desktop_exists microsoft-edge.desktop && opts="${opts:+$opts\n}󰇩  Edge"
+
+  current="$(xdg-settings get default-web-browser 2>/dev/null || true)"
+  case "$current" in
+    firefox*)        current="󰈹  Firefox" ;;
+    brave*)          current="󰖟  Brave" ;;
+    chromium*)       current="  Chromium" ;;
+    google-chrome*)  current="󰊯  Chrome" ;;
+    microsoft-edge*) current="󰇩  Edge" ;;
+    *)               current="" ;;
+  esac
+
+  [[ -z "$opts" ]] && { notify-send "No browsers found" -t 2000; return; }
+
+  local choice
+  choice=$(menu "Default Browser" "$opts" "" "$current") || return
+  case "$choice" in
+    *Firefox*)  xdg-settings set default-web-browser firefox.desktop ;;
+    *Brave*)    xdg-settings set default-web-browser brave-browser.desktop ;;
+    *Chromium*) xdg-settings set default-web-browser chromium.desktop ;;
+    *Chrome*)   xdg-settings set default-web-browser google-chrome.desktop ;;
+    *Edge*)     xdg-settings set default-web-browser microsoft-edge.desktop ;;
+  esac
+}
+
+show_setup_terminal() {
+  local opts="" current=""
+  has kitty    && opts="${opts:+$opts\n}  Kitty"
+  has alacritty && opts="${opts:+$opts\n}  Alacritty"
+  has foot     && opts="${opts:+$opts\n}  Foot"
+  has ghostty  && opts="${opts:+$opts\n}  Ghostty"
+
+  current="$(xdg-settings get default-terminal-emulator 2>/dev/null || true)"
+  case "$current" in
+    *kitty*)     current="  Kitty" ;;
+    *alacritty*) current="  Alacritty" ;;
+    *foot*)      current="  Foot" ;;
+    *ghostty*)   current="  Ghostty" ;;
+    *)           current="" ;;
+  esac
+
+  [[ -z "$opts" ]] && { notify-send "No terminals found" -t 2000; return; }
+
+  local choice
+  choice=$(menu "Default Terminal" "$opts" "" "$current") || return
+  case "$choice" in
+    *Kitty*)     xdg-settings set default-terminal-emulator kitty.desktop ;;
+    *Alacritty*) xdg-settings set default-terminal-emulator alacritty.desktop ;;
+    *Foot*)      xdg-settings set default-terminal-emulator foot.desktop ;;
+    *Ghostty*)   xdg-settings set default-terminal-emulator ghostty.desktop ;;
+  esac
+}
+
+show_setup_editor() {
+  local opts="" current=""
+  has nvim     && opts="${opts:+$opts\n}  Neovim"
+  has code     && opts="${opts:+$opts\n}  VSCode"
+  has cursor   && opts="${opts:+$opts\n}  Cursor"
+  has vim      && opts="${opts:+$opts\n}  Vim"
+  has helix    && opts="${opts:+$opts\n}  Helix"
+  has emacs    && opts="${opts:+$opts\n}  Emacs"
+
+  current="$(xdg-mime query default text/plain 2>/dev/null || true)"
+  case "$current" in
+    *nvim*)      current="  Neovim" ;;
+    *code*)      current="  VSCode" ;;
+    *cursor*)    current="  Cursor" ;;
+    *vim*)       current="  Vim" ;;
+    *helix*)     current="  Helix" ;;
+    *emacs*)     current="  Emacs" ;;
+    *)           current="" ;;
+  esac
+
+  [[ -z "$opts" ]] && { notify-send "No editors found" -t 2000; return; }
+
+  local choice
+  choice=$(menu "Default Editor" "$opts" "" "$current") || return
+  case "$choice" in
+    *Neovim*)  xdg-mime default nvim.desktop text/plain ;;
+    *VSCode*)  xdg-mime default code.desktop text/plain ;;
+    *Cursor*)  xdg-mime default cursor.desktop text/plain ;;
+    *Vim*)     xdg-mime default vim.desktop text/plain ;;
+    *Helix*)   xdg-mime default helix.desktop text/plain ;;
+    *Emacs*)   xdg-mime default emacs.desktop text/plain ;;
+  esac
+}
+
+show_setup() {
+  case "$(menu "Setup" "󰂬  Default Browser\n󰄠  Default Terminal\n󰁀  Default Editor\n󰀨  Audio\n󰁚  WiFi\n  Notifications")" in
+    *"Browser"*)   show_setup_browser ;;
+    *"Terminal"*)  show_setup_terminal ;;
+    *"Editor"*)    show_setup_editor ;;
+    *Audio*)       i3-launch-audio.sh ;;
+    *WiFi*)        i3-launch-wifi.sh ;;
+    *"Notifications"*) bash "$HOME/.config/i3/scripts/notifications/notifications.sh" ;;
+    *)             show_main ;;
+  esac
+}
+
+show_system() {
+  i3-sys
+}
+
+show_main() {
+  case "$(menu "Go" "󰀤  Apps\n󰐳  Learn\n󰀰  Capture\n󰀗  Toggle\n󰀾  Wallpaper\n󰀓  Setup\n󰀑  System")" in
+    *Apps*)      show_apps ;;
+    *Learn*)     show_learn ;;
+    *Capture*)   show_capture ;;
+    *Toggle*)    show_toggle ;;
+    *Wallpaper*) setsid bash -c 'sleep 0.2; exec wallpaper-pick.sh' & ;;
+    *Setup*)     show_setup ;;
+    *System*)    show_system ;;
+    *)           exit 0 ;;
+  esac
+}
+
+show_main

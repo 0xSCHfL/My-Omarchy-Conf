@@ -1,4 +1,4 @@
-/* Super+Escape system menu — compact pywal card */
+/* Timer prompt — compact single-line popup */
 @import "~/.cache/wal/colors-rofi-dwm.rasi"
 
 * {
@@ -18,7 +18,7 @@
 
 window {
     location:         center;
-    width:            380px;
+    width:            320px;
     border:           1px;
     border-radius:    16px;
     border-color:     @border;
@@ -27,50 +27,33 @@ window {
 
 mainbox {
     padding: 14px;
-    spacing: 10px;
+    spacing: 8px;
 }
 
 inputbar {
     padding:       10px 12px;
+    spacing:       8px;
     border-radius: 12px;
     background-color: rgba(255, 255, 255, 0.04);
-    children:      [ prompt ];
+    children:      [ prompt, entry ];
 }
 
 prompt {
-    font:       "Iosevka Nerd Font Mono Bold 14";
+    font:       "Iosevka Nerd Font Bold 12";
     text-color: @prompt;
 }
 
+entry {
+    font:              "Iosevka Nerd Font 12";
+    placeholder:       "minutes";
+    placeholder-color: @fg-dim;
+}
+
 listview {
-    lines:        5;
+    lines:        0;
     columns:      1;
-    fixed-height: true;
-    spacing:      6px;
+    fixed-height: false;
     border:       0;
-}
-
-element {
-    padding:       9px 12px;
-    border:        1px;
-    border-radius: 11px;
-    border-color:  transparent;
-    background-color: transparent;
-}
-
-element selected normal {
-    border-color:     @prompt;
-    background-color: rgba(255, 255, 255, 0.06);
-}
-
-element-text {
-    font:           "Iosevka Nerd Font Mono 14";
-    text-color:     @fg;
-    vertical-align: 0.5;
-}
-
-element selected element-text {
-    text-color: @accent;
 }
 
 scrollbar {

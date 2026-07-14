@@ -1,0 +1,10 @@
+#!/bin/bash
+# Region screenshot via flameshot.
+# Works on dropdowns/menus that close when focus shifts to a selection overlay
+# because flameshot freezes the screen at the moment of the hotkey, so the
+# menu is captured before it can be torn down.
+dunstctl close-all
+
+# -g GUI mode: freezes screen, lets user draw a region with the mouse,
+#              auto-copies to clipboard when released
+flameshot gui -c -p ~/Downloads

@@ -75,8 +75,8 @@ timer () {
 }
 
 menu () {
-    if command -v rofi >/dev/null 2>&1 && [ -f "$HOME/.config/rofi/i3-launcher.rasi" ]; then
-        MINUTES="$(printf '' | rofi -dmenu -p 'Timer minutes' -theme "$HOME/.config/rofi/i3-launcher.rasi")"
+    if command -v rofi >/dev/null 2>&1 && [ -f "$HOME/.config/rofi/i3-timer.rasi" ]; then
+        MINUTES="$(printf '' | rofi -dmenu -p 'Timer minutes' -theme "$HOME/.config/rofi/i3-timer.rasi")"
         ROFI_EXIT=$?
         if [ "$ROFI_EXIT" -eq 0 ] && [ -n "$MINUTES" ]; then
             start_minutes "$MINUTES"

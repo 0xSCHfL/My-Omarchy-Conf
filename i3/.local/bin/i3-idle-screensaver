@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+# Skip if any media is actively playing
+if playerctl status 2>/dev/null | grep -q "^Playing$"; then
+    exit 0
+fi
+
+brightnessctl set 10% -q
