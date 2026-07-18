@@ -486,7 +486,7 @@ bindsym Mod4+r mode "resize"
 
 bar {
     status_command i3blocks -c ~/.config/i3blocks/config
-    position bottom
+    position top
     font pango:Iosevka 12
     separator_symbol "▏"
     padding 2px

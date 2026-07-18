@@ -146,7 +146,7 @@ required=(
 )
 optional=(
     qutebrowser chromium brave flatpak impala wiremix auto-cpufreq tesseract
-    ffmpeg slop ueberzugpp fzf imv mpv zathura nautilus Telegram discord
+    ffmpeg slop ueberzugpp fzf imv mpv nautilus Telegram discord
 )
 missing_required=0
 for cmd in "${required[@]}"; do
