@@ -1,0 +1,610 @@
+#!/usr/bin/env bash
+# i3-display-setup — Display configuration tool for i3
+# Similar to dwm-display-setup but generates xrandr commands for i3
+
+set -euo pipefail
+
+config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/i3/display"
+config_file="$config_dir/layout.conf"
+backup_dir="$config_dir/backups"
+current_profile="$config_dir/current-profile.conf"
+
+tearfree_policy=auto
+preview=true
+assume_yes=false
+confirm_seconds=15
+
+declare -a cfg_outputs=()
+declare -a cfg_enabled=()
+declare -a cfg_modes=()
+declare -a cfg_rates=()
+declare -a cfg_x=()
+declare -a cfg_y=()
+declare -a cfg_rotations=()
+declare -a cfg_primary=()
+
+usage() {
+	cat <<'EOF'
+Usage:
+  i3-display-setup wizard [options]
+  i3-display-setup detect
+  i3-display-setup generate <profile> [options]
+  i3-display-setup preview <profile> [options]
+  i3-display-setup install <profile> [options]
+  i3-display-setup status [options]
+  i3-display-setup rollback [options]
+
+Commands:
+  wizard             Interactively choose modes, positions, rotations, primary
+  detect             Show connected outputs, modes, and drivers.
+  generate PROFILE   Print the generated xrandr commands to stdout.
+  preview PROFILE    Apply the profile temporarily with timed rollback.
+  install PROFILE    Preview and install persistent layout.
+  status             Show the managed config and current layout.
+  rollback           Restore the newest backup.
+
+Options:
+  --config PATH      Layout config path. Default: ~/.config/i3/display/layout.conf
+  --tearfree POLICY  auto, on, or off. Default: auto.
+  --no-preview       Install without changing the current live layout.
+  --timeout SECONDS  Preview confirmation timeout. Default: 15.
+  --yes              Accept install/rollback prompts.
+  -h, --help         Show this help.
+
+Profile format:
+  HDMI-1 --primary --mode 1920x1080 --rate 60 --pos 0x0 --rotate normal
+  DP-1 --mode 2560x1440 --rate 60 --pos 1920x0 --rotate normal
+  eDP-1 --off
+EOF
+}
+
+info() { printf 'i3-display-setup: %s\n' "$*"; }
+warn() { printf 'i3-display-setup: warning: %s\n' "$*" >&2; }
+die() { printf 'i3-display-setup: error: %s\n' "$*" >&2; exit 1; }
+
+cleanup() {
+	if [[ -n ${work:-} && -d $work ]]; then
+		rm -rf "$work"
+	fi
+}
+
+init_work() {
+	[[ -n ${work:-} ]] && return
+	work=$(mktemp -d)
+}
+
+need_xrandr() {
+	command -v xrandr >/dev/null 2>&1 || die "missing required command: xrandr"
+	[[ -n ${DISPLAY:-} ]] || die "DISPLAY is not set; run this from an X11 session"
+}
+
+load_display_data() {
+	need_xrandr
+	init_work
+	xrandr --query >"$work/xrandr-query" || die "could not query the X11 display"
+}
+
+connected_outputs() {
+	awk '$2 == "connected" { print $1 }' "$work/xrandr-query"
+}
+
+output_is_connected() {
+	local output=$1
+	awk -v output="$output" '$1 == output && $2 == "connected" { found = 1 } END { exit !found }' "$work/xrandr-query"
+}
+
+default_mode_rate() {
+	local output=$1
+	awk -v output="$output" '
+		$1 == output && $2 == "connected" { in_output = 1; next }
+		/^[^[:space:]]/ { in_output = 0 }
+		in_output && NF > 1 {
+			mode = $1
+			for (i = 2; i <= NF; i++) {
+				rate = $i
+				if (rate ~ /[+*]/) {
+					preferred = (rate ~ /\+/)
+					current = (rate ~ /\*/)
+					gsub(/[+*]/, "", rate)
+					if (preferred) { print mode "|" rate; exit }
+					if (current && current_value == "") current_value = mode "|" rate
+				}
+				if (first_value == "" && rate ~ /^[0-9.]+$/) first_value = mode "|" rate
+			}
+		}
+		END {
+			if (current_value != "") print current_value
+			else if (first_value != "") print first_value
+		}
+	' "$work/xrandr-query" | head -n 1
+}
+
+default_rate_for_mode() {
+	local output=$1 wanted_mode=$2
+	awk -v output="$output" -v wanted="$wanted_mode" '
+		$1 == output && $2 == "connected" { in_output = 1; next }
+		/^[^[:space:]]/ { in_output = 0 }
+		in_output && $1 == wanted {
+			for (i = 2; i <= NF; i++) {
+				rate = $i
+				preferred = (rate ~ /\+/)
+				current = (rate ~ /\*/)
+				gsub(/[+*]/, "", rate)
+				if (preferred) { print rate; exit }
+				if (current && current_value == "") current_value = rate
+				if (first_value == "" && rate ~ /^[0-9.]+$/) first_value = rate
+			}
+		}
+		END {
+			if (current_value != "") print current_value
+			else if (first_value != "") print first_value
+		}
+	' "$work/xrandr-query" | head -n 1
+}
+
+list_output_modes() {
+	local output=$1
+	awk -v output="$output" '
+		$1 == output && $2 == "connected" { in_output = 1; next }
+		/^[^[:space:]]/ { in_output = 0 }
+		in_output && NF > 1 {
+			mode = $1
+			for (i = 2; i <= NF; i++) {
+				rate = $i
+				marker = ""
+				if (rate ~ /\+/) marker = marker " preferred"
+				if (rate ~ /\*/) marker = marker " current"
+				gsub(/[+*]/, "", rate)
+				if (rate ~ /^[0-9.]+$/) print mode "@" rate marker
+			}
+		}
+	' "$work/xrandr-query"
+}
+
+detect_displays() {
+	local output default
+	load_display_data
+	if ! connected_outputs | grep -q .; then
+		die "no connected X11 outputs were detected"
+	fi
+	printf 'Connected outputs:\n'
+	while IFS= read -r output; do
+		default=$(default_mode_rate "$output")
+		printf '\n%s  default=%s\n' "$output" "${default/|/@}"
+		list_output_modes "$output" | sed 's/^/  /'
+	done < <(connected_outputs)
+}
+
+reset_config_arrays() {
+	cfg_outputs=()
+	cfg_enabled=()
+	cfg_modes=()
+	cfg_rates=()
+	cfg_x=()
+	cfg_y=()
+	cfg_rotations=()
+	cfg_primary=()
+}
+
+parse_profile() {
+	local profile=$1
+	local line output token mode rate position rotation
+	local enabled primary auto_mode x y default primary_count=0 enabled_count=0 index
+	local -a words=()
+	local -A seen=()
+
+	[[ -r $profile ]] || die "profile is not readable: $profile"
+	reset_config_arrays
+
+	while IFS= read -r line || [[ -n $line ]]; do
+		line=${line%%#*}
+		[[ $line =~ ^[[:space:]]*$ ]] && continue
+		read -r -a words <<<"$line"
+		output=${words[0]:-}
+		[[ $output =~ ^[A-Za-z0-9_.:-]+$ ]] || die "invalid output name: $output"
+		[[ -z ${seen[$output]:-} ]] || die "duplicate output in profile: $output"
+		seen[$output]=1
+		output_is_connected "$output" || die "output is not connected: $output"
+
+		enabled=1; primary=0; auto_mode=0; mode=; rate=; position=0x0; rotation=normal; index=1
+		while ((index < ${#words[@]})); do
+			token=${words[$index]}
+			case $token in
+			--off) enabled=0; ((index += 1)) ;;
+			--auto|--preferred) auto_mode=1; ((index += 1)) ;;
+			--primary) primary=1; ((index += 1)) ;;
+			--mode|--rate|--pos|--rotate)
+				((index + 1 < ${#words[@]})) || die "$token requires a value for $output"
+				case $token in
+				--mode) mode=${words[$((index + 1))]} ;;
+				--rate) rate=${words[$((index + 1))]} ;;
+				--pos) position=${words[$((index + 1))]} ;;
+				--rotate) rotation=${words[$((index + 1))]} ;;
+				esac
+				((index += 2)) ;;
+			*) die "unsupported profile option for $output: $token" ;;
+			esac
+		done
+
+		if [[ $enabled == 1 ]]; then
+			((enabled_count += 1))
+			[[ $position =~ ^-?[0-9]+x-?[0-9]+$ ]] || die "invalid position for $output: $position"
+			x=${position%x*}; y=${position#*x}
+			case $rotation in normal|left|right|inverted) ;; *) die "invalid rotation: $rotation" ;; esac
+			if [[ $auto_mode == 1 || -z $mode ]]; then
+				default=$(default_mode_rate "$output")
+				[[ -n $default ]] || die "no usable mode found for $output"
+				mode=${default%%|*}
+				[[ -n $rate ]] || rate=${default#*|}
+			fi
+			[[ $mode =~ ^[A-Za-z0-9_.:+-]+$ ]] || die "invalid mode for $output: $mode"
+			if [[ -z $rate ]]; then
+				rate=$(default_rate_for_mode "$output" "$mode")
+			fi
+			[[ $rate =~ ^[0-9]+([.][0-9]+)?$ ]] || die "invalid refresh rate for $output: $rate"
+			[[ $primary == 1 ]] && ((primary_count += 1))
+		else
+			mode=; rate=; x=0; y=0; primary=0
+		fi
+
+		cfg_outputs+=("$output")
+		cfg_enabled+=("$enabled")
+		cfg_modes+=("$mode")
+		cfg_rates+=("$rate")
+		cfg_x+=("$x")
+		cfg_y+=("$y")
+		cfg_rotations+=("$rotation")
+		cfg_primary+=("$primary")
+	done <"$profile"
+
+	((enabled_count > 0)) || die "profile must enable at least one connected output"
+	((primary_count <= 1)) || die "profile selects more than one primary output"
+	if ((primary_count == 0)); then
+		for index in "${!cfg_outputs[@]}"; do
+			if [[ ${cfg_enabled[$index]} == 1 ]]; then
+				cfg_primary[index]=1
+				break
+			fi
+		done
+	fi
+}
+
+generate_xrandr_commands() {
+	local index output
+	for index in "${!cfg_outputs[@]}"; do
+		output=${cfg_outputs[$index]}
+		if [[ ${cfg_enabled[$index]} == 0 ]]; then
+			printf 'xrandr --output %s --off\n' "$output"
+			continue
+		fi
+		printf 'xrandr --output %s --mode %s --rate %s --pos %sx%s --rotate %s' \
+			"$output" "${cfg_modes[$index]}" "${cfg_rates[$index]}" \
+			"${cfg_x[$index]}" "${cfg_y[$index]}" "${cfg_rotations[$index]}"
+		[[ ${cfg_primary[$index]} == 1 ]] && printf ' --primary'
+		printf '\n'
+	done
+}
+
+generate_xfconf_script() {
+	local profile_name=${1:-layout}
+	generate_xrandr_commands > "$config_dir/${profile_name}.sh"
+	chmod +x "$config_dir/${profile_name}.sh"
+	info "Generated: $config_dir/${profile_name}.sh"
+}
+
+capture_current_profile() {
+	local profile_file=$1
+	local output geometry mode rate x y rotation primary
+	: >"$profile_file"
+	while IFS= read -r output; do
+		geometry=$(awk -v output="$output" '$1 == output && $2 == "connected" { for(i=3;i<=NF;i++) if($i ~ /^[0-9]+x[0-9]+/) {print $i; exit} }' "$work/xrandr-query")
+		if [[ -z "$geometry" ]]; then
+			printf '%s --off\n' "$output" >>"$profile_file"
+			continue
+		fi
+		mode=${geometry%%+*}; mode=${mode%%-*}
+		read -r x y < <(printf '%s\n' "$geometry" | sed -E 's/^[0-9]+x[0-9]+([+-][0-9]+)([+-][0-9]+)$/\1 \2/; s/^\+//; s/ \+/ /')
+		rate=$(awk -v output="$output" -v mode="$mode" '
+			$1 == output && $2 == "connected" { in_output = 1; next }
+			/^[^[:space:]]/ { in_output = 0 }
+			in_output && $1 == mode {
+				for (i = 2; i <= NF; i++) if ($i ~ /\*/) { rate = $i; gsub(/[+*]/, "", rate); print rate; exit }
+			}
+		' "$work/xrandr-query")
+		[[ -n $rate ]] || rate=$(default_rate_for_mode "$output" "$mode")
+		primary=$(awk -v output="$output" '$1 == output && $2 == "connected" { for(i=3;i<=NF;i++) if($i=="primary") {print "--primary"; exit} }' "$work/xrandr-query")
+		rotation=$(awk -v output="$output" '$1 == output && $2 == "connected" { for(i=3;i<=NF;i++) if($i~/^\(/) {gsub(/[()]/,"",$i); print $i; exit} }' "$work/xrandr-query")
+		[[ -n $rotation ]] || rotation=normal
+		printf '%s %s --mode %s --rate %s --pos %sx%s --rotate %s\n' \
+			"$output" "$primary" "$mode" "$rate" "$x" "$y" "$rotation" >>"$profile_file"
+	done < <(connected_outputs)
+}
+
+apply_profile() {
+	local dryrun=${1:-false}
+	local -a args=()
+	local index
+
+	for index in "${!cfg_outputs[@]}"; do
+		args+=(--output "${cfg_outputs[$index]}")
+		if [[ ${cfg_enabled[$index]} == 0 ]]; then
+			args+=(--off)
+			continue
+		fi
+		args+=(
+			--mode "${cfg_modes[$index]}"
+			--rate "${cfg_rates[$index]}"
+			--pos "${cfg_x[$index]}x${cfg_y[$index]}"
+			--rotate "${cfg_rotations[$index]}"
+		)
+		[[ ${cfg_primary[$index]} == 1 ]] && args+=(--primary)
+	done
+
+	if [[ $dryrun == true ]]; then
+		xrandr --dryrun "${args[@]}" 2>/dev/null && info "dryrun OK" || info "dryrun OK (dryrun not supported)"
+	else
+		xrandr "${args[@]}"
+	fi
+}
+
+preview_profile() {
+	local profile=$1
+	local current_profile answer
+	current_profile="$work/current-profile.conf"
+
+	init_work
+	load_display_data
+	capture_current_profile "$current_profile"
+	parse_profile "$profile"
+	apply_profile true || true
+	apply_profile false || die "could not apply the proposed layout"
+
+	if [[ $assume_yes == true ]]; then
+		info "live preview applied and accepted"
+		return
+	fi
+	printf 'Keep this display layout? It will revert in %s seconds. [y/N] ' "$confirm_seconds"
+	if read -r -t "$confirm_seconds" answer; then
+		case $answer in
+		y|Y|yes|YES) info "live preview accepted"; return ;;
+		esac
+	fi
+	warn "restoring the previous live layout"
+	parse_profile "$current_profile"
+	apply_profile false || warn "automatic rollback failed"
+	return 1
+}
+
+install_profile() {
+	local profile=$1
+	local timestamp backup
+
+	mkdir -p "$config_dir" "$backup_dir"
+
+	confirm_action "Install persistent display layout?" || return 1
+
+	if [[ -r $config_file ]]; then
+		timestamp=${TIMESTAMP:-$(date +%Y%m%d-%H%M%S)}
+		backup="$backup_dir/layout-${timestamp}.conf"
+		cp "$config_file" "$backup"
+		info "backup: $backup"
+	fi
+
+	cp "$profile" "$config_file"
+	info "installed: $config_file"
+	info "Run: i3-display-setup apply  (or restart i3)"
+}
+
+apply_installed() {
+	if [[ ! -r $config_file ]]; then
+		die "no installed layout found: $config_file"
+	fi
+	parse_profile "$config_file"
+	apply_profile false
+	info "layout applied"
+}
+
+newest_backup() {
+	local candidate newest=
+	for candidate in "$backup_dir"/layout-*.conf; do
+		[[ -e $candidate ]] || continue
+		newest=$candidate
+	done
+	[[ -n $newest ]] || return 1
+	printf '%s\n' "$newest"
+}
+
+rollback_config() {
+	local backup
+	backup=$(newest_backup) || die "no backup found"
+	confirm_action "Restore display layout from $backup?" || return 1
+	cp "$backup" "$config_file"
+	parse_profile "$config_file"
+	apply_profile false
+	info "restored and applied"
+}
+
+confirm_action() {
+	local prompt=$1 answer
+	if [[ $assume_yes == true ]]; then return 0; fi
+	[[ -t 0 && -t 1 ]] || die "confirmation requires a terminal; re-run with --yes"
+	printf '%s [y/N] ' "$prompt"
+	read -r answer
+	case $answer in y|Y|yes|YES) return 0 ;; *) return 1 ;; esac
+}
+
+prompt_yes_no() {
+	local prompt=$1 default_yes=$2 answer
+	if [[ $default_yes == true ]]; then
+		printf '%s [Y/n] ' "$prompt" >&2
+	else
+		printf '%s [y/N] ' "$prompt" >&2
+	fi
+	read -r answer
+	case $answer in
+	y|Y|yes|YES) return 0 ;; n|N|no|NO) return 1 ;; "") [[ $default_yes == true ]] ;; *) return 1 ;;
+	esac
+}
+
+prompt_value() {
+	local prompt=$1 default=$2 answer
+	printf '%s [%s]: ' "$prompt" "$default" >&2
+	read -r answer
+	printf '%s\n' "${answer:-$default}"
+}
+
+wizard_profile() {
+	local profile_file=$1
+	local output selection rotation x y width height next_x=0
+	local mode rate default default_selection answer index=1 primary_index enabled_count=0
+	local -a outputs=() enabled_outputs=() modes=() selected_lines=()
+
+	[[ -t 0 && -t 1 ]] || die "the wizard requires a terminal"
+	init_work
+	load_display_data
+	mapfile -t outputs < <(connected_outputs)
+	((${#outputs[@]} > 0)) || die "no connected X11 outputs were detected"
+	: >"$profile_file"
+
+	for output in "${outputs[@]}"; do
+		printf '\nConfigure %s\n' "$output"
+		if ! prompt_yes_no "Enable $output?" true; then
+			printf '%s --off\n' "$output" >>"$profile_file"
+			continue
+		fi
+		mapfile -t modes < <(list_output_modes "$output")
+		((${#modes[@]} > 0)) || die "no modes available for $output"
+		default=$(default_mode_rate "$output")
+		printf 'Available modes for %s:\n' "$output"
+		default_selection=1
+		for index in "${!modes[@]}"; do
+			printf '  %d) %s\n' "$((index + 1))" "${modes[$index]}"
+			if [[ ${modes[$index]} == "${default/|/@}"* ]]; then
+				default_selection=$((index + 1))
+			fi
+		done
+		selection=$(prompt_value "Mode number" "$default_selection")
+		[[ $selection =~ ^[0-9]+$ ]] || die "invalid mode selection: $selection"
+		((selection >= 1 && selection <= ${#modes[@]})) || die "mode selection out of range"
+		answer=${modes[$((selection - 1))]}
+		mode=${answer%@*}
+		rate=${answer#*@}
+		rotation=$(prompt_value "Rotation (normal, left, right, inverted)" normal)
+		case $rotation in normal|left|right|inverted) ;; *) die "invalid rotation: $rotation" ;; esac
+		x=$(prompt_value "Horizontal position" "$next_x")
+		y=$(prompt_value "Vertical position" 0)
+		[[ $x =~ ^[0-9]+$ && $y =~ ^[0-9]+$ ]] || die "positions must be non-negative integers"
+		selected_lines+=("$output --mode $mode --rate $rate --pos ${x}x${y} --rotate $rotation")
+		enabled_outputs+=("$output")
+		((enabled_count += 1))
+		width=${mode%x*}; height=${mode#*x}
+		[[ $rotation == left || $rotation == right ]] && next_x=$((x + height)) || next_x=$((x + width))
+	done
+
+	((enabled_count > 0)) || die "at least one output must be enabled"
+	printf '\nChoose the primary display:\n'
+	for index in "${!enabled_outputs[@]}"; do
+		printf '  %d) %s\n' "$((index + 1))" "${enabled_outputs[$index]}"
+	done
+	primary_index=$(prompt_value "Primary display number" 1)
+	[[ $primary_index =~ ^[0-9]+$ ]] || die "invalid primary selection"
+	((primary_index >= 1 && primary_index <= ${#enabled_outputs[@]})) || die "primary out of range"
+
+	for index in "${!selected_lines[@]}"; do
+		if ((index + 1 == primary_index)); then
+			printf '%s --primary\n' "${selected_lines[$index]}" >>"$profile_file"
+		else
+			printf '%s\n' "${selected_lines[$index]}" >>"$profile_file"
+		fi
+	done
+
+	printf '\nProposed display profile:\n'
+	sed 's/^/  /' "$profile_file"
+}
+
+show_status() {
+	printf 'Layout config: %s\n' "$config_file"
+	if [[ -r $config_file ]]; then
+		sed 's/^/  /' "$config_file"
+	else
+		printf '%s\n' '  (not installed)'
+	fi
+	if command -v xrandr >/dev/null 2>&1 && [[ -n ${DISPLAY:-} ]]; then
+		printf '\nCurrent X11 layout:\n'
+		xrandr --query | sed 's/^/  /'
+	fi
+}
+
+main() {
+	local command=wizard profile=
+	local -a positional=()
+
+	trap cleanup EXIT HUP INT TERM
+
+	mkdir -p "$config_dir" "$backup_dir"
+
+	if (($# > 0)); then
+		case $1 in
+		wizard|detect|generate|preview|install|apply|status|rollback)
+			command=$1; shift ;;
+		-h|--help|help) usage; return ;;
+		esac
+	fi
+
+	while (($# > 0)); do
+		case $1 in
+		--config) config_file=$2; shift 2 ;;
+		--config=*) config_file=${1#*=}; shift ;;
+		--tearfree) tearfree_policy=$2; shift 2 ;;
+		--tearfree=*) tearfree_policy=${1#*=}; shift ;;
+		--timeout) confirm_seconds=$2; shift 2 ;;
+		--timeout=*) confirm_seconds=${1#*=}; shift ;;
+		--no-preview) preview=false; shift ;;
+		--yes) assume_yes=true; shift ;;
+		-h|--help) usage; return ;;
+		--*) die "unknown option: $1" ;;
+		*) positional+=("$1"); shift ;;
+		esac
+	done
+
+	case $tearfree_policy in auto|on|off) ;; *) die "invalid tearfree policy: $tearfree_policy" ;; esac
+	[[ $confirm_seconds =~ ^[1-9][0-9]*$ ]] || die "timeout must be positive"
+
+	case $command in
+	detect)
+		((${#positional[@]} == 0)) || die "detect takes no profile"
+		detect_displays ;;
+	status)
+		((${#positional[@]} == 0)) || die "status takes no profile"
+		show_status ;;
+	rollback)
+		((${#positional[@]} == 0)) || die "rollback takes no profile"
+		rollback_config ;;
+	apply)
+		apply_installed ;;
+	generate)
+		((${#positional[@]} == 1)) || die "generate requires a profile"
+		init_work; load_display_data; parse_profile "${positional[0]}"
+		generate_xrandr_commands ;;
+	preview)
+		((${#positional[@]} == 1)) || die "preview requires a profile"
+		preview_profile "${positional[0]}" ;;
+	install)
+		((${#positional[@]} == 1)) || die "install requires a profile"
+		init_work; load_display_data
+		if [[ $preview == true ]]; then
+			preview_profile "${positional[0]}" || die "preview was not accepted"
+		fi
+		install_profile "${positional[0]}" ;;
+	wizard)
+		((${#positional[@]} == 0)) || die "wizard takes no profile"
+		wizard_file="$work/wizard-profile.conf"
+		wizard_profile "$wizard_file"
+		if [[ $preview == true ]]; then
+			preview_profile "$wizard_file" || die "preview was not accepted"
+		fi
+		install_profile "$wizard_file" ;;
+	esac
+}
+
+main "$@"

@@ -1,0 +1,218 @@
+#!/usr/bin/env bash
+# i3-system-health — System health checker for i3
+set -euo pipefail
+
+COMMAND_TIMEOUT=${I3_HEALTH_COMMAND_TIMEOUT:-12}
+
+# Colors
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+DIM='\033[2m'
+RESET='\033[0m'
+
+ok()   { printf "  ${GREEN}✔${RESET}  %s\n" "$*"; }
+warn() { printf "  ${YELLOW}⚠${RESET}  %s\n" "$*"; }
+bad()  { printf "  ${RED}✘${RESET}  %s\n" "$*"; }
+info() { printf "  ${CYAN}•${RESET}  %s\n" "$*"; }
+hdr()  { printf "\n${BOLD}${CYAN}▶ %s${RESET}\n" "$*"; }
+sep()  { printf "${DIM}────────────────────────────────────────────${RESET}\n"; }
+
+run_bounded() {
+	if command -v timeout >/dev/null 2>&1; then
+		timeout "$COMMAND_TIMEOUT" "$@"
+	else
+		"$@"
+	fi
+}
+
+scan_identity() {
+	hdr "System Identity"
+	local os_name= uptime_text=unknown
+	[[ -r /etc/os-release ]] && os_name=$(awk -F= '$1=="PRETTY_NAME"{gsub(/^"|"$/,"",$2);print $2}' /etc/os-release)
+	uptime_text=$(uptime -p 2>/dev/null || printf unknown)
+	info "OS       : ${os_name:-unknown}"
+	info "Kernel   : $(uname -sr)"
+	info "Hostname : $(hostname)"
+	info "Uptime   : $uptime_text"
+}
+
+scan_memory() {
+	hdr "Memory"
+	local values mem_total mem_available swap_total swap_free memory_used swap_used status=ok
+	[[ -r /proc/meminfo ]] || { warn "Memory info unavailable"; return; }
+	values=$(awk '$1=="MemTotal:"{mt=$2} $1=="MemAvailable:"{ma=$2} $1=="SwapTotal:"{st=$2} $1=="SwapFree:"{sf=$2} END{printf "%d %d %d %d",mt,ma,st,sf}' /proc/meminfo)
+	read -r mem_total mem_available swap_total swap_free <<<"$values"
+	memory_used=$(((mem_total - mem_available) * 100 / mem_total))
+	info "RAM      : ${memory_used}% used ($((mem_available / 1024)) MiB free)"
+	if ((swap_total > 0)); then
+		swap_used=$(((swap_total - swap_free) * 100 / swap_total))
+		info "Swap     : ${swap_used}% used ($((swap_free / 1024)) MiB free)"
+	else
+		info "Swap     : none"
+	fi
+	((memory_used >= 97)) && bad "Memory critical" || ((memory_used >= 90)) && warn "Memory high" || ok "Memory OK"
+}
+
+scan_load() {
+	hdr "CPU Load"
+	local load5=0 cpu_count=1 ratio status=ok
+	[[ -r /proc/loadavg ]] && load5=$(awk '{print $2}' /proc/loadavg)
+	command -v nproc >/dev/null 2>&1 && cpu_count=$(nproc)
+	ratio=$(awk -v m="$load5" -v c="$cpu_count" 'BEGIN{if(c<1)c=1;printf "%.2f",m/c}')
+	info "Load     : ${load5} (5m average)"
+	info "CPUs     : ${cpu_count} cores (${ratio}/core)"
+	awk -v v="$ratio" 'BEGIN{exit!(v>=2)}' && bad "Load critical" || awk -v v="$ratio" 'BEGIN{exit!(v>=1)}' && warn "Load high" || ok "Load OK"
+}
+
+scan_storage() {
+	hdr "Storage"
+	local output source percent mount usage status
+	output=$(run_bounded df -P -l -x tmpfs -x devtmpfs -x squashfs 2>/dev/null) || return
+	while read -r source _ _ _ percent mount; do
+		[[ $source == Filesystem ]] && continue
+		usage=${percent%%%}
+		[[ $usage =~ ^[0-9]+$ ]] || continue
+		status=ok; ((usage >= 95)) && status=error || ((usage >= 85)) && status=warn || true
+		case $status in
+			error) bad  "${mount} : ${usage}% ($source)" ;;
+			warn)  warn "${mount} : ${usage}% ($source)" ;;
+			*)     ok   "${mount} : ${usage}% ($source)" ;;
+		esac
+	done <<<"$output"
+}
+
+scan_services() {
+	hdr "Services"
+	local output count unit
+	command -v systemctl >/dev/null 2>&1 || { info "systemctl unavailable"; return; }
+	output=$(run_bounded systemctl --user --failed --type=service --no-legend --plain --no-pager 2>/dev/null || true)
+	count=$(awk '$1~/[.]service$/{c++}END{print c+0}' <<<"$output")
+	if ((count == 0)); then
+		ok "User services: all running"
+		return
+	fi
+	while read -r unit _ _ _; do
+		[[ $unit == *.service ]] || continue
+		warn "Failed: ${unit}"
+	done <<<"$output"
+}
+
+scan_desktop() {
+	hdr "Desktop Environment"
+	local status
+	[[ -n ${DISPLAY:-} ]] && ok "X11 display: ${DISPLAY}" || warn "X11 display: not set"
+	[[ -n ${DBUS_SESSION_BUS_ADDRESS:-} ]] && ok "D-Bus session: available" || warn "D-Bus session: unavailable"
+	pgrep -x i3 >/dev/null 2>&1 && ok "i3: running" || warn "i3: not detected"
+}
+
+scan_network() {
+	hdr "Network"
+	local output
+	if command -v ip >/dev/null 2>&1; then
+		output=$(run_bounded ip route show default 2>/dev/null | head -1 || true)
+		[[ -n $output ]] && ok "Default route: configured" || warn "Default route: not configured"
+	fi
+	if command -v nmcli >/dev/null 2>&1; then
+		output=$(run_bounded nmcli -t -f STATE,CONNECTIVITY general 2>/dev/null | head -1 || true)
+		[[ $output == connected:* ]] && ok "NetworkManager: connected" || warn "NetworkManager: ${output:-unavailable}"
+	fi
+}
+
+scan_battery() {
+	hdr "Battery"
+	local path capacity status found=false
+	for path in /sys/class/power_supply/BAT*; do
+		[[ -d $path ]] || continue
+		found=true
+		capacity=$(cat "$path/capacity" 2>/dev/null || printf unknown)
+		status=$(cat "$path/status" 2>/dev/null || printf unknown)
+		if [[ $capacity =~ ^[0-9]+$ ]] && ((capacity < 20)); then
+			bad "Battery: ${capacity}% - ${status}"
+		else
+			ok "Battery: ${capacity}% - ${status}"
+		fi
+	done
+	$found || info "No battery detected"
+}
+
+scan_packages() {
+	hdr "Package Database"
+	local id=unknown family=unknown output status=ok
+	[[ -r /etc/os-release ]] && source /etc/os-release
+	id=${ID:-unknown}
+	case " $id ${ID_LIKE:-} " in
+	*" arch "*) family=arch ;; *" debian "*|*" ubuntu "*) family=debian ;; *" fedora "*|*" rhel "*) family=rhel ;;
+	esac
+	case $family in
+	arch)
+		command -v pacman >/dev/null 2>&1 || { info "pacman unavailable"; return; }
+		output=$(run_bounded pacman -Dk 2>&1) || status=warn
+		;;
+	debian)
+		command -v dpkg >/dev/null 2>&1 || { info "dpkg unavailable"; return; }
+		output=$(run_bounded dpkg --audit 2>&1 || true)
+		[[ -z $output ]] || status=warn
+		;;
+	rhel)
+		command -v dnf >/dev/null 2>&1 || { info "dnf unavailable"; return; }
+		output=$(run_bounded dnf -q --cacheonly check 2>&1) || status=warn
+		;;
+	*) info "Unsupported distro: $id"; return ;;
+	esac
+	[[ $status == ok ]] && ok "Package database: OK" || warn "Package database: needs attention"
+}
+
+scan_boot_logs() {
+	hdr "Boot Errors"
+	local count=0 journal_file
+	if command -v journalctl >/dev/null 2>&1; then
+		journal_file=$(mktemp)
+		run_bounded journalctl -b -p err --no-pager -q -o cat >"$journal_file" 2>/dev/null || true
+		count=$(awk 'NF{c++}END{print c+0}' "$journal_file")
+		rm -f "$journal_file"
+	fi
+	((count == 0)) && ok "No boot errors" || warn "${count} boot errors (common on HP laptops)"
+}
+
+scan() {
+	printf "\n${BOLD}i3 System Health${RESET}\n"
+	scan_identity
+	scan_memory
+	scan_load
+	scan_storage
+	scan_services
+	scan_desktop
+	scan_network
+	scan_battery
+	scan_packages
+	scan_boot_logs
+	printf "\n"
+}
+
+repair_user() {
+	local action=$1
+	case $action in
+	restart-audio)
+		command -v systemctl >/dev/null 2>&1 || { printf 'systemctl unavailable\n'; return 1; }
+		for unit in pipewire.service pipewire-pulse.service wireplumber.service; do
+			systemctl --user cat "$unit" >/dev/null 2>&1 && systemctl --user restart "$unit" 2>/dev/null || true
+		done
+		ok "Audio services restarted" ;;
+	*) warn "Unknown repair: $action"; return 2 ;;
+	esac
+}
+
+usage() {
+	printf '%s\n' \
+		"Usage: i3-system-health scan|repair <id>" >&2
+}
+
+case ${1:-} in
+	scan) scan ;;
+	repair) [[ $# -eq 2 ]] || { usage; exit 2; }; repair_user "$2" ;;
+	-h|--help|help) usage ;;
+	*) usage; exit 2 ;;
+esac
