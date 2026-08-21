@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+URL="https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/porn-only/hosts"
+DEST_DIR="/etc/opensnitchd/blocklists/porn"
+DEST_FILE="${DEST_DIR}/porn.txt"
+SERVICE="opensnitchd"
+
+log() {
+    /usr/bin/logger -t opensnitch-blocklist-update -- "$*"
+    printf '%s\n' "$*"
+}
+
+mkdir -p "$DEST_DIR"
+
+TEMP_FILE="$(mktemp)"
+trap 'rm -f "$TEMP_FILE"' EXIT
+
+log "Downloading updated OpenSnitch adult-domain blocklist."
+
+/usr/bin/curl \
+    --fail \
+    --silent \
+    --show-error \
+    --location \
+    --retry 3 \
+    --connect-timeout 20 \
+    --max-time 300 \
+    "$URL" \
+    --output "$TEMP_FILE"
+
+FILE_SIZE="$(stat -c '%s' "$TEMP_FILE")"
+
+if (( FILE_SIZE < 10000 )); then
+    log "ERROR: Downloaded blocklist is unexpectedly small: ${FILE_SIZE} bytes."
+    exit 1
+fi
+
+if ! grep -Eq '^(0\.0\.0\.0|127\.0\.0\.1)[[:space:]]+[A-Za-z0-9.-]+' "$TEMP_FILE"; then
+    log "ERROR: Downloaded file does not look like a valid hosts blocklist."
+    exit 1
+fi
+
+if [[ -f "$DEST_FILE" ]] && cmp -s "$TEMP_FILE" "$DEST_FILE"; then
+    log "Blocklist is already up to date."
+    exit 0
+fi
+
+install -m 0644 "$TEMP_FILE" "${DEST_FILE}.new"
+mv -f "${DEST_FILE}.new" "$DEST_FILE"
+
+systemctl restart "$SERVICE"
+
+DOMAIN_COUNT="$(
+    grep -Ec '^(0\.0\.0\.0|127\.0\.0\.1)[[:space:]]+[A-Za-z0-9.-]+' "$DEST_FILE"
+)"
+
+log "Blocklist updated successfully: ${DOMAIN_COUNT} entries. OpenSnitch restarted."

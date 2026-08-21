@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# blocklist-update — Update /etc/hosts with porn blocklist
+set -euo pipefail
+
+HOSTS_FILE="/etc/hosts"
+MARKER="# ---porn-blocklist-start---"
+TEMP_FILE=$(mktemp)
+
+# Download blocklist
+BLOCKLIST=$(curl -sL "https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/porn-only/hosts" 2>/dev/null || true)
+
+if [[ -z "$BLOCKLIST" ]]; then
+    echo "Failed to download blocklist" >&2
+    exit 1
+fi
+
+# Extract domains (skip comments and headers)
+DOMAINS=$(echo "$BLOCKLIST" | awk '/^0\.0\.0\.0/ {print $2}' | sort -u)
+
+if [[ -z "$DOMAINS" ]]; then
+    echo "No domains found in blocklist" >&2
+    exit 1
+fi
+
+# Remove old blocklist if exists
+if grep -q "$MARKER" "$HOSTS_FILE" 2>/dev/null; then
+    sudo sed -i "/$MARKER/,/# ---porn-blocklist-end---/d" "$HOSTS_FILE"
+fi
+
+# Add new blocklist
+{
+    echo "$MARKER"
+    echo "# Porn blocklist — updated $(date +%Y-%m-%d)"
+    echo "# Source: StevenBlack/hosts"
+    echo "$DOMAINS" | while read -r domain; do
+        [[ -n "$domain" ]] && echo "0.0.0.0 $domain"
+    done
+    echo "# ---porn-blocklist-end---"
+} | sudo tee -a "$HOSTS_FILE" > /dev/null
+
+echo "Blocked $(echo "$DOMAINS" | wc -l) porn domains"

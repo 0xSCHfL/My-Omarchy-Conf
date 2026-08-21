@@ -57,6 +57,7 @@ Mod = Super (Windows key)
 |-----|--------|
 | `Mod+1-0` | Switch to workspace |
 | `Mod+Shift+1-0` | Move window to workspace (and follow) |
+| `Mod+o` | Toggle focused window as sticky picture-in-picture |
 | `Mod+PageDown` | Next workspace (also touchpad 3-finger swipe left) |
 | `Mod+PageUp` | Previous workspace (also touchpad 3-finger swipe right) |
 
@@ -89,7 +90,7 @@ Mod = Super (Windows key)
 | `XF86AudioNext` | Spotify-only next track |
 | `XF86AudioPrev` | Spotify-only previous track |
 | `XF86AudioStop` | Spotify-only stop |
-| `Mod+Alt+p` | Spotify-only play-pause |
+| `Mod+Alt+p` | Choose a media player and toggle play-pause |
 | `Mod+Alt+n` | Spotify-only next track |
 | `Mod+Alt+b` | Spotify-only previous track |
 | `XF86MonBrightnessUp` | Brightness +5% (brightnessctl) |

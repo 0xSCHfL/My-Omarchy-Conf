@@ -34,6 +34,8 @@ client.unfocused        $wal_bg $wal_bg $wal_dim $wal_bg $wal_bg
 client.focused_inactive $wal_bg $wal_bg $wal_dim $wal_bg $wal_bg
 default_floating_border none
 for_window [class=".*"] border none
+# Follow app activation requests, including Dunst notification actions.
+focus_on_window_activation focus
 
 # Linphone — class is "linphone.AppImage" on the main window.
 # Incoming calls are handled by dunst critical-urgency notifications
@@ -103,8 +105,8 @@ bindsym XF86AudioNext exec --no-startup-id playerctl -p spotify next
 bindsym XF86AudioPrev exec --no-startup-id playerctl -p spotify previous
 # Spotify stop (playerctl)
 bindsym XF86AudioStop exec --no-startup-id playerctl -p spotify stop
-# Spotify play/pause (playerctl)
-bindsym Mod4+Mod1+p exec --no-startup-id playerctl -p spotify play-pause
+# Select a media player and toggle play/pause (rofi + playerctl)
+bindsym Mod4+Mod1+p exec --no-startup-id $HOME/.config/i3/scripts/media/i3-media-picker.sh
 # Spotify next track (playerctl)
 bindsym Mod4+Mod1+n exec --no-startup-id playerctl -p spotify next
 # Spotify previous track (playerctl)
@@ -151,6 +153,8 @@ set $right l
 
 # use Mouse+Mod4 to drag floating windows to their wanted position
 floating_modifier Mod4
+# Toggle the focused window as a centered picture-in-picture popup
+bindsym Mod4+o exec --no-startup-id $HOME/.config/i3/scripts/pip-window-toggle.sh
 for_window [class="i3-screensaver"] fullscreen enable, border none
 for_window [class="fzfmenu"] floating enable, move position center
 for_window [class="i3-cliphist-fzf"] floating enable, resize set 1000 500, move position center
@@ -288,9 +292,7 @@ bindsym Mod1+Shift+f exec --no-startup-id kitty -e yazi
 # Maximize, keeps bar visible (maximize.sh)
 bindsym Mod4+Mod1+f exec --no-startup-id ~/.config/i3/scripts/utils/maximize.sh
 
-# change container layout (stacked, tabbed, toggle split)
-# Stack windows in container (i3 layout)
-bindsym Mod4+o layout stacking
+# change container layout (tabbed, toggle split)
 # Toggle horizontal/vertical split (i3 layout)
 bindsym Mod4+e layout toggle split
 

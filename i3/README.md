@@ -85,8 +85,10 @@ dotfiles/i3/
 | `Print` | Screenshot → clipboard (maim) |
 | `Alt+Print` | Screen recording (ffmpeg) |
 | `Super+Ctrl+Print` | OCR screenshot (tesseract) |
+| `Super+o` | Toggle focused window as sticky picture-in-picture |
 | `XF86AudioPlay/Next/Prev/Stop` | Spotify-only playback controls |
-| `Super+Alt+p/n/b` | Spotify-only play-pause/next/previous |
+| `Super+Alt+p` | Choose a media player and toggle play-pause |
+| `Super+Alt+n/b` | Spotify-only next/previous |
 | `Alt+Tab` | Cycle focus |
 | `Super+Ctrl+w` / `Super+Alt+w` | WiFi TUI (impala) |
 | `Super+Ctrl+a` / `Super+Alt+a` | Audio TUI (wiremix) |

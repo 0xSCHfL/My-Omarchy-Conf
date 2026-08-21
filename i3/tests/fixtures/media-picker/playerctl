@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ -n "${MEDIA_PICKER_TEST_LOG:-}" ]]; then
+  printf '%s\n' "$*" >> "$MEDIA_PICKER_TEST_LOG"
+fi
+
+case "${1:-}" in
+  -l)
+    printf 'spotify\nchromium\n'
+    ;;
+  -p)
+    player="${2:-}"
+    case "${3:-}" in
+      status)
+        printf '%s\n' "${player/spotify/Paused}"
+        ;;
+      metadata)
+        if [[ "$player" == "spotify" ]]; then
+          printf 'Spotify\tArtist\tSong\n'
+        else
+          printf 'Chromium\tYouTube\tVideo\n'
+        fi
+        ;;
+      play-pause)
+        ;;
+      *)
+        exit 1
+        ;;
+    esac
+    ;;
+  *)
+    exit 1
+    ;;
+esac
