@@ -1,0 +1,321 @@
+#!/usr/bin/env bash
+# Omarchy-inspired Windows 11 VM for i3, using Docker, KVM, and FreeRDP.
+
+set -u
+
+RUNTIME_DIR="/var/lib/i3-windows"
+COMPOSE_FILE="$RUNTIME_DIR/docker-compose.yml"
+CONFIG_DIR="$HOME/.config/i3-windows"
+CREDENTIALS_FILE="$CONFIG_DIR/credentials"
+COMPOSE_OVERRIDE="$CONFIG_DIR/docker-compose.override.yml"
+STORAGE_DIR="$HOME/.windows"
+SHARED_DIR="$HOME/Windows"
+CONTAINER="i3-windows"
+IMAGE="dockurr/windows"
+THEME="$HOME/.config/rofi/dwm-keys.rasi"
+
+if [[ -r "$HOME/.cache/wal/colors.sh" ]]; then
+    set +u
+    # shellcheck disable=SC1091
+    source "$HOME/.cache/wal/colors.sh"
+    set -u
+fi
+export FOREGROUND="${foreground:-#dbc1aa}"
+export BACKGROUND="${background:-#1b120d}"
+export BORDER_FOREGROUND="${color4:-#943c0c}"
+export GUM_CHOOSE_HEADER_FOREGROUND="${color4:-#943c0c}"
+export GUM_CHOOSE_SELECTED_FOREGROUND="${foreground:-#dbc1aa}"
+export GUM_CHOOSE_CURSOR_FOREGROUND="${color4:-#943c0c}"
+export GUM_INPUT_HEADER_FOREGROUND="${color4:-#943c0c}"
+export GUM_INPUT_PROMPT_FOREGROUND="${foreground:-#dbc1aa}"
+
+die() {
+    printf 'ERROR: %s\n' "$*" >&2
+    if [[ "${I3_WINDOWS_VM_HOLD:-0}" == 1 ]]; then
+        read -r -p 'Press Enter to close this window...' _ || true
+    fi
+    exit 1
+}
+has() { command -v "$1" >/dev/null 2>&1; }
+
+docker_cmd() {
+    if docker info >/dev/null 2>&1; then
+        printf '%s\n' docker
+    else
+        printf '%s\n' sudo docker
+    fi
+}
+
+dc() {
+    local runner
+    local -a compose_files=(-f "$COMPOSE_FILE")
+    prepare_compose_override
+    if [[ -r "$COMPOSE_OVERRIDE" ]]; then
+        compose_files+=(-f "$COMPOSE_OVERRIDE")
+    fi
+    runner=$(docker_cmd)
+    # shellcheck disable=SC2086
+    $runner compose "${compose_files[@]}" "$@"
+}
+
+prepare_compose_override() {
+    # This machine enables Docker userns-remap globally. Keep the compatibility
+    # override in the user's config so existing root-owned Omarchy-style compose
+    # files also work after reboot.
+    if [[ -r /etc/docker/daemon.json ]] && grep -q 'userns-remap' /etc/docker/daemon.json; then
+        mkdir -p "$CONFIG_DIR"
+        printf 'services:\n  windows:\n    userns_mode: host\n' > "$COMPOSE_OVERRIDE"
+        chmod 600 "$COMPOSE_OVERRIDE"
+    fi
+}
+
+require_tools() {
+    local -a missing=()
+    has docker || missing+=(docker)
+    has xfreerdp3 || missing+=(freerdp)
+    has gum || missing+=(gum)
+    has rofi || missing+=(rofi)
+    has alacritty || missing+=(alacritty)
+    has sudo || missing+=(sudo)
+    [[ -e /dev/kvm ]] || missing+=(/dev/kvm)
+    [[ -e /dev/net/tun ]] || missing+=(/dev/net/tun)
+
+    if (( ${#missing[@]} > 0 )); then
+        die "Missing Windows VM requirements: ${missing[*]}. Run ./install.sh packages i3, then enable virtualization in BIOS if needed."
+    fi
+    docker compose version >/dev/null 2>&1 || die 'Docker Compose is not available. Install docker-compose.'
+    systemctl is-active --quiet docker.service || die 'Docker service is not running. Run: sudo systemctl enable --now docker.service'
+    prepare_compose_override
+}
+
+valid_username() { [[ "$1" =~ ^[A-Za-z0-9_-]{1,20}$ ]]; }
+valid_password() { [[ "$1" =~ ^[[:print:]]{1,64}$ ]]; }
+valid_size() { [[ "$1" =~ ^[0-9]{1,3}G$ ]]; }
+valid_cores() { [[ "$1" =~ ^[0-9]{1,2}$ ]] && ((10#$1 >= 1 && 10#$1 <= $(nproc))); }
+
+yaml_escape() {
+    local value="$1"
+    value=${value//\\/\\\\}
+    value=${value//\"/\\\"}
+    printf '%s' "$value"
+}
+
+write_credentials() {
+    mkdir -p "$CONFIG_DIR"
+    chmod 700 "$CONFIG_DIR"
+    umask 077
+    printf 'USERNAME=%s\nPASSWORD=%s\n' "$1" "$2" > "$CREDENTIALS_FILE"
+    chmod 600 "$CREDENTIALS_FILE"
+}
+
+read_credential() {
+    local wanted="$1" key value
+    [[ -r "$CREDENTIALS_FILE" ]] || return 1
+    while IFS='=' read -r key value; do
+        [[ "$key" == "$wanted" ]] && { printf '%s' "$value"; return 0; }
+    done < "$CREDENTIALS_FILE"
+    return 1
+}
+
+write_compose() {
+    local ram="$1" cores="$2" disk="$3" username="$4" password="$5" tz="$6"
+    local esc_password tmp
+    esc_password=$(yaml_escape "$password")
+    tmp=$(mktemp)
+    chmod 600 "$tmp"
+    cat > "$tmp" <<EOF
+services:
+  windows:
+    image: $IMAGE
+    container_name: $CONTAINER
+    environment:
+      VERSION: "11"
+      RAM_SIZE: "$ram"
+      CPU_CORES: "$cores"
+      DISK_SIZE: "$disk"
+      USERNAME: "$username"
+      PASSWORD: "$esc_password"
+      TZ: "$tz"
+      ARGUMENTS: "-rtc base=localtime,clock=host,driftfix=slew"
+    devices:
+      - /dev/kvm
+      - /dev/net/tun
+    cap_add:
+      - NET_ADMIN
+    # This host enables Docker userns-remap globally. The Windows container
+    # needs the normal root namespace for KVM and its bind-mounted storage,
+    # which is also how the Omarchy VM is intended to run.
+    userns_mode: host
+    ports:
+      - 127.0.0.1:8006:8006
+      - 127.0.0.1:3389:3389/tcp
+      - 127.0.0.1:3389:3389/udp
+    volumes:
+      - $STORAGE_DIR:/storage
+      - $SHARED_DIR:/shared
+    restart: "no"
+    stop_grace_period: 2m
+EOF
+    sudo install -d -m 0755 "$RUNTIME_DIR"
+    if getent group docker >/dev/null 2>&1; then
+        sudo install -o root -g docker -m 0640 "$tmp" "$COMPOSE_FILE"
+    else
+        sudo install -o root -g root -m 0640 "$tmp" "$COMPOSE_FILE"
+    fi
+    rm -f "$tmp"
+}
+
+install_vm() {
+    require_tools
+    local total_ram available_gb max_disk ram cores disk username password confirm tz
+    local size ram_default disk_default
+    local -a ram_options=() disk_options=()
+
+    if [[ -f "$COMPOSE_FILE" ]]; then
+        gum confirm --default=false 'A Windows VM is already configured. Reconfigure it?' || {
+            echo 'Existing configuration kept.'
+            return 0
+        }
+    fi
+    total_ram=$(awk 'NR==1 {printf "%d", $2/1024/1024}' /proc/meminfo)
+    available_gb=$(df -P "$HOME" | awk 'NR==2 {printf "%d", $4/1024/1024}')
+    max_disk=$((available_gb - 10))
+    ((max_disk >= 32)) || die "At least 42GB free is required; found ${available_gb}GB."
+
+    gum style --border normal --padding '1 2' --margin '1' --align left \
+        'Windows VM setup' '' \
+        "System RAM: ${total_ram}GB" \
+        "CPU cores: $(nproc)" \
+        "Free disk: ${available_gb}GB" '' \
+        'The VM needs at least 32GB disk plus about 10GB for the Windows image.'
+
+    local ram_default=4G
+    ((total_ram < 4)) && ram_default=2G
+    for size in 2 4 8 16 32 64; do
+        ((size <= total_ram)) && ram_options+=("${size}G")
+    done
+    ram=$(gum choose --selected="$ram_default" --header='How much RAM for Windows?' "${ram_options[@]}") || die 'RAM selection cancelled.'
+    cores=$(gum input --value='2' --header="How many CPU cores? (1-$(nproc))" --char-limit=2) || die 'CPU selection cancelled.'
+    disk_default=64G
+    ((max_disk < 64)) && disk_default=32G
+    for size in 32 64 128 256 512; do
+        ((size <= max_disk)) && disk_options+=("${size}G")
+    done
+    disk=$(gum choose --selected="$disk_default" --header='How much disk space for Windows? (64G recommended)' "${disk_options[@]}") || die 'Disk selection cancelled.'
+    username=$(gum input --placeholder='Username (Enter for docker)' --header='Enter Windows username:') || die 'Username input cancelled.'
+    username=${username:-docker}
+    password=$(gum input --password --placeholder='Password (Enter for admin)' --header='Enter Windows password:') || die 'Password input cancelled.'
+    password=${password:-admin}
+
+    valid_size "$ram" || die 'RAM must look like 4G.'
+    valid_cores "$cores" || die 'CPU cores must be between 1 and the host CPU count.'
+    valid_size "$disk" || die 'Disk size must look like 64G.'
+    ((10#${disk%G} <= max_disk)) || die "Disk is too large; maximum is ${max_disk}G."
+    valid_username "$username" || die 'Username may contain only letters, digits, _ and -.'
+    valid_password "$password" || die 'Password must be 1-64 printable characters.'
+
+    gum style --border normal --padding '1 2' --margin '1' --align left \
+        'Windows VM Configuration' '' \
+        "RAM:       $ram" \
+        "CPU:       $cores cores" \
+        "Disk:      $disk" \
+        "Username:  $username" \
+        'Password:  (hidden)'
+    gum confirm --default=true 'Install and download Windows 11 now?' || { echo 'Installation cancelled.'; return 0; }
+
+    mkdir -p "$STORAGE_DIR" "$SHARED_DIR"
+    tz=$(timedatectl show -p Timezone --value 2>/dev/null || printf 'UTC')
+    write_compose "$ram" "$cores" "$disk" "$username" "$password" "$tz"
+    write_credentials "$username" "$password"
+    echo 'Starting Windows VM installation. This may download several gigabytes and take 10-15 minutes.'
+    dc up -d || die 'Docker could not start the Windows VM.'
+    echo 'Monitor progress at: http://127.0.0.1:8006'
+    if ! wait_for_web; then
+        echo 'The VM is still starting; opening the monitor page anyway.'
+    fi
+    xdg-open http://127.0.0.1:8006
+}
+
+wait_for_web() {
+    local i
+    for ((i=0; i<30; i++)); do
+        (echo >/dev/tcp/127.0.0.1/8006) >/dev/null 2>&1 && return 0
+        sleep 1
+    done
+    return 1
+}
+
+wait_for_rdp() {
+    local i
+    for ((i=0; i<120; i++)); do
+        (echo >/dev/tcp/127.0.0.1/3389) >/dev/null 2>&1 && return 0
+        sleep 1
+    done
+    return 1
+}
+
+launch_vm() {
+    require_tools
+    [[ -f "$COMPOSE_FILE" ]] || die 'Windows VM is not configured. Choose Install first.'
+    local username password keep_alive="false"
+    [[ "${1:-}" == '-k' || "${1:-}" == '--keep-alive' ]] && keep_alive=true
+    username=$(read_credential USERNAME 2>/dev/null || printf 'docker')
+    password=$(read_credential PASSWORD 2>/dev/null || printf 'admin')
+    echo 'Starting Windows VM and waiting for RDP...'
+    dc up -d || die 'Could not start the Windows VM.'
+    wait_for_rdp || die 'Windows did not become ready within two minutes.'
+    KRB5_CONFIG="$CONFIG_DIR/krb5.conf"; export KRB5_CONFIG
+    [[ -f "$KRB5_CONFIG" ]] || printf '[libdefaults]\n  dns_lookup_kdc = false\n  dns_lookup_realm = false\n' > "$KRB5_CONFIG"
+    xfreerdp3 /u:"$username" /p:"$password" /v:127.0.0.1:3389 \
+        -grab-keyboard /sound /microphone /clipboard /cert:ignore \
+        /title:'Windows VM - i3' /dynamic-resolution /gfx:RFX
+    if [[ "$keep_alive" == false ]]; then
+        dc down || true
+    fi
+}
+
+status_vm() {
+    [[ -f "$COMPOSE_FILE" ]] || { echo 'Windows VM not configured.'; return 0; }
+    dc ps
+}
+
+logs_vm() {
+    if [[ ! -f "$COMPOSE_FILE" ]]; then
+        echo 'Windows VM is not configured yet.'
+        echo 'Choose Install / configure Windows first.'
+        if [[ "${I3_WINDOWS_VM_HOLD:-0}" == 1 ]]; then
+            read -r -p 'Press Enter to close this window...' _ || true
+        fi
+        return 0
+    fi
+    echo 'Following Windows VM logs. Press Ctrl+C to stop watching (the VM keeps running).'
+    dc logs -f --tail=100
+}
+
+stop_vm() {
+    [[ -f "$COMPOSE_FILE" ]] || { echo 'Windows VM not configured.'; return 0; }
+    dc down
+}
+
+menu() {
+    local choice
+    choice=$(printf '󰍲  Install / configure Windows\n󰍲  Launch Windows\n󰍲  Windows status\n󰖟  Windows logs\n󰍲  Stop Windows' | \
+        rofi -dmenu -no-sort -i -theme "$THEME" -p 'Windows VM') || return 0
+    case "$choice" in
+        *Install*) I3_WINDOWS_VM_HOLD=1 setsid -f alacritty --class i3-windows-vm -e "$0" install ;;
+        *Launch*) I3_WINDOWS_VM_HOLD=1 setsid -f alacritty --class i3-windows-vm -e "$0" launch ;;
+        *status*) I3_WINDOWS_VM_HOLD=1 setsid -f alacritty --class i3-windows-vm -e "$0" status ;;
+        *logs*) I3_WINDOWS_VM_HOLD=1 setsid -f alacritty --class i3-windows-vm -e "$0" logs ;;
+        *Stop*) I3_WINDOWS_VM_HOLD=1 setsid -f alacritty --class i3-windows-vm -e "$0" stop ;;
+    esac
+}
+
+case "${1:-menu}" in
+    menu) menu ;;
+    install) install_vm ;;
+    launch) launch_vm "${2:-}" ;;
+    status) status_vm ;;
+    logs) logs_vm ;;
+    stop) stop_vm ;;
+    *) printf 'Usage: %s [menu|install|launch [-k]|status|stop]\n' "${0##*/}" ;;
+esac

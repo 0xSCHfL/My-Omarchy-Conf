@@ -2,8 +2,9 @@
 
 command -v tte &>/dev/null || exit 1
 
-# Don't launch if already running
-pgrep -f "class i3-screensaver" >/dev/null 2>&1 && exit 0
+# Don't launch if the actual screensaver window is already running. Checking
+# the X11 window class avoids matching the launcher command itself.
+xdotool search --class '^i3-screensaver$' >/dev/null 2>&1 && exit 0
 
 setsid -f alacritty \
     --class i3-screensaver \

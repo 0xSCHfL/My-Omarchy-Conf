@@ -18,14 +18,14 @@ Mod = Super (Windows key)
 | `Mod+n` | Notes manager |
 | `Mod+Shift+f` | File manager (nautilus) |
 
-## Web Apps (i3-webapp → Brave --app)
+## Web Apps and App Shortcuts
 
-| Key | URL |
-|-----|-----|
-| `Mod+Shift+w` | WhatsApp |
-| `Mod+Shift+g` | ChatGPT |
-| `Mod+Shift+x` | X (Twitter) |
-| `Mod+Shift+d` | Discord |
+| Key | Action |
+|-----|--------|
+| `Mod+Shift+w` | WhatsApp web app |
+| `Mod+Shift+a` | ChatGPT desktop app |
+| `Mod+Shift+x` | X (Twitter) web app |
+| `Mod+Shift+d` | Discord app |
 | `Mod+Shift+e` | Email picker |
 
 ## Window Management
@@ -117,13 +117,15 @@ Mod = Super (Windows key)
 | `Print` | Area screenshot → clipboard (maim + xclip) |
 | `Alt+Print` | Screen recording (i3-screenrecord + ffmpeg) |
 | `Mod+Ctrl+Print` | Area OCR → clipboard (maim + tesseract) |
+| `Mod+Ctrl+c` | Capture menu: screenshot, OCR, recording, or image clipboard |
 
 ## Clipboard & Images
 
 | Key | Action |
 |-----|--------|
-| `Mod+v` | Text clipboard history (cliphist + rofi) |
+| `Mod+Ctrl+v` | Text clipboard history (cliphist + rofi) |
 | `Mod+Shift+v` | Image clipboard history (i3-imgcliphist) |
+| `Mod+v` | Alternate text clipboard history (cliphist + fzf) |
 | `Mod+Shift+i` | Image picker (fzfub + ueberzugpp) |
 
 ## Wallpaper
@@ -137,3 +139,4 @@ Mod = Super (Windows key)
 | Key | Action |
 |-----|--------|
 | `Mod+Shift+m` | Timer menu (i3blocks timer) |
+Click the time block to open the calendar popup. Use `i3-reminder <minutes> <message>` for desktop reminders.

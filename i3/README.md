@@ -76,15 +76,19 @@ dotfiles/i3/
 | `Super+Alt+c` | Run i3-check in a popup terminal |
 | `Super+Alt+m` | Local manuals / Learn menu |
 | `Super+Alt+Space` | Local manuals / Learn menu |
-| `Super+Ctrl+Space` | Wallpaper picker |
+| `Super+Ctrl+Space` | i3 control menu |
+| Search (inside control menu) | Search and launch apps, tools, capture, power, reminders, and Windows VM |
+| `Super+Ctrl+Space` → Setup → Windows VM | Install, configure, launch, status, or stop a Docker Windows VM |
 | `Super+Shift+i` | Image picker (fzfub) |
+| `Super+Ctrl+v` | Text clipboard history (cliphist + rofi) |
 | `Super+Shift+v` | Image clipboard history |
-| `Super+v` | Text clipboard history (cliphist) |
+| `Super+v` | Alternate text clipboard history (cliphist + fzf) |
 | `Super+n` | Notes |
 | `Super+Ctrl+n` | Notification history |
 | `Print` | Screenshot → clipboard (maim) |
 | `Alt+Print` | Screen recording (ffmpeg) |
 | `Super+Ctrl+Print` | OCR screenshot (tesseract) |
+| `Super+Ctrl+c` | Capture menu: screenshot, OCR, recording, or image clipboard |
 | `Super+o` | Toggle focused window as sticky picture-in-picture |
 | `XF86AudioPlay/Next/Prev/Stop` | Spotify-only playback controls |
 | `Super+Alt+p` | Choose a media player and toggle play-pause |
@@ -96,7 +100,7 @@ dotfiles/i3/
 | `Super+comma` | Close notification |
 | `Super+Ctrl+comma` | Toggle pause notifications |
 
-Web apps (`Super+Shift+w/a/x/d/e`): WhatsApp, ChatGPT, X, Discord, Email
+Web apps and app shortcuts (`Super+Shift+w/a/x/d/e`): WhatsApp, ChatGPT, X, Discord, Email
 
 ## Custom Scripts (`~/.local/bin/`)
 
@@ -105,6 +109,7 @@ Web apps (`Super+Shift+w/a/x/d/e`): WhatsApp, ChatGPT, X, Discord, Email
 | `i3-screenshot` | Area screenshot → clipboard (maim + xclip) |
 | `i3-screenrecord` | Screen recording (ffmpeg) |
 | `i3-ocr` | Area OCR → clipboard (maim + tesseract) |
+| `i3-windows-vm` | Docker/KVM Windows VM manager with FreeRDP |
 | `i3-lock` | Lock screen with blur (maim + magick + i3lock-color) |
 | `i3-sys` | System menu: suspend/reboot/shutdown |
 | `i3-check` | Validate i3 config, scripts, executable bits, dependencies, and docs drift |

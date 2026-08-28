@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# Generate xob's volume style from the colors produced by pywal.
+set -euo pipefail
+
+colors_json="$HOME/.cache/wal/colors.json"
+output="$HOME/.cache/wal/xob-styles.cfg"
+
+[ -f "$colors_json" ] || exit 0
+mkdir -p "$(dirname "$output")"
+
+tmp_file=$(mktemp "${output}.XXXXXX")
+trap 'rm -f "$tmp_file"' EXIT
+
+python3 - "$colors_json" > "$tmp_file" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as stream:
+    data = json.load(stream)
+
+special = data["special"]
+colors = data["colors"]
+bg = special["background"]
+fg = special["foreground"]
+accent = colors["color4"]
+alert = colors["color1"]
+
+print(f'''volume = {{
+    orientation = "horizontal";
+    x = {{ relative = 0.5; offset = -120; }};
+    y = {{ relative = 1.0; offset = -32; }};
+    length = {{ relative = 0.0; offset = 240; }};
+    thickness = {{ absolute = 22; }};
+    border = 2;
+    outline = 0;
+    padding = 2;
+    overflow = "hidden";
+    color = {{
+        normal = {{ fg = "{fg}"; bg = "{bg}cc"; border = "{fg}"; }};
+        alt = {{ fg = "{accent}"; bg = "{bg}cc"; border = "{accent}"; }};
+        overflow = {{ fg = "{alert}"; bg = "{bg}cc"; border = "{alert}"; }};
+        altoverflow = {{ fg = "{alert}"; bg = "{bg}cc"; border = "{alert}"; }};
+    }};
+}};
+
+}};''')
+PY
+
+mv "$tmp_file" "$output"
+trap - EXIT

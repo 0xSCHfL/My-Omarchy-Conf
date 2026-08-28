@@ -6,3 +6,7 @@ if playerctl status 2>/dev/null | grep -q "^Playing$"; then
 fi
 
 brightnessctl set 10% -q
+
+# Start the visual screensaver in a dedicated fullscreen terminal. The idle
+# timer's canceller stops it when keyboard or mouse activity is detected.
+"$HOME/.local/bin/i3-launch-screensaver"

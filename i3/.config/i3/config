@@ -66,7 +66,7 @@ exec_always --no-startup-id xset s off -dpms
 exec --no-startup-id xss-lock --transfer-sleep-lock -- $HOME/.local/bin/i3-lock
 exec_always --no-startup-id $HOME/.local/bin/i3-idle
 exec_always --no-startup-id setsid -f $HOME/.local/bin/i3-video-idle-reset
-exec_always --no-startup-id setsid -f voxtype daemon
+# Voxtype is started once by the enabled user systemd service.
 
 # NetworkManager is the most popular way to manage wireless networks on Linux,
 # and nm-applet is a desktop environment-independent system tray GUI for it.
@@ -136,6 +136,10 @@ bindsym Mod4+Shift+g exec --no-startup-id alacritty --class i3-gdrive -e i3-gdri
 # Dictation toggle, auto-types result (voxtype-toggle-paste.sh)
 bindsym Mod4+Ctrl+x exec --no-startup-id $HOME/.config/i3/scripts/utils/voxtype-toggle-paste.sh
 
+# Omarchy-style push-to-talk: hold F9 to dictate, release F9 to transcribe
+bindsym F9 exec --no-startup-id voxtype record start
+bindsym --release F9 exec --no-startup-id voxtype record stop
+
 # Notification controls (dunst)
 # Dismiss last notification (dunstctl)
 bindsym Mod4+comma exec dunstctl close
@@ -158,6 +162,9 @@ floating_modifier Mod4
 # Toggle the focused window as a centered picture-in-picture popup
 bindsym Mod4+o exec --no-startup-id $HOME/.config/i3/scripts/pip-window-toggle.sh
 for_window [class="i3-screensaver"] fullscreen enable, border none
+for_window [class="i3-calendar"] floating enable, border pixel 1, move position 780 px 34 px
+for_window [title="Calendar"] floating enable, border pixel 1, move position 780 px 34 px
+for_window [class="i3-windows-vm"] floating enable, resize set 900 700, move position center
 for_window [class="fzfmenu"] floating enable, move position center
 for_window [class="i3-cliphist-fzf"] floating enable, resize set 1000 500, move position center
 for_window [class="fzf"] floating enable, move position center
@@ -403,6 +410,8 @@ bindsym Mod4+Shift+q exec "echo -e 'No\nYes'| rofi -dmenu -no-sort -i -theme ~/.
 bindsym Mod4+Ctrl+space exec --no-startup-id $HOME/.local/bin/i3-menu
 # Screenshot region to clipboard via flameshot (freezes screen — works on dropdowns/menus)
 bindsym Print exec --no-startup-id i3-flameshot
+# Unified capture menu: screenshot, OCR, recording, or image clipboard
+bindsym Mod4+Ctrl+c exec --no-startup-id i3-capture-menu
 # Legacy maim screenshot (Shift+Print) — use for full-screen or when flameshot acts up
 bindsym Shift+Print exec --no-startup-id i3-screenshot
 # Toggle screen recording (i3-screenrecord)
@@ -431,8 +440,8 @@ bindsym Mod4+Shift+i exec --no-startup-id i3-imgpicker
 bindsym Mod4+Mod1+t exec --no-startup-id Telegram -theme dark
 # WhatsApp Web as standalone app (i3-webapp)
 bindsym Mod4+Shift+w exec --no-startup-id i3-webapp "https://web.whatsapp.com/"
-# ChatGPT as standalone app (i3-webapp)
-bindsym Mod4+Shift+a exec --no-startup-id i3-webapp "https://chatgpt.com/"
+# ChatGPT desktop app
+bindsym Mod4+Shift+a exec --no-startup-id chatgpt
 # X (Twitter) as standalone app (i3-webapp)
 bindsym Mod4+Shift+x exec --no-startup-id i3-webapp "https://x.com/"
 # Discord chat (discord)

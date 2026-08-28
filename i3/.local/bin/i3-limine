@@ -1,9 +1,11 @@
 #!/bin/bash
-# Refresh Limine bootloader config from i3 dotfiles, matching Omarchy's Plymouth unlock flow.
+# Refresh Limine bootloader config from i3 dotfiles with Plymouth unlock.
 
 set -euo pipefail
 
-DOTFILES="$HOME/Work/dotfiles"
+SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
+DOTFILES="$(cd "$SCRIPT_DIR/../../.." && pwd -P)"
 MACHINE_ID="$(cat /etc/machine-id)"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 PLYMOUTH_THEME="0xSSfN"
@@ -30,7 +32,7 @@ fi
 echo "Backing up current boot config..."
 backup_if_exists /boot/limine.conf
 backup_if_exists /etc/default/limine
-backup_if_exists /etc/mkinitcpio.conf.d/omarchy_hooks.conf
+backup_if_exists /etc/mkinitcpio.conf.d/i3_hooks.conf
 
 echo "Resetting Limine, cmdline, and initramfs hook config..."
 if [[ ! -x "$DOTFILES/limine/generate-default-limine" ]]; then
@@ -43,7 +45,7 @@ TMP_DEFAULT_LIMINE="$(mktemp)"
 sudo cp "$DOTFILES/limine/limine.conf" /boot/limine.conf
 sudo cp "$TMP_DEFAULT_LIMINE" /etc/default/limine
 sudo mkdir -p /etc/mkinitcpio.conf.d
-sudo cp "$DOTFILES/limine/omarchy_hooks.conf" /etc/mkinitcpio.conf.d/omarchy_hooks.conf
+sudo cp "$DOTFILES/limine/i3_hooks.conf" /etc/mkinitcpio.conf.d/i3_hooks.conf
 
 if [[ -f "$DOTFILES/limine/backdrop.png" ]]; then
   sudo cp "$DOTFILES/limine/backdrop.png" /boot/backdrop.png
@@ -79,12 +81,12 @@ if [[ "$cmdline" == *"plymouth.enable=0"* ]]; then
   exit 1
 fi
 
-if ! grep -qE '^HOOKS=.*\bplymouth\b' "$DOTFILES/limine/omarchy_hooks.conf"; then
+if ! grep -qE '^HOOKS=.*\bplymouth\b' "$DOTFILES/limine/i3_hooks.conf"; then
   echo "  ERROR: repo hook config is missing plymouth." >&2
   exit 1
 fi
 
-if ! grep -qE '^HOOKS=.*\bplymouth\b' /etc/mkinitcpio.conf.d/omarchy_hooks.conf; then
+if ! grep -qE '^HOOKS=.*\bplymouth\b' /etc/mkinitcpio.conf.d/i3_hooks.conf; then
   echo "  ERROR: live initramfs hook config is missing plymouth." >&2
   exit 1
 fi

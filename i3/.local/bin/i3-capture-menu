@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Unified screenshot, OCR, screen-recording, and image-clipboard menu.
+set -u
+
+THEME="$HOME/.config/rofi/dwm-keys.rasi"
+choice=$(printf '%s\n' \
+    "󰹑  Screenshot" \
+    "󰑋  Screen recording" \
+    "󰆍  OCR text" \
+    "󰅍  Image clipboard" | \
+    rofi -dmenu -no-sort -i -theme "$THEME" -p "Capture" \
+        -kb-row-up 'k,Up' -kb-row-down 'j,Down' -kb-cancel 'Escape,h,q')
+
+case "$choice" in
+    *Screenshot*)          exec i3-flameshot ;;
+    *"Screen recording"*) exec i3-screenrecord ;;
+    *"OCR text"*)         exec i3-ocr ;;
+    *"Image clipboard"*)  exec i3-imgcliphist ;;
+    *)                     exit 0 ;;
+esac

@@ -1,2 +1,7 @@
 #!/usr/bin/env bash
-printf "| %(%A, %B %e  %_I:%M%P )T\\n"
+
+if [[ "${BLOCK_BUTTON:-0}" == 1 ]]; then
+    setsid -f "$HOME/.local/bin/i3-calendar" >/dev/null 2>&1
+fi
+
+printf "| 󰃭 %(%A, %B %e  %_I:%M%P )T\\n"

@@ -147,30 +147,73 @@ show_setup_editor() {
 }
 
 show_setup() {
-  case "$(menu "Setup" "󰂬  Default Browser\n󰄠  Default Terminal\n󰁀  Default Editor\n󰀨  Audio\n󰁚  WiFi\n  Notifications")" in
+  case "$(menu "Setup" "󰂬  Default Browser\n󰄠  Default Terminal\n󰁀  Default Editor\n󰀨  Audio\n󰁚  WiFi\n  Notifications\n󰍲  Windows VM")" in
     *"Browser"*)   show_setup_browser ;;
     *"Terminal"*)  show_setup_terminal ;;
     *"Editor"*)    show_setup_editor ;;
     *Audio*)       i3-launch-audio.sh ;;
     *WiFi*)        i3-launch-wifi.sh ;;
     *"Notifications"*) bash "$HOME/.config/i3/scripts/notifications/notifications.sh" ;;
+    *"Windows VM"*) i3-windows-vm ;;
     *)             show_main ;;
   esac
 }
 
+show_search() {
+  local choice
+  choice=$(menu "Search" "󰀤  Applications\n󰆍  Audio\n󰂯  Bluetooth\n󰹑  Screenshot\n󰆍  OCR text\n󰑋  Screen recording\n󰅍  Clipboard history\n󰔛  Reminder\n󰍲  Windows VM\n󰀑  System power\n󰌾  Lock screen\n󰦔  Wallpaper picker\n󰙵  Activity (btop)\n󰄜  Keybindings\n󱣅  Manuals\n󰗼  Notes\n󰤨  Wi-Fi")
+  case "$choice" in
+    *Applications*)       show_apps ;;
+    *Audio*)               i3-launch-audio.sh ;;
+    *Bluetooth*)           setsid -f alacritty --class i3-bluetooth -e bluetui ;;
+    *Screenshot*)          i3-flameshot ;;
+    *"OCR text"*)          i3-ocr ;;
+    *"Screen recording"*) i3-screenrecord ;;
+    *Clipboard*)           i3-cliphist-pick ;;
+    *Reminder*)            i3-reminder menu ;;
+    *"Windows VM"*)        i3-windows-vm ;;
+    *"System power"*)      i3-sys ;;
+    *"Lock screen"*)       i3-lock ;;
+    *Wallpaper*)           wallpaper-pick.sh ;;
+    *Activity*)            setsid -f kitty -e btop ;;
+    *Keybindings*)         i3-keys ;;
+    *Manuals*)             i3-manuals ;;
+    *Notes*)               notes ;;
+    *Wi-Fi*)               i3-launch-wifi.sh ;;
+    *)                     show_main ;;
+  esac
+}
+
 show_system() {
-  i3-sys
+  case "$(menu "System" "󰀗  Toggle settings\n󰦔  Wallpaper\n󰙵  Activity (btop)\n󰌾  Lock screen\n󰀑  Power menu")" in
+    *"Toggle"*)      show_toggle ;;
+    *Wallpaper*)      wallpaper-pick.sh ;;
+    *Activity*)       setsid -f kitty -e btop ;;
+    *"Lock screen"*)  i3-lock ;;
+    *"Power menu"*)   i3-sys ;;
+    *)                show_main ;;
+  esac
+}
+
+show_tools() {
+  case "$(menu "Tools" "󰔛  Reminder\n󰅍  Clipboard history\n󰆍  Audio\n󰂯  Bluetooth")" in
+    *Reminder*)   i3-reminder menu ;;
+    *Clipboard*)  i3-cliphist-pick ;;
+    *Audio*)      i3-launch-audio.sh ;;
+    *Bluetooth*)  setsid -f alacritty --class i3-bluetooth -e bluetui ;;
+    *)            show_main ;;
+  esac
 }
 
 show_main() {
-  case "$(menu "Go" "󰀤  Apps\n󰐳  Learn\n󰀰  Capture\n󰀗  Toggle\n󰀾  Wallpaper\n󰀓  Setup\n󰀑  System")" in
-    *Apps*)      show_apps ;;
-    *Learn*)     show_learn ;;
-    *Capture*)   show_capture ;;
-    *Toggle*)    show_toggle ;;
-    *Wallpaper*) setsid bash -c 'sleep 0.2; exec wallpaper-pick.sh' & ;;
-    *Setup*)     show_setup ;;
-    *System*)    show_system ;;
+  case "$(menu "Go" "󰞋  Search\n󰀤  Applications\n󰐳  Learn\n󰀰  Capture\n󰔛  Tools\n󰀓  Setup\n󰀑  System")" in
+    *Search*)             show_search ;;
+    *Applications*)       show_apps ;;
+    *Tools*)              show_tools ;;
+    *Learn*)              show_learn ;;
+    *Capture*)            show_capture ;;
+    *Setup*)              show_setup ;;
+    *System*)             show_system ;;
     *)           exit 0 ;;
   esac
 }

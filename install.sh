@@ -87,6 +87,8 @@ if [[ "$PM" == "pacman" ]]; then
         i3-wm i3blocks polybar rofi
         # X11 / VM display support
         xorg-server xorg-xinit xf86-video-qxl spice-vdagent qemu-guest-agent
+        # Docker/KVM Windows VM from the i3 control menu
+        docker docker-compose freerdp gum
         # Terminals & apps
         kitty alacritty btop neovim tmux
         # Screenshot & OCR
@@ -96,7 +98,7 @@ if [[ "$PM" == "pacman" ]]; then
         # Window/display utils
         xdotool xorg-xdpyinfo dex
         # System info (i3blocks scripts)
-        sysstat wireless_tools imagemagick
+        sysstat wireless_tools imagemagick yad
         # Pager / syntax highlight
         bat
         # Markdown preview (peek.nvim + local terminal preview)
@@ -107,11 +109,11 @@ if [[ "$PM" == "pacman" ]]; then
     )
 elif [[ "$PM" == "apt" ]]; then
     COMMON_PKGS=(stow feh picom dunst copyq network-manager-gnome policykit-1-gnome pipewire-pulse fonts-noto fonts-noto-color-emoji brightnessctl playerctl fzf jq libnotify-bin)
-    I3_PKGS=(i3 i3blocks polybar rofi kitty alacritty btop neovim tmux maim xclip xdotool flameshot tesseract-ocr imagemagick x11-utils sysstat wireless-tools)
+    I3_PKGS=(i3 i3blocks polybar rofi kitty alacritty btop neovim tmux maim xclip xdotool flameshot tesseract-ocr imagemagick yad x11-utils sysstat wireless-tools)
     DWM_PKGS=(build-essential imv mpv autocutsel)
 elif [[ "$PM" == "dnf" ]]; then
     COMMON_PKGS=(stow feh picom dunst network-manager-applet polkit-gnome pipewire-pulse jetbrains-mono-fonts noto-fonts-emoji brightnessctl playerctl fzf jq libnotify)
-    I3_PKGS=(i3 i3blocks polybar rofi kitty alacritty btop neovim tmux maim xclip xdotool flameshot tesseract ImageMagick xdpyinfo sysstat)
+    I3_PKGS=(i3 i3blocks polybar rofi kitty alacritty btop neovim tmux maim xclip xdotool flameshot tesseract ImageMagick yad xdpyinfo sysstat)
     DWM_PKGS=(make gcc imv mpv libX11-devel libXft-devel libXinerama-devel)
 else
     COMMON_PKGS=()
@@ -138,21 +140,6 @@ setup_voxtype() {
             echo "  → Downloading small.en Whisper model (better accuracy)..."
             voxtype setup model --set small.en 2>/dev/null || echo "  ! Could not set model — run: voxtype setup model"
         fi
-        # GTK4 layer-shell cannot place an OSD on X11/i3. The source package
-        # provides the native frontend, so configure it without overwriting
-        # an existing user-defined OSD section.
-        local local_voxtype_config="$HOME/.config/voxtype/config.toml"
-        if [[ -x /usr/lib/voxtype/voxtype-osd-native && -f "$local_voxtype_config" ]] \
-            && ! grep -q '^\[osd\]' "$local_voxtype_config"; then
-            cat >> "$local_voxtype_config" <<'EOF'
-
-[osd]
-frontend = "native"
-position = "bottom-center"
-margin_px = 24
-EOF
-            echo "  ✓ Voxtype OSD configured for bottom-center"
-        fi
         voxtype setup systemd 2>/dev/null && echo "  ✓ voxtype systemd service set up"
     fi
 }
@@ -165,20 +152,19 @@ install_all() {
 
     if [[ -n "$PM_AUR" ]]; then
         echo "  → AUR packages..."
-        # Use the source package: voxtype-bin ships GTK4 only, while i3/X11
-        # needs the native OSD frontend for a reliable bottom-center overlay.
-        if [[ "$PM" == "pacman" ]] && pacman -Qq voxtype-bin &>/dev/null; then
-            echo "  → Replacing voxtype-bin with voxtype (native OSD support)..."
-            sudo pacman -R --noconfirm voxtype-bin
-        fi
         $PM_AUR -S --needed --noconfirm \
             impala wiremix auto-cpufreq \
             python-pywal xob \
             ttf-iosevka-nerd \
-            voxtype ydotool || true
+            voxtype-bin ydotool || true
     fi
 
     setup_voxtype
+
+    if command -v systemctl &>/dev/null && command -v docker &>/dev/null; then
+        sudo systemctl enable --now docker.service 2>/dev/null \
+            && echo "  ✓ Docker service enabled"
+    fi
 
     if command -v touchegg &>/dev/null && command -v systemctl &>/dev/null; then
         echo "  → Setting up touchpad gestures..."
@@ -647,13 +633,9 @@ case "${1:-stow}" in
                 install_pkgs "i3" "${I3_PKGS[@]}"
                 if [[ -n "$PM_AUR" ]]; then
                     echo "  → AUR packages..."
-                    if [[ "$PM" == "pacman" ]] && pacman -Qq voxtype-bin &>/dev/null; then
-                        echo "  → Replacing voxtype-bin with voxtype (native OSD support)..."
-                        sudo pacman -R --noconfirm voxtype-bin
-                    fi
                     $PM_AUR -S --needed --noconfirm \
                         ttf-iosevka-nerd \
-                        xob voxtype ydotool || true
+                        xob voxtype-bin ydotool || true
                 fi
                 setup_voxtype
                 ;;

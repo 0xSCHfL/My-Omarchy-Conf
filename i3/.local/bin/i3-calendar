@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+# Toggle a small calendar popup from the i3blocks time block.
+set -u
+PID_FILE="${XDG_RUNTIME_DIR:-/tmp}/i3-calendar.pid"
+
+if [[ -s "$PID_FILE" ]] && kill -0 "$(cat "$PID_FILE" 2>/dev/null)" 2>/dev/null; then
+    kill "$(cat "$PID_FILE")" 2>/dev/null || true
+    rm -f "$PID_FILE"
+    exit 0
+fi
+
+rm -f "$PID_FILE"
+cleanup() { rm -f "$PID_FILE"; }
+trap cleanup EXIT INT TERM
+printf '%s\n' "$$" > "$PID_FILE"
+
+if ! command -v yad >/dev/null 2>&1; then
+    notify-send "Calendar" "Install yad to show the calendar popup." -t 3000
+    exit 1
+fi
+
+read -r SCREEN_WIDTH SCREEN_HEIGHT < <(
+    xdpyinfo 2>/dev/null | awk '/dimensions:/{split($2, size, "x"); print size[1], size[2]; exit}'
+)
+SCREEN_WIDTH="${SCREEN_WIDTH:-1920}"
+SCREEN_HEIGHT="${SCREEN_HEIGHT:-1080}"
+CALENDAR_WIDTH=360
+CALENDAR_HEIGHT=300
+CALENDAR_X=$(( (SCREEN_WIDTH - CALENDAR_WIDTH) / 2 ))
+CALENDAR_Y=34
+
+# YAD is GTK-based, so give it a small runtime stylesheet using the current
+# Pywal palette instead of inheriting the desktop's unrelated GTK theme.
+if [[ -r "$HOME/.cache/wal/colors.sh" ]]; then
+    # shellcheck disable=SC1091
+    set +u
+    source "$HOME/.cache/wal/colors.sh"
+    set -u
+fi
+WAL_BG="${background:-#1b120d}"
+WAL_FG="${foreground:-#dbc1aa}"
+WAL_ACCENT="${color4:-#943c0c}"
+WAL_MUTED="${color8:-#998776}"
+CSS_FILE="${XDG_RUNTIME_DIR:-/tmp}/i3-calendar-${UID}.css"
+cat > "$CSS_FILE" <<EOF
+window {
+    background-color: ${WAL_BG};
+    color: ${WAL_FG};
+}
+calendar {
+    background-color: ${WAL_BG};
+    color: ${WAL_FG};
+    padding: 12px;
+}
+calendar.view {
+    background-color: ${WAL_BG};
+    color: ${WAL_FG};
+}
+calendar.header {
+    color: ${WAL_ACCENT};
+}
+calendar.highlight {
+    color: ${WAL_ACCENT};
+}
+calendar:selected {
+    background-color: ${WAL_ACCENT};
+    color: ${WAL_BG};
+}
+button {
+    background-color: ${WAL_BG};
+    color: ${WAL_FG};
+    border-color: ${WAL_MUTED};
+}
+button:hover {
+    background-color: ${WAL_ACCENT};
+    color: ${WAL_BG};
+}
+EOF
+cleanup() { rm -f "$PID_FILE" "$CSS_FILE"; }
+trap cleanup EXIT INT TERM
+
+exec yad --calendar --class=i3-calendar --title="Calendar" \
+    --width="$CALENDAR_WIDTH" --height="$CALENDAR_HEIGHT" \
+    --geometry="${CALENDAR_WIDTH}x${CALENDAR_HEIGHT}+${CALENDAR_X}+${CALENDAR_Y}" \
+    --on-top --skip-taskbar --css="$CSS_FILE" \
+    --borders=12 --no-buttons

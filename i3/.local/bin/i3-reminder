@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Desktop reminder: i3-reminder <minutes> <message>
+set -u
+
+SCRIPT_PATH="$(readlink -f "$0" 2>/dev/null || printf '%s' "$0")"
+THEME="$HOME/.config/rofi/i3-timer.rasi"
+
+usage() {
+    printf 'Usage: %s <minutes> <message>\n' "${0##*/}"
+    printf '       %s menu\n' "${0##*/}"
+}
+
+run_reminder() {
+    local minutes="$1" message="$2"
+    sleep "$((minutes * 60))"
+    notify-send "Reminder" "$message" -t 10000
+    paplay /usr/share/sounds/freedesktop/stereo/message.oga 2>/dev/null || true
+}
+
+schedule() {
+    local minutes="${1:-}" message="${2:-}"
+    [[ "$minutes" =~ ^[0-9]+$ && "$minutes" -gt 0 && -n "$message" ]] || {
+        usage >&2
+        return 2
+    }
+    notify-send "Reminder set" "$message — in ${minutes} minute(s)" -t 3000
+    setsid -f "$SCRIPT_PATH" run "$minutes" "$message" >/dev/null 2>&1
+}
+
+menu() {
+    local minutes message
+    minutes=$(printf '' | rofi -dmenu -p 'Reminder minutes' -theme "$THEME") || return 0
+    [[ "$minutes" =~ ^[0-9]+$ && "$minutes" -gt 0 ]] || return 2
+    message=$(printf '' | rofi -dmenu -p 'Reminder text' -theme "$THEME") || return 0
+    [[ -n "$message" ]] || return 0
+    schedule "$minutes" "$message"
+}
+
+case "${1:-}" in
+    menu) menu ;;
+    run) [[ $# -ge 3 ]] || exit 2; run_reminder "$2" "$3" ;;
+    '') usage; exit 2 ;;
+    *) schedule "$@" ;;
+esac
