@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+# Small, readable CPU monitor for the i3bar load/CPU indicators.
+set -u
+CPU_THRESHOLD=5
+
+read_cpu() {
+    read -r _ user nice system idle iowait irq softirq steal _ < /proc/stat
+    total=$((user + nice + system + idle + iowait + irq + softirq + steal))
+    busy=$((total - idle - iowait))
+}
+
+read_cpu
+old_total=$total
+old_busy=$busy
+
+while :; do
+    sleep 1
+    read_cpu
+    total_delta=$((total - old_total))
+    busy_delta=$((busy - old_busy))
+    if [ "$total_delta" -gt 0 ]; then
+        cpu_pct=$((busy_delta * 100 / total_delta))
+    else
+        cpu_pct=0
+    fi
+    old_total=$total
+    old_busy=$busy
+
+    clear
+    printf 'CPU monitor — press q to close\n\n'
+    printf 'CPU usage: %s%%\n' "$cpu_pct"
+    printf 'Load avg : %s\n' "$(awk '{print $1, $2, $3}' /proc/loadavg)"
+    printf 'Memory   : '
+    free | awk '/^Mem:/ {printf "%.1f GiB used / %.1f GiB total (%d%%)\n", $3/1024/1024, $2/1024/1024, $3/$2*100}'
+    printf '\n%-8s %-7s %-7s %s\n' 'PID' 'CPU%' 'MEM%' 'COMMAND'
+    printf '%-8s %-7s %-7s %s\n' '--------' '-------' '-------' '------------------------------'
+    printf 'Only processes using at least %s%% CPU:\n\n' "$CPU_THRESHOLD"
+    ps -eo pid=,pcpu=,pmem=,comm= --sort=-pcpu | \
+        awk -v threshold="$CPU_THRESHOLD" '$2 >= threshold {
+            printf "%-8s %-7s %-7s %s\n", $1, $2, $3, $4
+            found=1
+            count++
+            if (count >= 12) exit
+        }
+        END { if (!found) print "(no process currently above the threshold)" }'
+    printf '\nUpdated: %s\n' "$(date '+%H:%M:%S')"
+
+    read -rsn1 -t 0.1 key || true
+    [ "${key:-}" = q ] && exit 0
+done

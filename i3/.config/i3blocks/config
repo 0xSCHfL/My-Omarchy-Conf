@@ -46,7 +46,7 @@ interval=10
 separator=false
 
 [load]
-command=echo "| 󰾆 $(awk '{print $1}' /proc/loadavg)"
+command=~/.config/i3blocks/scripts/load
 interval=2
 color=#e5c890
 separator=false

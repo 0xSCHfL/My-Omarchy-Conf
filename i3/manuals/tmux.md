@@ -18,6 +18,9 @@ Ctrl+Space
 |-----|--------|
 | `Prefix r` | Reload tmux config |
 | `Prefix w` | Open custom session/window popup |
+| `Prefix c` | Enter copy-mode |
+| `Prefix N` | Create a new tmux window |
+| `Prefix [` | Enter copy-mode |
 | `v` in copy-mode | Begin selection |
 | `y` in copy-mode | Copy selection |
 

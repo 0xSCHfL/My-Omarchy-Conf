@@ -129,21 +129,7 @@ install_pkgs() {
     $PM_INSTALL "${pkgs[@]}" || echo "  (some packages may not be available on this distro)"
 }
 
-install_all() {
-    echo "Installing packages..."
-    install_pkgs "common" "${COMMON_PKGS[@]}"
-    install_pkgs "i3" "${I3_PKGS[@]}"
-    install_pkgs "dwm" "${DWM_PKGS[@]}"
-
-    if [[ -n "$PM_AUR" ]]; then
-        echo "  → AUR packages..."
-        $PM_AUR -S --needed --noconfirm \
-            impala wiremix auto-cpufreq \
-            python-pywal xob \
-            ttf-iosevka-nerd \
-            voxtype-bin ydotool || true
-    fi
-
+setup_voxtype() {
     # voxtype: add user to input group + download small.en model
     if command -v voxtype &>/dev/null; then
         echo "  → Setting up voxtype dictation..."
@@ -152,8 +138,47 @@ install_all() {
             echo "  → Downloading small.en Whisper model (better accuracy)..."
             voxtype setup model --set small.en 2>/dev/null || echo "  ! Could not set model — run: voxtype setup model"
         fi
+        # GTK4 layer-shell cannot place an OSD on X11/i3. The source package
+        # provides the native frontend, so configure it without overwriting
+        # an existing user-defined OSD section.
+        local local_voxtype_config="$HOME/.config/voxtype/config.toml"
+        if [[ -x /usr/lib/voxtype/voxtype-osd-native && -f "$local_voxtype_config" ]] \
+            && ! grep -q '^\[osd\]' "$local_voxtype_config"; then
+            cat >> "$local_voxtype_config" <<'EOF'
+
+[osd]
+frontend = "native"
+position = "bottom-center"
+margin_px = 24
+EOF
+            echo "  ✓ Voxtype OSD configured for bottom-center"
+        fi
         voxtype setup systemd 2>/dev/null && echo "  ✓ voxtype systemd service set up"
     fi
+}
+
+install_all() {
+    echo "Installing packages..."
+    install_pkgs "common" "${COMMON_PKGS[@]}"
+    install_pkgs "i3" "${I3_PKGS[@]}"
+    install_pkgs "dwm" "${DWM_PKGS[@]}"
+
+    if [[ -n "$PM_AUR" ]]; then
+        echo "  → AUR packages..."
+        # Use the source package: voxtype-bin ships GTK4 only, while i3/X11
+        # needs the native OSD frontend for a reliable bottom-center overlay.
+        if [[ "$PM" == "pacman" ]] && pacman -Qq voxtype-bin &>/dev/null; then
+            echo "  → Replacing voxtype-bin with voxtype (native OSD support)..."
+            sudo pacman -R --noconfirm voxtype-bin
+        fi
+        $PM_AUR -S --needed --noconfirm \
+            impala wiremix auto-cpufreq \
+            python-pywal xob \
+            ttf-iosevka-nerd \
+            voxtype ydotool || true
+    fi
+
+    setup_voxtype
 
     if command -v touchegg &>/dev/null && command -v systemctl &>/dev/null; then
         echo "  → Setting up touchpad gestures..."
@@ -622,10 +647,15 @@ case "${1:-stow}" in
                 install_pkgs "i3" "${I3_PKGS[@]}"
                 if [[ -n "$PM_AUR" ]]; then
                     echo "  → AUR packages..."
+                    if [[ "$PM" == "pacman" ]] && pacman -Qq voxtype-bin &>/dev/null; then
+                        echo "  → Replacing voxtype-bin with voxtype (native OSD support)..."
+                        sudo pacman -R --noconfirm voxtype-bin
+                    fi
                     $PM_AUR -S --needed --noconfirm \
                         ttf-iosevka-nerd \
-                        xob || true
+                        xob voxtype ydotool || true
                 fi
+                setup_voxtype
                 ;;
             all|"") install_all ;;
             *) echo "Usage: $0 packages [i3|all]"; exit 1 ;;

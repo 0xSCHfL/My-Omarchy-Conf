@@ -22,7 +22,7 @@ selected=$(list_text | fzf \
     --preview-window "right:40%:wrap" \
     --bind "ctrl-j:down" \
     --bind "ctrl-k:up" \
-    --bind "ctrl-d:execute-silent(cliphist delete <<< {})+reload(list_text)" \
+    --bind "ctrl-d:execute-silent(i3-cliphist-delete {})+reload(list_text)" \
     --header "enter:copy  ctrl-d:delete  esc:quit")
 
 [ -n "$selected" ] && cliphist decode <<< "$selected" | xclip -selection clipboard

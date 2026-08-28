@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+# System load indicator. Left-click opens the readable CPU monitor.
+load=$(awk '{print $1}' /proc/loadavg)
+printf '| 󰾆 %s\n' "$load"
+printf '\n#e5c890\n'
+
+case "${BLOCK_BUTTON:-}" in
+    1) setsid -f alacritty --class i3-load-popup -e i3-load-monitor ;;
+esac

@@ -1,0 +1,9 @@
+#!/bin/bash
+# Delete one selected entry from cliphist.
+set -euo pipefail
+
+if [ "$#" -gt 0 ]; then
+    printf '%s\n' "$1" | cliphist delete
+else
+    cliphist delete
+fi

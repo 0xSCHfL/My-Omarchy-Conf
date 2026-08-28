@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# Generate btop's live theme from the colors produced by pywal.
+set -euo pipefail
+
+colors_json="$HOME/.cache/wal/colors.json"
+theme_dir="$HOME/.config/btop/themes"
+theme_file="$theme_dir/current.theme"
+
+[ -f "$colors_json" ] || exit 0
+mkdir -p "$theme_dir"
+
+tmp_file=$(mktemp "$theme_dir/.current.theme.XXXXXX")
+trap 'rm -f "$tmp_file"' EXIT
+
+python3 - "$colors_json" > "$tmp_file" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as stream:
+    data = json.load(stream)
+
+special = data["special"]
+colors = data["colors"]
+bg = special["background"]
+fg = special["foreground"]
+c = lambda number: colors[f"color{number}"]
+
+theme = {
+    "main_bg": bg,
+    "main_fg": fg,
+    "title": fg,
+    "hi_fg": c(4),
+    "selected_bg": c(4),
+    "selected_fg": bg,
+    "inactive_fg": c(8),
+    "graph_text": c(7),
+    "meter_bg": c(8),
+    "proc_misc": c(5),
+    "cpu_box": c(2),
+    "mem_box": c(3),
+    "net_box": c(4),
+    "proc_box": c(6),
+    "div_line": c(8),
+    "temp_start": c(2), "temp_mid": c(3), "temp_end": c(1),
+    "cpu_start": c(2), "cpu_mid": c(3), "cpu_end": c(1),
+    "free_start": c(2), "free_mid": c(3), "free_end": c(4),
+    "cached_start": c(6), "cached_mid": c(5), "cached_end": c(4),
+    "available_start": c(2), "available_mid": c(6), "available_end": c(7),
+    "used_start": c(2), "used_mid": c(3), "used_end": c(1),
+    "download_start": c(2), "download_mid": c(5), "download_end": c(4),
+    "upload_start": c(6), "upload_mid": c(5), "upload_end": c(4),
+    "process_start": c(2), "process_mid": c(3), "process_end": c(4),
+}
+
+print("# Generated from Pywal colors.json")
+for key, value in theme.items():
+    print(f'theme[{key}]="{value}"')
+PY
+
+mv "$tmp_file" "$theme_file"
+trap - EXIT

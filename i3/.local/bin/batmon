@@ -1,7 +1,7 @@
 #!/bin/bash
 
 THRESHOLD=20
-SUSPEND_THRESHOLD=5
+HIBERNATE_THRESHOLD=5
 FLAG_LOW="/tmp/batmon_low"
 FLAG_FULL="/tmp/batmon_full"
 FLAG_SUSPENDED="/tmp/batmon_suspended"
@@ -31,18 +31,19 @@ while true; do
             rm -f "$FLAG_FULL"
         fi
 
-        # Critical suspend: when discharging and at/below the
-        # suspend threshold, fire systemctl suspend exactly once.
-        # xss-lock will lock the screen first; on resume the charger
-        # must be present or you'll boot straight into a fresh
-        # shutdown. Re-arm on charge so a future discharge can trigger
-        # again.
-        if [[ "$status" == "Discharging" && "$level" -le "$SUSPEND_THRESHOLD" ]]; then
+        # Critical hibernate: when discharging and at/below the
+        # suspend threshold, hibernate exactly once. Plain suspend keeps
+        # consuming battery and can end in an uncontrolled power loss.
+        # Re-arm on charge so a future discharge can trigger again.
+        if [[ "$status" == "Discharging" && "$level" -le "$HIBERNATE_THRESHOLD" ]]; then
             if [ ! -f "$FLAG_SUSPENDED" ]; then
-                notify-send -u critical -t 15000 "🔌 Suspending" "Battery at ${level}% — going to sleep now."
+                notify-send -u critical -t 15000 "🔌 Hibernating" "Battery at ${level}% — saving your session now."
                 touch "$FLAG_SUSPENDED"
                 sleep 2
-                systemctl suspend
+                if ! systemctl hibernate; then
+                    notify-send -u critical -t 15000 "⚠️ Hibernate failed" "Powering off to prevent battery damage."
+                    systemctl poweroff
+                fi
             fi
         elif [[ "$status" == "Charging" || "$status" == "Full" ]]; then
             rm -f "$FLAG_SUSPENDED"
