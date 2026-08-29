@@ -127,7 +127,6 @@ Colorized blocks with nerd font icons — each block has its own color matching 
 | `Alt+Tab` | Cycle windows (propagates maximize state) |
 | `Super+Ctrl+X` | Dictation toggle (voxtype auto-types at cursor) |
 | `Super+Ctrl+E` | Emoji picker |
-| `Super+Ctrl+V` | Clipboard history (cliphist + rofi) |
 | `Super+V` | Alternate clipboard history (cliphist + fzf) |
 | `Super+Shift+V` | Image clipboard history |
 | `Super+Ctrl+W` | Wifi TUI (impala) |

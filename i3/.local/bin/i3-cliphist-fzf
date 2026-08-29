@@ -25,4 +25,4 @@ selected=$(list_text | fzf \
     --bind "ctrl-d:execute-silent(i3-cliphist-delete {})+reload(list_text)" \
     --header "enter:copy  ctrl-d:delete  esc:quit")
 
-[ -n "$selected" ] && cliphist decode <<< "$selected" | xclip -selection clipboard
+[ -n "$selected" ] && cliphist decode <<< "$selected" | setsid -f xclip -selection clipboard -i -quiet >/dev/null 2>&1

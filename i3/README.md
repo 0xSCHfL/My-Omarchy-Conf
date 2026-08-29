@@ -80,9 +80,7 @@ dotfiles/i3/
 | Search (inside control menu) | Search and launch apps, tools, capture, power, reminders, and Windows VM |
 | `Super+Ctrl+Space` → Setup → Windows VM | Install, configure, launch, status, or stop a Docker Windows VM |
 | `Super+Shift+i` | Image picker (fzfub) |
-| `Super+Ctrl+v` | Text clipboard history (cliphist + rofi) |
-| `Super+Shift+v` | Image clipboard history |
-| `Super+v` | Alternate text clipboard history (cliphist + fzf) |
+| `Super+v` | Combined text and image clipboard history |
 | `Super+n` | Notes |
 | `Super+Ctrl+n` | Notification history |
 | `Print` | Screenshot → clipboard (maim) |

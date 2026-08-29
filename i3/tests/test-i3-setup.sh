@@ -97,6 +97,7 @@ check_config_line 'Mod4\+Shift\+c.*chromium --ozone-platform=x11' 'Chromium uses
 check_config_line 'class="\^?Bitwarden\$?' 'Bitwarden floating rule'
 check_config_line 'class="i3-load-popup"' 'load popup floating rule'
 check_config_line 'class="i3-windows-vm"' 'Windows VM popup floating rule'
+check_config_line 'class="i3-clipboard-picker"' 'combined clipboard popup floating rule'
 check_config_line 'Mod4\+Ctrl\+space.*i3-menu' 'control menu binding'
 check_config_line 'Mod4\+Ctrl\+c.*i3-capture-menu' 'unified capture menu binding'
 
@@ -116,6 +117,7 @@ scripts=(
     .local/bin/i3-capture-menu
     .local/bin/i3-reminder
     .local/bin/i3-windows-vm
+    .local/bin/i3-clipboard-picker
     .local/bin/i3-menu
     .config/i3/scripts/media/volume-osd.sh
     .config/i3/scripts/media/brightness-osd.sh

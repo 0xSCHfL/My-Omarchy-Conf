@@ -13,7 +13,7 @@ while true; do
         -p 'Clipboard:')
 
     case $? in
-        0)  cliphist decode <<< "$sel" | xclip -selection clipboard; break ;;
+        0)  cliphist decode <<< "$sel" | setsid -f xclip -selection clipboard -i -quiet >/dev/null 2>&1; break ;;
         10) cliphist delete <<< "$sel" ;;  # delete and stay open
         *)  break ;;                        # Escape/cancel → close
     esac

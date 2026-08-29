@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
+  <rect width="640" height="360" rx="28" fill="#1b120d"/>
+  <rect x="24" y="24" width="592" height="312" rx="20" fill="#2d1b14" stroke="#d98752" stroke-width="4"/>
+  <circle cx="160" cy="180" r="74" fill="#67c7ff"/>
+  <path d="M128 184l22 22 46-52" fill="none" stroke="#1b120d" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="270" y="170" fill="#f0d6bd" font-family="sans-serif" font-size="38">Clipboard</text>
+  <text x="270" y="220" fill="#d98752" font-family="sans-serif" font-size="28">image preview test</text>
+</svg>

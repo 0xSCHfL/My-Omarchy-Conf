@@ -2,8 +2,20 @@
 # Clipboard history daemon — pipes clipboard changes into cliphist
 
 LAST=""
+
+read_clipboard() {
+    local target clip
+    for target in UTF8_STRING text/plain STRING; do
+        if clip=$(timeout 2 xclip -o -selection clipboard -target "$target" 2>/dev/null); then
+            printf '%s' "$clip"
+            return 0
+        fi
+    done
+    return 1
+}
+
 while true; do
-    clip=$(timeout 2 xclip -o -selection clipboard 2>/dev/null)
+    clip=$(read_clipboard || true)
     if [ -n "$clip" ] && [ "$clip" != "$LAST" ]; then
         printf '%s' "$clip" | cliphist store
         LAST="$clip"

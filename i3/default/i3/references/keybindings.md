@@ -123,9 +123,7 @@ Mod = Super (Windows key)
 
 | Key | Action |
 |-----|--------|
-| `Mod+Ctrl+v` | Text clipboard history (cliphist + rofi) |
-| `Mod+Shift+v` | Image clipboard history (i3-imgcliphist) |
-| `Mod+v` | Alternate text clipboard history (cliphist + fzf) |
+| `Mod+v` | Combined text and image clipboard history |
 | `Mod+Shift+i` | Image picker (fzfub + ueberzugpp) |
 
 ## Wallpaper

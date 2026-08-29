@@ -166,7 +166,7 @@ for_window [class="i3-calendar"] floating enable, border pixel 1, move position 
 for_window [title="Calendar"] floating enable, border pixel 1, move position 780 px 34 px
 for_window [class="i3-windows-vm"] floating enable, resize set 900 700, move position center
 for_window [class="fzfmenu"] floating enable, move position center
-for_window [class="i3-cliphist-fzf"] floating enable, resize set 1000 500, move position center
+for_window [class="i3-clipboard-picker"] floating enable, resize set 860 256, move position center
 for_window [class="fzf"] floating enable, move position center
 for_window [class="Walker"] floating enable, resize set 644 300, move position center
 for_window [class="walker"] floating enable, resize set 644 300, move position center
@@ -222,7 +222,7 @@ bindsym Mod4+Shift+s exec bash -c 'rm -f ~/.var/app/com.spotify.Client/cache/spo
 bindsym Mod4+Shift+Mod1+b exec --no-startup-id i3-brave --incognito
 # Open Chromium (X11) (chromium); let Chromium manage its profile lock.
 bindsym Mod4+Shift+c exec --no-startup-id chromium --ozone-platform=x11
-# Super+Shift+v merged into Super+v (combined text+image picker)
+# Combined text and image clipboard picker
 # System monitor in terminal (btop)
 bindsym Mod4+Shift+t exec --no-startup-id kitty -e btop
 # Pomodoro/timer menu (timer)
@@ -454,14 +454,8 @@ bindsym Mod4+n exec --no-startup-id notes
 bindsym Mod4+Ctrl+n exec --no-startup-id bash $HOME/.config/i3/scripts/notifications/notifications.sh
 # Neovim in a terminal (nvim)
 bindsym Mod4+Shift+n exec --no-startup-id kitty -e nvim
-# Clipboard history via rofi
-# Text clipboard history, rofi (i3-cliphist-pick)
-bindsym Mod4+Ctrl+v exec --no-startup-id i3-cliphist-pick
-# Image clipboard history with previews (i3-imgcliphist)
-bindsym Mod4+Shift+v exec --no-startup-id i3-imgcliphist
-# Alternate clipboard history via fzf
-# Text clipboard history, fzf with preview (i3-cliphist-fzf)
-bindsym Mod4+v exec --no-startup-id alacritty --class i3-cliphist-fzf -e i3-cliphist-fzf
+# Combined text and image clipboard history (fzf + chafa)
+bindsym Mod4+v exec --no-startup-id alacritty --class i3-clipboard-picker -e i3-clipboard-picker
 # System menu: lock/suspend/reboot (i3-sys)
 bindsym Mod4+Escape exec --no-startup-id i3-sys
 # Pick & kill a process via rofi (i3-kill)

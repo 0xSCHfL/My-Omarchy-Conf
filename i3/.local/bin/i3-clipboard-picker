@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+# Combined text and image clipboard history picker.
+
+set -u
+
+HIST_DIR="$HOME/.cache/hist"
+SOCKET="${SOCKET:-}"
+
+cleanup_preview() {
+    [[ -n "$SOCKET" ]] && ueberzugpp cmd -s "$SOCKET" -a exit >/dev/null 2>&1 || true
+}
+
+list_items() {
+    cliphist list | awk -F '\t' '$2 !~ /PNG.*IDAT|JPEG|GIF8|RIFF.*WEBP|^\[\[ binary/' | while IFS= read -r item; do
+        printf 'TEXT\t%s\n' "$item"
+    done
+    find "$HIST_DIR" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' -o -iname '*.bmp' -o -iname '*.tiff' \) -printf 'IMAGE\t%p\n' 2>/dev/null | sort -rk2
+}
+
+preview_item() {
+    local item="$1" kind payload
+    kind="${item%%$'\t'*}"
+    payload="${item#*$'\t'}"
+
+    if [[ "$kind" == IMAGE ]]; then
+        if [[ -n "$SOCKET" ]] && command -v ueberzugpp >/dev/null 2>&1; then
+            ueberzugpp cmd -s "$SOCKET" -i fzfpreview -a add \
+                -x "${FZF_PREVIEW_LEFT:-0}" -y "${FZF_PREVIEW_TOP:-0}" \
+                --max-width "${FZF_PREVIEW_COLUMNS:-64}" \
+                --max-height "${FZF_PREVIEW_LINES:-28}" \
+                -f "$payload" >/dev/null 2>&1 || true
+        elif command -v chafa >/dev/null 2>&1; then
+            chafa --format symbols --colors full --symbols block --scale max --animate off --size 64x28 -- "$payload"
+        else
+            file --brief -- "$payload"
+        fi
+    else
+        cliphist decode <<< "$payload" 2>/dev/null || true
+    fi
+}
+
+copy_item() {
+    local item="$1" kind payload mime
+    kind="${item%%$'\t'*}"
+    payload="${item#*$'\t'}"
+
+    if [[ "$kind" == IMAGE ]]; then
+        mime=$(file -b --mime-type -- "$payload" 2>/dev/null || printf 'image/png')
+        setsid -f xclip -selection clipboard -target "$mime" -i -quiet < "$payload" >/dev/null 2>&1
+    else
+        cliphist decode <<< "$payload" | setsid -f xclip -selection clipboard -i -quiet >/dev/null 2>&1
+    fi
+}
+
+case "${1:-pick}" in
+    --preview)
+        preview_item "${2:-}"
+        exit 0
+        ;;
+    pick)
+        if command -v ueberzugpp >/dev/null 2>&1 && command -v uuidgen >/dev/null 2>&1; then
+            preview_pid_file="/tmp/.i3-clipboard-picker-$(uuidgen)"
+            ueberzugpp layer --no-stdin --silent --pid-file "$preview_pid_file" >/dev/null 2>&1
+            for _ in {1..40}; do
+                [[ -s "$preview_pid_file" ]] && break
+                sleep 0.05
+            done
+            if [[ -s "$preview_pid_file" ]]; then
+                preview_pid=$(<"$preview_pid_file")
+                SOCKET="/tmp/ueberzugpp-$preview_pid.socket"
+                export SOCKET
+                trap cleanup_preview EXIT HUP INT TERM
+            fi
+            rm -f "$preview_pid_file"
+        fi
+        selected=$(list_items | fzf \
+            --prompt 'Clipboard: ' \
+            --layout reverse \
+            --no-sort \
+            --delimiter $'\t' \
+            --with-nth '2..' \
+            --preview "$0 --preview {}" \
+            --preview-window 'right:48%:wrap' \
+            --bind 'ctrl-j:down' \
+            --bind 'ctrl-k:up' \
+            --header 'enter:copy  ctrl-j/k:scroll  esc:quit') || exit 0
+        [[ -n "$selected" ]] && copy_item "$selected"
+        ;;
+esac
