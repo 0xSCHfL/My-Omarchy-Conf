@@ -119,6 +119,8 @@ scripts=(
     .local/bin/i3-windows-vm
     .local/bin/i3-clipboard-picker
     .local/bin/i3-cliphist-reset
+    .local/bin/i3-keys
+    .local/bin/i3-notification-sound-picker
     .local/bin/i3-menu
     .config/i3/scripts/media/volume-osd.sh
     .config/i3/scripts/media/brightness-osd.sh

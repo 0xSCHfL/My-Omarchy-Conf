@@ -3,10 +3,12 @@
 
 CONFIG="$HOME/.config/i3/config"
 ROFI_THEME="$HOME/.config/rofi/i3-help.rasi"
-ROFI_NAV=(-kb-row-up "k,Up" -kb-row-down "j,Down" -kb-cancel "Escape,h,q")
+ROFI_NAV=(-kb-row-up "Up" -kb-row-down "Down" -kb-cancel "Escape")
 
 rofi_menu() {
-    rofi -dmenu -no-sort -i -theme "$ROFI_THEME" "${ROFI_NAV[@]}" -p "$1"
+    rofi -dmenu -no-sort -i -no-custom -matching fuzzy \
+        -theme "$ROFI_THEME" "${ROFI_NAV[@]}" \
+        -p "$1" -mesg 'Search all keybindings  •  ↑/↓ move  •  Esc close'
 }
 
 categorize() {
@@ -83,14 +85,10 @@ categorize() {
 
 bindings=$(categorize)
 
-while true; do
-    main=$(printf '%s\n' "$bindings" | cut -f1 | sort -u | rofi_menu "i3 Keys")
-    [ -z "$main" ] && exit 0
+# Present every binding in one searchable list, like Omarchy's keybindings
+# palette. Searching now matches the key, category, subcategory, or action.
+display_bindings=$(printf '%s\n' "$bindings" | awk -F'\t' '{
+    printf "%-28s  %-24s  %s\n", $3, $1 " / " $2, $4
+}')
 
-    while true; do
-        sub=$(printf '%s\n' "$bindings" | awk -F'\t' -v m="$main" '$1==m {print $2}' | sort -u | rofi_menu "$main")
-        [ -z "$sub" ] && exit 0
-
-        printf '%s\n' "$bindings" | awk -F'\t' -v m="$main" -v s="$sub" '$1==m && $2==s {print $3}' | rofi_menu "$main › $sub" >/dev/null
-    done
-done
+printf '%s\n' "$display_bindings" | rofi_menu "Keys" >/dev/null

@@ -71,7 +71,7 @@ Mod = Super (Windows key)
 | `Mod+Escape` | System menu: suspend/reboot/shutdown (i3-sys) |
 | `Mod+Delete` | Process killer (i3-kill) |
 | `Mod+x` | Lock screen (i3lock-color + maim blur) |
-| `Mod+Ctrl+k` | Keybinding cheatsheet (i3-keys) |
+| `Mod+Alt+k` | Keybinding cheatsheet (i3-keys) |
 | `Mod+Alt+k` | Keybinding cheatsheet (i3-keys) |
 | `Mod+Alt+c` | Run i3-check in a popup terminal |
 | `Mod+Alt+m` | Local manuals / Learn menu (i3-manuals) |

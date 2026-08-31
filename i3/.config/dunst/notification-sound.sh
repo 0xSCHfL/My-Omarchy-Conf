@@ -2,7 +2,14 @@
 
 set -u
 
-sound_file="${DUNST_SOUND_FILE:-/usr/share/sounds/freedesktop/stereo/message.oga}"
+sound_path_file="${DUNST_SOUND_PATH_FILE:-${XDG_STATE_HOME:-$HOME/.local/state}/dunst/notification-sound.path}"
+if [[ -n "${DUNST_SOUND_FILE:-}" ]]; then
+    sound_file="$DUNST_SOUND_FILE"
+elif [[ -r "$sound_path_file" ]]; then
+    sound_file=$(<"$sound_path_file")
+else
+    sound_file='/usr/share/sounds/freedesktop/stereo/message.oga'
+fi
 state_file="${DUNST_SOUND_STATE_FILE:-${XDG_STATE_HOME:-$HOME/.local/state}/dunst/notification-sound.disabled}"
 
 [ -r "$sound_file" ] || exit 0

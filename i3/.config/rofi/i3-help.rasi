@@ -1,5 +1,10 @@
-/* i3 keybinding help — simple readable sheet */
+/* i3 keybinding help — Omarchy-inspired searchable palette */
 @import "~/.cache/wal/colors-rofi-dwm.rasi"
+
+configuration {
+    matching: "fuzzy";
+    show-icons: false;
+}
 
 * {
     bg:          @wal-bg;
@@ -18,53 +23,58 @@
 
 window {
     location:         center;
-    width:            820px;
-    border:           1px;
-    border-radius:    10px;
+    width:            860px;
+    border:           2px;
+    border-radius:    4px;
     border-color:     @border;
     background-color: @bg;
 }
 
 mainbox {
-    padding: 14px 0;
-    spacing: 8px;
+    padding: 18px;
+    spacing: 12px;
 }
 
 inputbar {
-    padding: 4px 18px 12px 18px;
+    padding: 10px 12px;
     spacing: 8px;
-    children: [ prompt ];
+    border-radius: 2px;
+    background-color: rgba(255, 255, 255, 0.05);
+    children: [ prompt, entry ];
 }
 
 prompt {
-    font:       "Iosevka Nerd Font Bold 13";
+    font:       "Iosevka Nerd Font Bold 14";
     text-color: @prompt;
 }
 
 entry {
-    font:              "Iosevka Nerd Font 13";
-    placeholder:       "search keys...";
+    font:              "Iosevka Nerd Font 14";
+    placeholder:       "Search keybindings...";
     placeholder-color: @fg-dim;
 }
 
 listview {
-    lines:        12;
+    lines:        16;
     columns:      1;
     fixed-height: false;
+    spacing:      4px;
     border:       1px 0 0 0;
     border-color: @border;
-    padding:      6px 0 0 0;
+    padding:      10px 0 0 0;
 }
 
 element {
-    padding:      8px 18px;
-    border:       0 0 0 3px;
+    padding:      9px 12px;
+    border:       1px;
     border-color: transparent;
+    border-radius: 2px;
+    background-color: transparent;
 }
 
 element selected normal {
-    border-color:     @prompt;
-    background-color: rgba(255, 255, 255, 0.04);
+    border-color:     @accent;
+    background-color: rgba(255, 255, 255, 0.10);
 }
 
 element-text {

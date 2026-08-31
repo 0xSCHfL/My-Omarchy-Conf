@@ -17,6 +17,7 @@ displayed = run("dunstctl", "count", "displayed") or "0"
 
 items = [
     f"{'Resume notifications' if paused == 'true' else 'Pause notifications'}",
+    "Change notification sound",
     f"Notification history ({history})",
     f"Close visible notifications ({displayed})",
     "Pop last notification",
@@ -31,6 +32,9 @@ PY
 case "$choice" in
   "Pause notifications"|"Resume notifications")
     dunstctl set-paused toggle
+    ;;
+  "Change notification sound")
+    i3-notification-sound-picker
     ;;
   "Notification history ("*)
     selected_id=$(

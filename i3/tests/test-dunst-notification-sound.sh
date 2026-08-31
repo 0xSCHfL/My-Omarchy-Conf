@@ -17,6 +17,7 @@ fail() { printf '  FAIL  %s\n' "$*"; exit 1; }
 [ -x "$SCRIPT" ] || fail 'notification sound script is not executable'
 [ -x "$TOGGLE" ] || fail 'notification sound toggle is not executable'
 grep -q '^\[notification_sound\]$' "$GENERATOR" || fail 'Dunst sound rule missing'
+grep -q 'desktop_entry = "chatgpt"' "$GENERATOR" || fail 'Dunst sound rule is not restricted to ChatGPT'
 grep -q 'script = ~/.config/dunst/notification-sound.sh' "$GENERATOR" || fail 'Dunst sound script path missing'
 grep -q 'Mod4+Ctrl+Shift+comma.*i3-notification-sound-toggle' "$I3_CONFIG" || fail 'sound toggle keybinding missing'
 

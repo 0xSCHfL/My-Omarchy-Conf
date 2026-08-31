@@ -18,11 +18,27 @@ if (( ${#players[@]} == 0 )); then
 fi
 
 entries=()
+playing_players=()
+other_players=()
+declare -A player_status player_metadata
+
 for player in "${players[@]}"; do
   status="$("$playerctl_bin" -p "$player" status 2>/dev/null || printf 'Unknown')"
   metadata="$("$playerctl_bin" -p "$player" metadata --format '{{artist}} — {{title}}' 2>/dev/null || true)"
   [[ -n "$metadata" ]] || metadata="No track information"
-  entries+=("$player [$status] — $metadata")
+  player_status["$player"]="$status"
+  player_metadata["$player"]="$metadata"
+  if [[ "$status" == Playing ]]; then
+    playing_players+=("$player")
+  else
+    other_players+=("$player")
+  fi
+done
+
+# Put the active player first while preserving playerctl's order for ties.
+players=("${playing_players[@]}" "${other_players[@]}")
+for player in "${players[@]}"; do
+  entries+=("$player [${player_status[$player]}] — ${player_metadata[$player]}")
 done
 
 selected_index="$(

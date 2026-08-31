@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# Choose and persist a custom Dunst notification sound with Yazi.
+
+set -euo pipefail
+
+terminal_bin="${TERMINAL_BIN:-alacritty}"
+rofi_bin="${ROFI_BIN:-rofi}"
+sound_path_file="${DUNST_SOUND_PATH_FILE:-${XDG_STATE_HOME:-$HOME/.local/state}/dunst/notification-sound.path}"
+default_sound_dir="$HOME/Music/Notification Sounds"
+start_dir="${NOTIFICATION_SOUND_START_DIR:-$default_sound_dir}"
+[[ -d "$start_dir" ]] || start_dir="$HOME/Music"
+[[ -d "$start_dir" ]] || start_dir="$HOME"
+
+notify() {
+    command -v notify-send >/dev/null 2>&1 && notify-send "$@" || true
+}
+
+command -v "$rofi_bin" >/dev/null 2>&1 || {
+    notify 'Notification sound' "Rofi not found: $rofi_bin"
+    exit 1
+}
+
+app=$(printf 'ChatGPT\n' | "$rofi_bin" -dmenu -i -no-custom \
+    -p 'Sound for' -theme "$HOME/.config/rofi/i3-launcher.rasi")
+[[ "$app" == ChatGPT ]] || exit 0
+
+command -v "$terminal_bin" >/dev/null 2>&1 || {
+    notify 'Notification sound' "Terminal not found: $terminal_bin"
+    exit 1
+}
+command -v yazi >/dev/null 2>&1 || {
+    notify 'Notification sound' 'Yazi is required to choose a sound'
+    exit 1
+}
+command -v file >/dev/null 2>&1 || {
+    notify 'Notification sound' 'The file command is required to validate audio'
+    exit 1
+}
+
+chooser_file=$(mktemp)
+trap 'rm -f -- "$chooser_file"' EXIT
+
+"$terminal_bin" --class i3-notification-sound-picker -e yazi \
+    --chooser-file="$chooser_file" "$start_dir"
+
+selected=''
+[[ -s "$chooser_file" ]] && IFS= read -r selected < "$chooser_file"
+[[ -n "$selected" ]] || exit 0
+
+if [[ ! -f "$selected" ]]; then
+    notify 'Notification sound' 'The selected path is not a file'
+    exit 1
+fi
+
+mime=$(file --brief --mime-type -- "$selected")
+if [[ "$mime" != audio/* ]]; then
+    notify 'Notification sound' 'Please select an audio file'
+    exit 1
+fi
+
+mkdir -p "$(dirname "$sound_path_file")"
+printf '%s\n' "$selected" > "$sound_path_file"
+dunstctl reload >/dev/null 2>&1 || true
+notify 'Notification sound' "Now using: ${selected##*/}"

@@ -7,13 +7,17 @@ fi
 
 case "${1:-}" in
   -l)
-    printf 'spotify\nchromium\n'
+    printf 'chromium\nspotify\n'
     ;;
   -p)
     player="${2:-}"
     case "${3:-}" in
       status)
-        printf '%s\n' "${player/spotify/Paused}"
+        if [[ "$player" == "spotify" ]]; then
+          printf 'Playing\n'
+        else
+          printf 'Paused\n'
+        fi
         ;;
       metadata)
         if [[ "$player" == "spotify" ]]; then

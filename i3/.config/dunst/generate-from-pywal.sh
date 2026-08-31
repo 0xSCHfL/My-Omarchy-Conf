@@ -35,7 +35,7 @@ foreground = "$foreground"
 timeout = 30
 
 [notification_sound]
-appname = "*"
+desktop_entry = "chatgpt"
 script = ~/.config/dunst/notification-sound.sh
 EOF
 

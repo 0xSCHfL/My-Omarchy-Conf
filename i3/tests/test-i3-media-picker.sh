@@ -15,9 +15,9 @@ if ! "$repo_dir/.config/i3/scripts/media/i3-media-picker.sh"; then
   exit 1
 fi
 
-grep -F -- "-p chromium play-pause" "$MEDIA_PICKER_TEST_LOG" >/dev/null
-if grep -F -- "-p spotify play-pause" "$MEDIA_PICKER_TEST_LOG" >/dev/null; then
-  echo "media picker toggled the wrong player" >&2
+grep -F -- "-p spotify play-pause" "$MEDIA_PICKER_TEST_LOG" >/dev/null
+if grep -F -- "-p chromium play-pause" "$MEDIA_PICKER_TEST_LOG" >/dev/null; then
+  echo "media picker toggled the inactive player" >&2
   exit 1
 fi
 

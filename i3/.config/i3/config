@@ -27,6 +27,9 @@ set_from_resource $wal_alert color1 #d75f5f
 set_from_resource $wal_panel background #262626
 
 default_border none
+# Choose the next split direction from the current container shape, like
+# automatic tiling in Hyprland, instead of always opening to the right.
+default_orientation auto
 
 # Hide the blue tiling drag indicator
 client.focused          $wal_bg $wal_bg $wal_fg $wal_bg $wal_bg
@@ -169,6 +172,7 @@ for_window [title="Calendar"] floating enable, border pixel 1, move position 780
 for_window [class="i3-windows-vm"] floating enable, resize set 900 700, move position center
 for_window [class="fzfmenu"] floating enable, move position center
 for_window [class="i3-clipboard-picker"] floating enable, resize set 1000 256, move position center
+for_window [class="i3-notification-sound-picker"] floating enable, resize set 900 650, move position center
 for_window [class="fzf"] floating enable, move position center
 for_window [class="Walker"] floating enable, resize set 644 300, move position center
 for_window [class="walker"] floating enable, resize set 644 300, move position center
@@ -421,7 +425,7 @@ bindsym Mod4+Print exec --no-startup-id i3-screenrecord
 # OCR a screen region into clipboard (i3-ocr)
 bindsym Mod4+Ctrl+Print exec --no-startup-id i3-ocr
 # Keybindings help, auto-generated (i3-keys)
-bindsym Mod4+Ctrl+k exec --no-startup-id $HOME/.local/bin/i3-keys
+bindsym Mod4+Mod1+k exec --no-startup-id $HOME/.local/bin/i3-keys
 # Emoji picker via rofimoji (i3-emojipick)
 bindsym Mod4+Ctrl+e exec --no-startup-id $HOME/.local/bin/i3-emojipick
 # CPU frequency / power profile menu (i3-cpufreq)
