@@ -23,17 +23,34 @@ empty=$(( bar_width - filled ))
 
 if [ "$muted" = "yes" ]; then
   label="Muted"
+  icon="audio-volume-muted"
   bar="$(printf '%*s' "$bar_width" '' | tr ' ' '#')"
   percent=0
 else
   label="${vol}%"
+  if [ "$vol" -le 33 ]; then
+    icon="audio-volume-low"
+  elif [ "$vol" -le 66 ]; then
+    icon="audio-volume-medium"
+  else
+    icon="audio-volume-high"
+  fi
   bar="$(printf '%*s' "$filled" '' | tr ' ' '#')$(printf '%*s' "$empty" '' | tr ' ' '-')"
   percent="$vol"
 fi
 
-popup_text=$(printf '<span font="Iosevka 14"><b>Volume</b></span>\n<span font="Iosevka 11">%s</span>' "$label")
+popup_text=$(printf '<b><span font="Iosevka 14">Volume</span></b>\n<span font="Iosevka 12">%s</span>' "$label")
 
-# YAD displays both the numeric percentage and the progress bar.
+screen_width=$(xdpyinfo 2>/dev/null | awk '/dimensions:/ && !found {split($2, size, "x"); print size[1]; found=1}')
+screen_height=$(xdpyinfo 2>/dev/null | awk '/dimensions:/ && !found {split($2, size, "x"); print size[2]; found=1}')
+screen_width=${screen_width:-1920}
+screen_height=${screen_height:-1080}
+popup_width=360
+popup_height=120
+popup_x=$(( (screen_width - popup_width) / 2 ))
+popup_y=$(( screen_height - popup_height - 48 ))
+
+# YAD displays the percentage in the label and one clean progress indicator.
 if ! command -v yad >/dev/null 2>&1; then
   # xob is the lightweight fallback and is already installed by the i3
   # package set. It displays the same Pywal-colored bar without text.
@@ -60,20 +77,20 @@ fi
 
 {
   printf '%s\n' "$percent"
-  sleep 0.8
-} | exec yad \
+  sleep 1.8
+} | yad \
   --progress \
   --title="volume-osd" \
   --text="$popup_text" \
-  --progress-text="$bar" \
-  --center \
+  --image="$icon" \
+  --geometry="${popup_width}x${popup_height}+${popup_x}+${popup_y}" \
   --fixed \
   --undecorated \
   --on-top \
   --skip-taskbar \
   --width=360 \
-  --height=100 \
-  --timeout=1 \
+  --height="$popup_height" \
+  --timeout=2 \
   --auto-close \
   --no-buttons \
-  --borders=18
+  --borders=18 || true

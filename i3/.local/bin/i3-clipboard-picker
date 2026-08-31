@@ -3,22 +3,36 @@
 
 set -u
 
-HIST_DIR="$HOME/.cache/hist"
+HIST_DIR="${CLIPBOARD_HIST_DIR:-$HOME/.cache/hist}"
 SOCKET="${SOCKET:-}"
 
 cleanup_preview() {
     [[ -n "$SOCKET" ]] && ueberzugpp cmd -s "$SOCKET" -a exit >/dev/null 2>&1 || true
 }
 
+clear_preview() {
+    [[ -n "$SOCKET" ]] && ueberzugpp cmd -s "$SOCKET" -i fzfpreview -a remove >/dev/null 2>&1 || true
+}
+
 list_items() {
     cliphist list | awk -F '\t' '$2 !~ /PNG.*IDAT|JPEG|GIF8|RIFF.*WEBP|^\[\[ binary/' | while IFS= read -r item; do
-        printf 'TEXT\t%s\n' "$item"
+        payload="${item#*$'\t'}"
+        if [[ "$payload" == __I3_IMAGE__:* ]]; then
+            path="${payload#__I3_IMAGE__:}"
+            [[ -f "$path" ]] && printf 'IMAGE\t%s\n' "$path"
+        else
+            printf 'TEXT\t%s\n' "$item"
+        fi
     done
-    find "$HIST_DIR" -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' -o -iname '*.bmp' -o -iname '*.tiff' \) -printf 'IMAGE\t%p\n' 2>/dev/null | sort -rk2
 }
 
 preview_item() {
     local item="$1" kind payload
+
+    # fzf reuses the preview pane. Remove the previous image before showing
+    # text or drawing the next image, otherwise it remains stuck on screen.
+    clear_preview
+
     kind="${item%%$'\t'*}"
     payload="${item#*$'\t'}"
 
@@ -52,9 +66,31 @@ copy_item() {
     fi
 }
 
+delete_item() {
+    local item="$1" kind payload
+    kind="${item%%$'\t'*}"
+    payload="${item#*$'\t'}"
+
+    if [[ "$kind" == IMAGE ]]; then
+        marker="__I3_IMAGE__:$payload"
+        cliphist list | awk -F '\t' -v marker="$marker" '$2 == marker {print; exit}' | cliphist delete
+        rm -f -- "$payload"
+    else
+        printf '%s\n' "$payload" | cliphist delete
+    fi
+}
+
 case "${1:-pick}" in
+    --list)
+        list_items
+        exit 0
+        ;;
     --preview)
         preview_item "${2:-}"
+        exit 0
+        ;;
+    --delete)
+        [[ -n "${2:-}" ]] && delete_item "$2"
         exit 0
         ;;
     pick)
@@ -83,7 +119,8 @@ case "${1:-pick}" in
             --preview-window 'right:48%:wrap' \
             --bind 'ctrl-j:down' \
             --bind 'ctrl-k:up' \
-            --header 'enter:copy  ctrl-j/k:scroll  esc:quit') || exit 0
+            --bind "ctrl-d:execute-silent($0 --delete {})+reload($0 --list)" \
+            --header 'enter:copy  ctrl-d:delete  ctrl-j/k:scroll  esc:quit') || exit 0
         [[ -n "$selected" ]] && copy_item "$selected"
         ;;
 esac

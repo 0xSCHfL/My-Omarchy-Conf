@@ -4,7 +4,17 @@
 
 HIST_DIR="$HOME/.cache/hist"
 LOGFILE="/tmp/i3-imgclipwatch.log"
+LOCK_PATH="${CLIPHIST_LOCK_PATH:-$HOME/.cache/cliphist/.lock}"
 mkdir -p "$HIST_DIR"
+
+store_clipboard() {
+    local value="$1"
+    mkdir -p "$(dirname "$LOCK_PATH")"
+    {
+        flock -x 9
+        printf '%s\n' "$value" | cliphist store
+    } 9>"$LOCK_PATH"
+}
 
 prev_checksum=""
 
@@ -38,6 +48,7 @@ while :; do
                 OUTFILE="$HIST_DIR/$(date +%Y-%m-%d_%H-%M-%S).$ext"
                 mv "$TMPFILE" "$OUTFILE"
                 echo "[$(date)] Saved to $OUTFILE" >> "$LOGFILE"
+                store_clipboard "__I3_IMAGE__:$OUTFILE"
                 pkill -f "xclip -selection clipboard -loops" 2>/dev/null || true
                 xclip -selection clipboard -t "$mime" -loops 0 < "$OUTFILE" &
             else

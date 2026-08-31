@@ -87,7 +87,7 @@ fi
 check_config_line '^# Voxtype is started once by the enabled user systemd service' 'voxtype is not duplicated by i3 startup'
 check_config_line 'voxtype-toggle-paste\.sh' 'voxtype shortcut uses the toggle script'
 check_config_line 'exec .*dunst' 'dunst starts from i3 startup'
-check_config_line 'exec_always .*i3-cliphist' 'clipboard history starts from i3 startup'
+check_config_line 'exec .*i3-cliphist' 'clipboard history starts from i3 startup'
 check_config_line 'exec .*xss-lock' 'xss-lock starts from i3 startup'
 check_config_line 'exec_always .*i3-idle' 'idle timer starts from i3 startup'
 check_config_line 'XF86AudioRaiseVolume.*volume-osd\.sh' 'volume-up OSD binding'
@@ -118,6 +118,7 @@ scripts=(
     .local/bin/i3-reminder
     .local/bin/i3-windows-vm
     .local/bin/i3-clipboard-picker
+    .local/bin/i3-cliphist-reset
     .local/bin/i3-menu
     .config/i3/scripts/media/volume-osd.sh
     .config/i3/scripts/media/brightness-osd.sh

@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+set -u
+
+state_file="${DUNST_SOUND_STATE_FILE:-${XDG_STATE_HOME:-$HOME/.local/state}/dunst/notification-sound.disabled}"
+
+if [ -e "$state_file" ]; then
+    rm -f -- "$state_file"
+    notify-send -u low -t 2500 "Notification sound" "Enabled"
+else
+    mkdir -p -- "$(dirname -- "$state_file")"
+    : > "$state_file"
+    notify-send -u low -t 2500 "Notification sound" "Muted (notifications remain visible)"
+fi

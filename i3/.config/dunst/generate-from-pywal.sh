@@ -33,6 +33,10 @@ foreground = "$foreground"
 background = "$color1"
 foreground = "$foreground"
 timeout = 30
+
+[notification_sound]
+appname = "*"
+script = ~/.config/dunst/notification-sound.sh
 EOF
 
 # Restart dunst

@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Reset cliphist completely, including its numeric IDs and saved image files.
+
+set -euo pipefail
+
+DB="${CLIPHIST_DB_PATH:-$HOME/.cache/cliphist/db}"
+LOCK_PATH="${CLIPHIST_LOCK_PATH:-$HOME/.cache/cliphist/.lock}"
+HIST_DIR="${CLIPBOARD_HIST_DIR:-$HOME/.cache/hist}"
+
+mkdir -p "$(dirname "$DB")" "$(dirname "$LOCK_PATH")"
+
+{
+    flock -x 9
+
+    if [[ -e "$DB" ]]; then
+        cliphist -db-path "$DB" wipe
+        rm -f -- "$DB"
+    fi
+
+    if [[ -d "$HIST_DIR" ]]; then
+        find "$HIST_DIR" -maxdepth 1 -type f \
+            \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' \
+            -o -iname '*.webp' -o -iname '*.bmp' -o -iname '*.tiff' \) \
+            -delete
+    fi
+} 9>"$LOCK_PATH"
+
+printf 'cliphist reset complete\n'

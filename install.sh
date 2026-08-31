@@ -255,8 +255,16 @@ stow_i3() {
     _backup_if_plain_file "$HOME/.config/dunst/dunstrc"
     _backup_if_plain_file "$HOME/.config/picom/picom.conf"
     _backup_if_plain_file "$HOME/.config/alacritty/alacritty.toml"
+    _backup_if_plain_file "$HOME/.config/systemd/user/cliphist-wipe.service"
+    _backup_if_plain_file "$HOME/.config/systemd/user/cliphist-wipe.timer"
     _stow_pkg "$DOTFILES" i3 --ignore='^shell$' --ignore='^sddm-theme$' --ignore='^default$'
     _stow_pkg "$DOTFILES/i3" shell
+
+    if command -v systemctl &>/dev/null && systemctl --user list-unit-files >/dev/null 2>&1; then
+        systemctl --user daemon-reload
+        systemctl --user enable --now cliphist-wipe.timer 2>/dev/null \
+            && echo "  ✓ Clipboard history reset timer enabled"
+    fi
 
     # Deploy smartctl-safe to /usr/local/bin for sudo access
     if [[ -f "$DOTFILES/i3/.local/bin/smartctl-safe" ]]; then

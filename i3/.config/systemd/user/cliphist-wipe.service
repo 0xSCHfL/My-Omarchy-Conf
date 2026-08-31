@@ -1,0 +1,6 @@
+[Unit]
+Description=Reset clipboard history
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/i3-cliphist-reset

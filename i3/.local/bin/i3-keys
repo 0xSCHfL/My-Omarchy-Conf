@@ -17,7 +17,7 @@ categorize() {
             if (cmd ~ /playerctl|pactl|volume-osd/) return "Volume & Player"
             if (cmd ~ /brightnessctl/) return "Brightness"
             if (cmd ~ /i3-launch-wifi|i3-launch-vpn|vortix|impala/) return "Network"
-            if (cmd ~ /dunstctl/) return "Notifications"
+            if (cmd ~ /dunstctl|notification-sound/) return "Notifications"
             if (cmd ~ /cliphist/) return "Clipboard"
             if (cmd ~ /screenshot|screenrecord|i3-ocr/) return "Screenshots"
             if (cmd ~ /wallpaper|i3-imgpicker/) return "Wallpaper"

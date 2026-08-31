@@ -81,8 +81,8 @@ exec --no-startup-id $HOME/.config/i3/scripts/wallpaper/wallpaper-set.sh
 exec --no-startup-id tmux start-server
 # Watch for Linphone popup windows; re-pin them after a 3s grace.
 exec_always --no-startup-id setsid -f $HOME/.local/bin/linphone-popup-watcher
-exec_always --no-startup-id setsid -f bash $HOME/.local/bin/i3-cliphist
-exec_always --no-startup-id setsid -f $HOME/.local/bin/i3-imgclipwatch
+exec --no-startup-id setsid -f bash $HOME/.local/bin/i3-cliphist
+exec --no-startup-id setsid -f $HOME/.local/bin/i3-imgclipwatch
 exec_always --no-startup-id setsid -f $HOME/.local/bin/batmon
 exec_always --no-startup-id setsid -f $HOME/.local/bin/i3-display-watch
 # DISABLED: i3-autolayout was closing terminals in workspace 4
@@ -149,6 +149,8 @@ bindsym Mod4+Shift+comma exec dunstctl close-all
 bindsym Mod4+Ctrl+comma exec dunstctl set-paused toggle
 # Invoke last notification action (dunstctl)
 bindsym Mod4+Mod1+comma exec dunstctl invoke
+# Toggle notification sounds while keeping notifications visible
+bindsym Mod4+Ctrl+Shift+comma exec --no-startup-id $HOME/.local/bin/i3-notification-sound-toggle
 
 # use these keys for focus, movement, and resize directions when reaching for
 # the arrows is not convenient
@@ -166,12 +168,12 @@ for_window [class="i3-calendar"] floating enable, border pixel 1, move position 
 for_window [title="Calendar"] floating enable, border pixel 1, move position 780 px 34 px
 for_window [class="i3-windows-vm"] floating enable, resize set 900 700, move position center
 for_window [class="fzfmenu"] floating enable, move position center
-for_window [class="i3-clipboard-picker"] floating enable, resize set 860 256, move position center
+for_window [class="i3-clipboard-picker"] floating enable, resize set 1000 256, move position center
 for_window [class="fzf"] floating enable, move position center
 for_window [class="Walker"] floating enable, resize set 644 300, move position center
 for_window [class="walker"] floating enable, resize set 644 300, move position center
 for_window [title="Walker"] floating enable, resize set 644 300, move position center
-for_window [title="volume-osd"] floating enable, resize set 360 100, move position center
+for_window [title="volume-osd"] floating enable, border none
 for_window [title="brightness-osd"] floating enable, resize set 360 100, move position center
 for_window [class="i3statspopup"] floating enable, resize set 900 650, move position center
 for_window [class="i3-load-popup"] floating enable, resize set 760 500, move position center
