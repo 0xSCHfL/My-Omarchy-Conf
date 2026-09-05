@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+case "${BLOCK_BUTTON:-0}" in
+    1)
+        setsid -f "$HOME/.local/bin/i3-idle-toggle" >/dev/null 2>&1
+        pkill -RTMIN+13 i3blocks 2>/dev/null || true
+        ;;
+esac
+
+if pgrep -x xidlehook >/dev/null 2>&1; then
+    printf '󰅐\n\n#a6d189\n'
+else
+    printf '󰅑\n\n#ea999c\n'
+fi

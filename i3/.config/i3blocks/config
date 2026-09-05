@@ -12,12 +12,6 @@ signal=9
 markup=pango
 separator=false
 
-[window_title]
-command=~/.config/i3blocks/scripts/window-title
-interval=1
-separator_block_width=0
-separator=false
-
 [voxtype]
 command=~/.config/i3blocks/scripts/voxtype
 interval=1
@@ -93,6 +87,12 @@ separator=false
 command=~/.config/i3blocks/scripts/battery
 interval=5
 signal=3
+separator=false
+
+[idle]
+command=~/.config/i3blocks/scripts/idle
+interval=2
+signal=13
 separator=false
 
 [time]

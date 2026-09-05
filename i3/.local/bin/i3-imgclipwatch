@@ -5,6 +5,7 @@
 HIST_DIR="$HOME/.cache/hist"
 LOGFILE="/tmp/i3-imgclipwatch.log"
 LOCK_PATH="${CLIPHIST_LOCK_PATH:-$HOME/.cache/cliphist/.lock}"
+DB_PATH="${CLIPHIST_DB_PATH:-$HOME/.cache/cliphist/db}"
 mkdir -p "$HIST_DIR"
 
 store_clipboard() {
@@ -19,6 +20,10 @@ store_clipboard() {
 prev_checksum=""
 
 while :; do
+    # Re-persist an image that is still selected after the periodic database reset.
+    if [ ! -s "$DB_PATH" ]; then
+        prev_checksum=""
+    fi
     targets=$(xclip -selection clipboard -t TARGETS -o 2>/dev/null || true)
     mime=""
     ext=""

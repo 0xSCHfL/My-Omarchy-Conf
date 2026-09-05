@@ -20,6 +20,9 @@ bash -n "$PICKER" && pass 'combined picker syntax' || fail 'combined picker synt
 bash -n "$CLIP_DAEMON" "$IMAGE_WATCHER" "$RESET_SCRIPT" && pass 'clipboard image flow syntax' || fail 'clipboard image flow syntax'
 grep -q '__I3_IMAGE__:' "$IMAGE_WATCHER" && pass 'image marker is stored in cliphist order' || fail 'image marker storage is missing'
 grep -q 'flock -x 9' "$CLIP_DAEMON" "$IMAGE_WATCHER" "$RESET_SCRIPT" && pass 'clipboard writers and reset share a lock' || fail 'clipboard reset locking is missing'
+grep -q 'DB_PATH=' "$CLIP_DAEMON" "$IMAGE_WATCHER" && pass 'watchers know the cliphist database path' || fail 'watchers do not know the cliphist database path'
+grep -q '\[ ! -s "\$DB_PATH" \]' "$CLIP_DAEMON" && pass 'text watcher recovers after database reset' || fail 'text watcher does not recover after database reset'
+grep -q 'prev_checksum=""' "$IMAGE_WATCHER" && pass 'image watcher recovers after database reset' || fail 'image watcher does not recover after database reset'
 grep -q 'ctrl-d:execute-silent(.*--delete.*reload' "$PICKER" && pass 'Ctrl+D deletes and reloads in place' || fail 'Ctrl+D delete binding is missing'
 
 if command -v chafa >/dev/null 2>&1; then

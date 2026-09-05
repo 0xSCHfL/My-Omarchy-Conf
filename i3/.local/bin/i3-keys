@@ -23,7 +23,7 @@ categorize() {
             if (cmd ~ /cliphist/) return "Clipboard"
             if (cmd ~ /screenshot|screenrecord|i3-ocr/) return "Screenshots"
             if (cmd ~ /wallpaper|i3-imgpicker/) return "Wallpaper"
-            if (cmd ~ /i3-lock|i3-sys|i3-kill|^restart$|^reload$|i3-msg|Exit i3/) return "Session"
+            if (cmd ~ /i3-lock|i3-sys|i3-kill|i3-idle-toggle|^restart$|^reload$|i3-msg|Exit i3/) return "Session"
             if (cmd ~ /^kill$|floating|fullscreen|maximize|float-toggle|^layout |split|^focus|^move|^a$/) return "Window control"
             if (cmd ~ /^resize|^mark/) return "Window control"
             if (cmd ~ /workspace/) return "Workspaces"

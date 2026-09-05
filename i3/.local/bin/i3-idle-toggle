@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if pgrep -x xidlehook >/dev/null 2>&1; then
+    pkill -x xidlehook
+    notify-send -t 1800 'Idle timers paused' 'Screensaver, lock, and automatic sleep are paused.'
+else
+    setsid -f "$HOME/.local/bin/i3-idle"
+    notify-send -t 1800 'Idle timers resumed' 'Screensaver, lock, and automatic sleep are active again.'
+fi

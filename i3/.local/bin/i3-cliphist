@@ -3,6 +3,7 @@
 
 LAST=""
 LOCK_PATH="${CLIPHIST_LOCK_PATH:-$HOME/.cache/cliphist/.lock}"
+DB_PATH="${CLIPHIST_DB_PATH:-$HOME/.cache/cliphist/db}"
 
 store_clipboard() {
     local value="$1"
@@ -30,6 +31,11 @@ clipboard_has_image() {
 }
 
 while true; do
+    # The periodic reset removes the database while this daemon keeps running.
+    # Clear LAST so the current clipboard is saved again after that reset.
+    if [ ! -s "$DB_PATH" ]; then
+        LAST=""
+    fi
     if clipboard_has_image; then
         # Image history is recorded by i3-imgclipwatch with a valid file path.
         # Do not feed binary image data into cliphist as text.

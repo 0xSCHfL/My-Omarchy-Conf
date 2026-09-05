@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+
+# Show visual feedback for fprintd verification requests.
+# fprintd does not identify the PAM caller on the bus, so this follows
+# verification events. In the current setup that is the sudo fingerprint
+# authentication path.
+
+set -u
+
+readonly FPRINTD_BUS_NAME='net.reactivated.Fprint'
+readonly FPRINTD_DEVICE='/net/reactivated/Fprint/Device/0'
+readonly ICON='/usr/share/icons/Adwaita/symbolic/devices/auth-fingerprint-symbolic.svg'
+readonly LOCK_FILE="${XDG_RUNTIME_DIR:-/tmp}/i3-fingerprint-notify.lock"
+
+if ! command -v gdbus >/dev/null 2>&1 || ! command -v notify-send >/dev/null 2>&1; then
+    exit 0
+fi
+
+# i3 can be restarted without killing the old watcher. Keep exactly one.
+exec 9>"$LOCK_FILE"
+if ! flock -n 9; then
+    exit 0
+fi
+
+notification_id=''
+verification_active=0
+
+notify_fingerprint() {
+    local urgency="$1"
+    local timeout="$2"
+    local summary="$3"
+    local body="$4"
+    local -a args=(
+        -a 'sudo-fingerprint'
+        -u "$urgency"
+        -t "$timeout"
+        -i "$ICON"
+    )
+
+    if [[ -n "$notification_id" ]]; then
+        args+=(-r "$notification_id")
+    else
+        args+=(--print-id)
+    fi
+
+    if [[ -n "$notification_id" ]]; then
+        notify-send "${args[@]}" "$summary" "$body" >/dev/null 2>&1 || true
+    else
+        notification_id="$(notify-send "${args[@]}" "$summary" "$body" 2>/dev/null || true)"
+    fi
+}
+
+reset_notification() {
+    notification_id=''
+    verification_active=0
+}
+
+monitor_fprintd() {
+    stdbuf -oL gdbus monitor \
+        --system \
+        --dest "$FPRINTD_BUS_NAME" \
+        --object-path "$FPRINTD_DEVICE"
+}
+
+while IFS= read -r signal; do
+    case "$signal" in
+        *'VerifyFingerSelected ('*)
+            verification_active=1
+            # Keep the prompt visible until fprintd reports a result. A slow
+            # finger placement must not make the guidance disappear.
+            notify_fingerprint normal 0 'Fingerprint needed' 'Touch the sensor to authenticate.'
+            ;;
+        *"VerifyStatus ('verify-match'"*)
+            if (( verification_active )); then
+                notify_fingerprint normal 2500 'Fingerprint accepted' 'sudo authentication successful.'
+                reset_notification
+            fi
+            ;;
+        *"VerifyStatus ('verify-no-match'"*)
+            if (( verification_active )); then
+                notify_fingerprint normal 3500 'Fingerprint not recognized' 'Try again or enter your sudo password.'
+                reset_notification
+            fi
+            ;;
+        *"VerifyStatus ('verify-retry-scan'"*|*"VerifyStatus ('verify-scan-too-short'"*|*"VerifyStatus ('verify-finger-not-centered'"*)
+            if (( verification_active )); then
+                notify_fingerprint normal 2500 'Try again' 'Place your finger flat on the sensor.'
+            fi
+            ;;
+        *"VerifyStatus ('verify-"*)
+            if (( verification_active )); then
+                notify_fingerprint critical 3500 'Fingerprint error' 'sudo could not verify your fingerprint.'
+                reset_notification
+            fi
+            ;;
+    esac
+done < <(
+    # The daemon is on-demand; reconnect if it exits or is restarted.
+    while :; do
+        monitor_fprintd || true
+        sleep 1
+    done
+)

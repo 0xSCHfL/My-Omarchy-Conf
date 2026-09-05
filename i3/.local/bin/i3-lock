@@ -16,6 +16,8 @@ TMPBG=/tmp/i3lock-bg.png
 maim "$TMPBG"
 magick "$TMPBG" -fill black -colorize 90 "$TMPBG"
 
+# i3lock starts pam_fprintd when Enter is pressed. Keep it in the
+# foreground so a successful PAM result always closes this exact lock.
 i3lock \
     --image="$TMPBG" \
     --clock \
@@ -56,16 +58,20 @@ i3lock \
     --keyhl-color="$(bg "$foreground" ff)" \
     --bar-count=50 \
     \
-    --verif-text="Verifying..." \
+    --verif-text="Touch fingerprint..." \
     --verif-color="$(bg "$color5" ff)" \
     --verif-font="Iosevka Term" \
     --verif-size=20 \
     \
-    --wrong-text="Wrong password, try again" \
+    --wrong-text="Fingerprint not recognized; try again or type password" \
     --wrong-color="$(bg "$color1" ff)" \
     --wrong-font="Iosevka Term" \
     --wrong-size=20 \
     \
     --noinput-text="" \
     \
+    --greeter-text="Touch fingerprint or press Enter for password" \
+    --greeter-color="$(bg "$foreground" ff)" \
+    --greeter-font="Iosevka Term" \
+    --greeter-size=20 \
     --nofork

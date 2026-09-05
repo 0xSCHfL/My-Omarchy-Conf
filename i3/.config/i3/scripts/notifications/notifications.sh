@@ -38,27 +38,37 @@ case "$choice" in
     ;;
   "Notification history ("*)
     selected_id=$(
-      dunstctl history | python3 - <<'PY' | rofi -dmenu -i -p "History" -theme "$HOME/.config/rofi/i3-launcher.rasi" | cut -f1
+      history_json="$(dunstctl history)"
+      printf '%s' "$history_json" | python3 -c '
 import json
 import sys
 
 try:
-    items = json.load(sys.stdin)
+    payload = json.load(sys.stdin)
 except json.JSONDecodeError:
-    items = []
+    sys.exit(0)
+
+# dunstctl 1.13 returns a typed D-Bus value: {"data": [[{...}]]}.
+# Keep this tolerant of older/plain-list output as well.
+data = payload.get("data", []) if isinstance(payload, dict) else payload
+items = data[0] if data and isinstance(data[0], list) else data
+
+def value(item, name):
+    field = item.get(name, "") if isinstance(item, dict) else ""
+    return field.get("data", "") if isinstance(field, dict) else field
 
 lines = []
-for item in reversed(items):
-    ident = str(item.get("id", ""))
-    summary = " ".join(str(item.get("summary", "")).split())
-    body = " ".join(str(item.get("body", "")).split())
+for item in reversed(items or []):
+    ident = str(value(item, "id"))
+    summary = " ".join(str(value(item, "summary")).split())
+    body = " ".join(str(value(item, "body")).split())
     text = summary or body or "[no text]"
     if body and body != summary:
-      text = f"{summary} - {body}" if summary else body
+        text = f"{summary} - {body}" if summary else body
     lines.append(f"{ident}\t{text}")
 
 print("\n".join(lines))
-PY
+' | rofi -dmenu -i -p "History" -theme "$HOME/.config/rofi/i3-launcher.rasi" | cut -f1
     )
     [ -n "${selected_id:-}" ] && dunstctl history-pop "$selected_id"
     ;;

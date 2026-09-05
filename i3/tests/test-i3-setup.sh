@@ -100,6 +100,7 @@ check_config_line 'class="i3-windows-vm"' 'Windows VM popup floating rule'
 check_config_line 'class="i3-clipboard-picker"' 'combined clipboard popup floating rule'
 check_config_line 'Mod4\+Ctrl\+space.*i3-menu' 'control menu binding'
 check_config_line 'Mod4\+Ctrl\+c.*i3-capture-menu' 'unified capture menu binding'
+check_config_line 'Mod4\+Ctrl\+i.*i3-idle-toggle' 'idle timer toggle binding'
 
 printf '\n[scripts]\n'
 scripts=(
@@ -107,6 +108,7 @@ scripts=(
     .local/bin/i3-idle-screensaver
     .local/bin/i3-idle-lock
     .local/bin/i3-idle-sleep
+    .local/bin/i3-idle-toggle
     .local/bin/i3-launch-screensaver
     .local/bin/i3-stop-screensaver
     .local/bin/i3-cliphist
@@ -126,6 +128,8 @@ scripts=(
     .config/i3/scripts/media/brightness-osd.sh
     .config/i3blocks/scripts/load
     .config/i3blocks/scripts/timedate
+    .config/i3blocks/scripts/idle
+    .config/i3/scripts/notifications/notifications.sh
 )
 
 for script in "${scripts[@]}"; do
