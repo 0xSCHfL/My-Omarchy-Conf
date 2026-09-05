@@ -1,5 +1,5 @@
 [Unit]
-Description=Periodic clipboard history reset
+Description=Periodic cliphist wipe
 
 [Timer]
 OnBootSec=5h

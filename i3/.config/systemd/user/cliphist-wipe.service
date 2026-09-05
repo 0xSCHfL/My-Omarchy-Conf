@@ -1,5 +1,5 @@
 [Unit]
-Description=Reset clipboard history
+Description=Wipe cliphist clipboard history
 
 [Service]
 Type=oneshot
