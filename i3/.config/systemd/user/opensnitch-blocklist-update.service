@@ -1,0 +1,6 @@
+[Unit]
+Description=Update OpenSnitch porn blocklist
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/opensnitch-blocklist-update
